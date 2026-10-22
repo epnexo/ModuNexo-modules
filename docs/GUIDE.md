@@ -66,7 +66,7 @@ move earlier; `social-channels` repeat the WhatsApp pattern; `attribution` needs
 
 - **Contacts and conversations are shared by almost everything.** Today our `inbox` has its own `contacts` table. When
   `contacts` becomes a module, the inbox keeps only a `contact_ref` (the id) plus a display-name snapshot, and reads the
-  rest through an event or a service-token call. Decide this before building module 1 (open decision A).
+  rest through an event or a service-token call. This is decided (decision A): `contacts` is its own module.
 - **Stage change is the busiest hook.** Define one event, `contacts.lead.stage_changed`, with a stable payload; the bridge,
   the agenda and attribution subscribe to it instead of calling each other.
 - **Ingest is called from every channel.** In Vocero all channels call one `ingestInboundMessage`. Here each channel
@@ -103,8 +103,8 @@ Ordered by what blocks first. Each is a small feature in the platform repo, done
 
 ## 6. Open decisions
 
-- **A.** Does `contacts` become its own module (clean, costs a refactor of the existing inbox), or does the inbox keep
-  contacts and the pipeline hangs from it?
+- **A. Decided: `contacts` is its own module.** The existing inbox is refactored to keep only a contact reference
+  (the id) plus a display-name snapshot, and reads the rest through an event or a service-token call.
 - **B.** `social-channels`: one module (shared Zernio client) or three.
 - **C.** Where the external brain lives: Vocero already treats it as an external service (ADR-001 question 3); keep that.
 - **D.** Publishing: this repository on GitHub, and whether archives are attached to releases.
