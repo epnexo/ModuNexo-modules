@@ -17,11 +17,11 @@ npm run modunexo -- modules add inbox-0.1.0.tgz --sha256 <hex>
 npm run modunexo -- modules apply <hex>              # place, build, restart without downtime
 ```
 
-`pack` needs the platform checkout beside this folder (`../CRM Module`, or set `MODUNEXO_PLATFORM`).
+`pack` needs the platform checkout beside this folder (`../ModuNexo`, or set `MODUNEXO_PLATFORM`).
 
 ## Develop
 
-The platform is linked as a local dependency (`file:../CRM Module/packages/...`), so run `npm install` here after
+The platform is linked as a local dependency (`file:../ModuNexo/packages/...`), so clone `ModuNexo` and `ModuNexo-modules` side by side and run `npm install` here after
 cloning both repositories side by side.
 
 ```bash

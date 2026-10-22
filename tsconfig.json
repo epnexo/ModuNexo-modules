@@ -1,5 +1,5 @@
 {
-  "extends": "../CRM Module/tsconfig.base.json",
+  "extends": "../ModuNexo/tsconfig.base.json",
   "compilerOptions": { "jsx": "react-jsx", "types": ["node"] },
   "include": ["*/**/*.ts", "*/**/*.tsx"],
   "exclude": ["node_modules", "dist"]

@@ -10,8 +10,8 @@
     "pack": "bash scripts/pack.sh"
   },
   "devDependencies": {
-    "@modunexo/core": "file:../CRM Module/packages/core",
-    "@modunexo/sdk": "file:../CRM Module/packages/sdk",
+    "@modunexo/core": "file:../ModuNexo/packages/core",
+    "@modunexo/sdk": "file:../ModuNexo/packages/sdk",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
