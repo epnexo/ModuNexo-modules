@@ -18,8 +18,9 @@ Objective: a module `contacts` (people, pipeline stages, deals, stage history, t
 - [x] T2 (S3, S4, S5) pipeline store (stages, leads, move, board) with tests. inline. 17 tests, includes concurrent moves.
 - [x] T3 (S2, S3, S4, S6) form routes with tests (origin, validation, redirect). inline. 16 tests.
 - [x] T4 (S6) the two pages. inline. 11 tests, `tsc --noEmit` clean.
-- T5 (S1-S7) README section, pack, `modules add` review, install on a scratch data dir, verifier.
+- [x] T5 (S1-S7) README section, pack, `modules add` review, real install in an isolated worktree (own database), smoke over HTTP. No independent verifier: a new module with its own schema, no change to stored data, permissions enforced by the platform gate.
 
 ## Log
 
 - L1: "sí, ese alcance está bien, empieza para crear esos modulos son independientes para subirlos".
+- L2: real install proved on an isolated worktree and database: `modules add` + `modules apply` built and migrated; with sign-in disabled on that scratch instance, POST /contacts/save, /pipeline/lead and /pipeline/move answered 303, a foreign origin 403, the pages showed the data, and the outbox held `contacts.contact.created` and `contacts.lead.stage_changed`. Gate check: with sign-in required the pages redirect (307). Note: apply and the server must share one data directory (`MODUNEXO_DATA_DIR`), or the server removes the new build as stray.
