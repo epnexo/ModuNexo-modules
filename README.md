@@ -82,3 +82,7 @@ anything (a page cannot ask who is looking, so the forms are shown to every read
   nothing. Other modules subscribe to these events; none imports this one.
 - **Not yet**: CSV import, deleting or reordering stages, assigning an owner, and a service-token route for other modules
   to read contacts (the inbox will need it to resolve a contact).
+
+## License
+
+MIT, see `LICENSE`. The platform itself is licensed separately (AGPL-3.0, with a module exception) in its own repository.

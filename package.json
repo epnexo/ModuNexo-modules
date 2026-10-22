@@ -2,6 +2,7 @@
   "name": "modunexo-modules",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Modules for the Modunexo platform, each packed as an archive you install with `modules add`.",
   "scripts": {
