@@ -1,5 +1,6 @@
 {
   "extends": "../CRM Module/tsconfig.base.json",
-  "compilerOptions": { "jsx": "preserve", "types": ["node"] },
-  "include": ["inbox/**/*.ts", "inbox/**/*.tsx", "tests/**/*.ts"]
+  "compilerOptions": { "jsx": "react-jsx", "types": ["node"] },
+  "include": ["*/**/*.ts", "*/**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
 }

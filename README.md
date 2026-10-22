@@ -5,18 +5,19 @@ module here is packed into an archive and installed on a running platform.
 
 | Module | What it does |
 | --- | --- |
+| `contacts` | People, pipeline stages, leads with their stage history, and the events `contact.created`, `contact.deleted` and `lead.stage_changed`. |
 | `inbox` | Receives signed messages from a channel at `/hooks/inbox/messages`, lists conversations, lets an operator reply, and updates live. |
 
 ## Install a module
 
 ```bash
-npm run pack:inbox                                   # writes dist/inbox-<version>.tgz and prints its SHA-256
+npm run pack -- inbox                                # writes dist/inbox-<version>.tgz and prints its SHA-256
 # on the platform:
 npm run modunexo -- modules add inbox-0.1.0.tgz --sha256 <hex>
 npm run modunexo -- modules apply <hex>              # place, build, restart without downtime
 ```
 
-`pack:inbox` needs the platform checkout beside this folder (`../CRM Module`).
+`pack` needs the platform checkout beside this folder (`../CRM Module`, or set `MODUNEXO_PLATFORM`).
 
 ## Develop
 
