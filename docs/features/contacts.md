@@ -14,10 +14,10 @@ Objective: a module `contacts` (people, pipeline stages, deals, stage history, t
 
 ## Tasks
 
-- T1 (S2, S5) manifest, migration, contacts store with tests. inline.
-- T2 (S3, S4, S5) pipeline store (stages, leads, move, board) with tests. inline.
-- T3 (S2, S3, S4, S6) form routes with tests (origin, validation, redirect). inline.
-- T4 (S6) the two pages. inline.
+- [x] T1 (S2, S5) manifest, migration, contacts store with tests. inline. 99335e6, 15 tests.
+- [x] T2 (S3, S4, S5) pipeline store (stages, leads, move, board) with tests. inline. 17 tests, includes concurrent moves.
+- [x] T3 (S2, S3, S4, S6) form routes with tests (origin, validation, redirect). inline. 16 tests.
+- [x] T4 (S6) the two pages. inline. 11 tests, `tsc --noEmit` clean.
 - T5 (S1-S7) README section, pack, `modules add` review, install on a scratch data dir, verifier.
 
 ## Log

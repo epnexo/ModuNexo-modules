@@ -61,3 +61,24 @@ a job, an event, secret settings and a live page. Pack and install it like any o
 ## Guide
 
 `docs/GUIDE.md` says which modules to build for the Vocero areas, in which order, with the rules every module follows and what the platform still lacks.
+
+## contacts
+
+People, a pipeline and leads. Needs no settings. Permissions: `contacts.read` opens the pages, `contacts.write` can change
+anything (a page cannot ask who is looking, so the forms are shown to every reader and the gate refuses the send).
+
+- **Contacts** (`/contacts`): name (required), phone, email, notes and an optional channel `identity` (for example
+  `wa:+573001112233`) that no two contacts share. Search covers name, phone, email and identity, ignoring case. The list
+  shows the newest 100. Deleting a contact deletes its leads and their history.
+- **Pipeline** (`/pipeline`): a column per stage. It starts with New, Contacted, Qualified, Won and Lost; Won and Lost are
+  closing stages. A writer can add a stage (placed just before the first closing one) and rename any stage; stages are
+  not deleted or reordered yet.
+- **Leads**: a title, an optional amount (up to 2 decimals) and a priority (`low`, `normal`, `high`), belonging to one
+  contact and starting in the first stage. Every move writes a history row; moving to a closing stage sets `closed_at`,
+  moving back to an open one clears it.
+- **Events**: `contacts.contact.created` `{ contactId }`, `contacts.contact.deleted` `{ contactId }` and
+  `contacts.lead.stage_changed` `{ leadId, contactId, fromStageId, toStageId, toKind }`, each published in the same
+  transaction as the write. Creating a lead, editing a contact and moving a lead to the stage it is already in announce
+  nothing. Other modules subscribe to these events; none imports this one.
+- **Not yet**: CSV import, deleting or reordering stages, assigning an owner, and a service-token route for other modules
+  to read contacts (the inbox will need it to resolve a contact).

@@ -31,9 +31,9 @@ below is a reading of the code, so treat it as a proposal to adjust.
    keep it in this repo under `docs/features/<id>.md`.
 2. `modules new <id> --dir <this repo>`; edit the manifest (permissions, settings, pages, jobs, events).
 3. Tests first (RED), in `tests/<id>/`, against a scratch database (`TEST_DATABASE_URL`, name ending in `_test`).
-4. `npm test` here. Then pack: `npm run modunexo -- modules pack <id> --out dist/<id>-<version>.tgz` from the platform
-   checkout, and install on a scratch data dir with `modules add <archive> --data-dir <tmp>` to read the review
-   (public routes, jobs, permissions are listed before anything runs).
+4. `npm test` and `npm run typecheck` here. Then `npm run pack -- <id>` (writes `dist/<id>-<version>.tgz` and prints its
+   SHA-256), and read the review with `modules add <archive> --data-dir <tmp>` from the platform checkout (public routes,
+   jobs, permissions are listed before anything runs).
 5. Install for real: `modules add ... --sha256 <hex>` then `modules apply <hex>`. The build goes beside the serving
    one and the restart is the switch, so the site does not go down. Check `/status` for jobs and events.
 6. Bump the module version for every change that ships; keep `platform: ^<SDK_VERSION>` in the manifest.
@@ -45,7 +45,7 @@ offer yet (section 4).
 
 | # | Module | What it does | Needs | Depends on (by events/HTTP) | Size |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `contacts` | People, pipeline stages, deals, stage history, CSV import. Emits `contact.created`, `lead.stage_changed`. | pages, events | nothing | M |
+| 1 | `contacts` (built, v0.1.0) | People, pipeline stages, deals, stage history, CSV import. Emits `contact.created`, `lead.stage_changed`. | pages, events | nothing | M |
 | 2 | `inbox` (exists) | Conversations and messages, reply window, live updates. Becomes the hub every channel feeds. | public route, jobs, events, files | contacts | L |
 | 3 | `whatsapp` | Meta Cloud API: receive, send, templates, media. | public route with **GET handshake (gap)**, jobs (template sync), files, secrets | inbox | L |
 | 4 | `agent-bridge` | Sends each turn to an external brain over HTTP, serves the brain's callbacks (messages, context, stage, handoff, bookings) and an LLM proxy. | jobs (outbox with retries), events, service tokens, llm | inbox, contacts, agenda | L |
