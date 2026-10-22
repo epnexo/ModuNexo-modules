@@ -1,0 +1,21 @@
+{
+  "name": "modunexo-modules",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Modules for the Modunexo platform, each packed as an archive you install with `modules add`.",
+  "scripts": {
+    "test": "node --import tsx --test --test-force-exit tests/**/*.test.ts",
+    "pack:inbox": "mkdir -p dist && npm --prefix ../\"CRM Module\" run -s modunexo -- modules pack \"$PWD/inbox\" --out \"$PWD/dist/inbox-$(node -p \"require('./inbox/package.json').version\").tgz\""
+  },
+  "devDependencies": {
+    "@modunexo/core": "file:../CRM Module/packages/core",
+    "@modunexo/sdk": "file:../CRM Module/packages/sdk",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.3.0",
+    "pg": "^8.23.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
