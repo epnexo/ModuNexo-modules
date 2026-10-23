@@ -14,9 +14,10 @@ Objective: a service-token API in `inbox` (v0.3.0) so an agent or another servic
 
 ## Tasks
 
-- T1 (S2-S7) the four routes, the extra reads, the manifest scopes and version 0.3.0, with tests. inline.
-- T2 (S1) README, changelog, pack, real upgrade 0.2.0 to 0.3.0 and a call with tokens on an isolated worktree and database.
+- [x] T1 (S2-S7) the four routes, the extra reads, the manifest scopes and version 0.3.0, with tests. inline.
+- [x] T2 (S1) README, changelog, pack, real upgrade 0.2.0 to 0.3.0 and a call with tokens on an isolated worktree and database.
 
 ## Log
 
 - L1: "hazlo ahora, haz la ruta de servicio del inbox" (after the pending list: the agent needs to read messages and send replies).
+- L2: proved on an isolated worktree and database with the real build and web server (inbox 0.3.0 installed fresh): a signed webhook message created the conversation; with a service token, no token 401, conversations 200 with the person and the unread count, messages 200 and the unread count stayed 1 after reading by service, send 201 `{ id, status: "queued" }`, messages after an id returned only the reply, mark read 200 and the count went to 0; a read-only token read 200 and sending 403. The upgrade path 0.2.0 to 0.3.0 has no migration and was not repeated here: it was proved for the same kind of change with contacts.
