@@ -45,7 +45,7 @@ async function announce(tx: DbQueryable, row: BookingRow, change: "created" | "r
 const lock = (tx: DbQueryable) => tx.query("select pg_advisory_xact_lock(hashtext('agenda.bookings'))");
 
 /** Books a free slot for the attendee. Anything that is not a free slot (off the grid, closed, past, beyond the horizon, taken, inside a buffer) is `not_available`. */
-export async function bookSlot(fields: BookingFields, now: Date = new Date()): Promise<{ ok: true; id: number } | { ok: false; error: "not_available" }> {
+export async function bookSlot(fields: BookingFields, now: Date = new Date()): Promise<{ ok: true; id: number; startsAt: Date; endsAt: Date } | { ok: false; error: "not_available" }> {
   return getDb(MODULE).transaction(async (tx) => {
     await lock(tx);
     const slot = (await slotsFor(tx, now)).find((candidate) => candidate.startsAt.getTime() === fields.startsAt.getTime());
@@ -56,7 +56,7 @@ export async function bookSlot(fields: BookingFields, now: Date = new Date()): P
     );
     const row = toRow(made.rows[0]!);
     await announce(tx, row, "created");
-    return { ok: true as const, id: row.id };
+    return { ok: true as const, id: row.id, startsAt: row.startsAt, endsAt: row.endsAt };
   });
 }
 
