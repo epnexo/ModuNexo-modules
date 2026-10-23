@@ -15,12 +15,12 @@ Objective: a module `agenda` (weekly availability, bookings that cannot clash, a
 
 ## Tasks
 
-- T1 (S3) time: local to UTC with daylight saving, the weekday and date of an instant in a zone. inline.
-- T2 (S2) settings and weekly hours store with validation. inline.
-- T3 (S3) free slots. inline.
-- T4 (S4, S5) bookings: book, reschedule, cancel, clash control, events. inline.
-- T5 (S6, S7) form routes and service routes. inline.
-- T6 (S6) the two pages and the manifest. inline.
+- [x] T1 (S3) time: local to UTC with daylight saving, the weekday and date of an instant in a zone. inline. 9 tests.
+- [x] T2 (S2) settings and weekly hours store with validation. inline. 7 tests.
+- [x] T3 (S3) free slots. inline. 13 tests (buffer, horizon, zones, both clock changes).
+- [x] T4 (S4, S5) bookings: book, reschedule, cancel, clash control, events. inline. 16 tests, includes simultaneous requests.
+- [x] T5 (S6, S7) form routes and service routes. inline. 21 tests.
+- [x] T6 (S6) the two pages and the manifest. inline. 9 tests plus 7 for the week arithmetic; `tsc --noEmit` clean.
 - T7 (S1-S8) README, pack, real install in an isolated worktree and database, smoke over HTTP.
 
 ## Log

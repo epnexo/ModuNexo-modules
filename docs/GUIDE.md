@@ -49,7 +49,7 @@ offer yet (section 4).
 | 2 | `inbox` (exists) | Conversations and messages, reply window, live updates. Becomes the hub every channel feeds. | public route, jobs, events, files | contacts | L |
 | 3 | `whatsapp` | Meta Cloud API: receive, send, templates, media. | public route with **GET handshake (gap)**, jobs (template sync), files, secrets | inbox | L |
 | 4 | `agent-bridge` | Sends each turn to an external brain over HTTP, serves the brain's callbacks (messages, context, stage, handoff, bookings) and an LLM proxy. | jobs (outbox with retries), events, service tokens, llm | inbox, contacts, agenda | L |
-| 5 | `agenda` | Availability, slots, bookings, rescheduling, Zoom and Google connectors. | pages, events, jobs, service tokens, secrets | contacts | L |
+| 5 | `agenda` (built, v0.1.0, without Zoom and Google) | Availability, slots, bookings, rescheduling, Zoom and Google connectors. | pages, events, jobs, service tokens, secrets | contacts | L |
 | 6 | `social-channels` | Instagram, Messenger, TikTok through Zernio (one module sharing the client, or three). | public routes with **GET handshake (gap)**, secrets | inbox | M |
 | 7 | `attribution` | Which ad a lead came from; sends conversions to Meta CAPI when a stage changes. | events, jobs (retries), secrets | inbox, contacts | M |
 | 8 | `results` | Read-only dashboards: funnel, ads, bot, hygiene. | pages; reads other modules by **events or HTTP (gap)** | contacts, agenda, attribution, inbox | M |
