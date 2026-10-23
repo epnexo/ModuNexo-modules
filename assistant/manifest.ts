@@ -22,5 +22,12 @@ export default defineModule({
   llm: { baseUrlSetting: "llm.url", apiKeySetting: "llm.key", modelSetting: "llm.model" },
   jobs: [{ name: "answer", entry: "./jobs/answer.ts", timeoutSeconds: 120, maxAttempts: 3 }],
   subscriptions: [{ event: "inbox.message.received", job: "answer" }],
-  nav: [],
+  nav: [{ label: "Assistant", href: "/assistant", icon: "bolt", permission: "assistant.read" }],
+  pages: [
+    { path: "/assistant", entry: "./web/assistant-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "assistant.read" },
+    { path: "/assistant/settings", entry: "./web/settings-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "assistant.read" },
+    { path: "/assistant/settings/save", entry: "./web/settings-save.ts", kind: "route", methods: ["POST"], permission: "assistant.write" },
+    { path: "/assistant/pause", entry: "./web/pause.ts", kind: "route", methods: ["POST"], permission: "assistant.write" },
+    { path: "/assistant/resume", entry: "./web/resume.ts", kind: "route", methods: ["POST"], permission: "assistant.write" },
+  ],
 });

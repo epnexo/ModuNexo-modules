@@ -68,3 +68,25 @@ export async function sendReply(target: InboxTarget, conversationId: number, tex
   if (response.status === 400 || response.status === 404) return "refused";
   throw new Error(`The inbox answered HTTP ${response.status}.`);
 }
+
+export type ConversationLine = { id: number; contactRef: string; contactName: string | null; lastMessageAt: Date };
+
+export async function conversationExists(conversationId: number): Promise<boolean> {
+  return (await inbox().query("select 1 from conversations where id = $1", [conversationId])).rows.length > 0;
+}
+
+/** The conversations with the most recent activity. */
+export async function recentConversations(limit: number): Promise<ConversationLine[]> {
+  const found = await inbox().query<{ id: string; contact_ref: string; contact_name: string | null; last_message_at: Date }>(
+    "select id, contact_ref, contact_name, last_message_at from conversations order by last_message_at desc, id desc limit $1",
+    [limit],
+  );
+  return found.rows.map((row) => ({ id: Number(row.id), contactRef: row.contact_ref, contactName: row.contact_name, lastMessageAt: row.last_message_at }));
+}
+
+/** The text of each of these messages, by id. */
+export async function messageTexts(ids: number[]): Promise<Map<number, string>> {
+  if (ids.length === 0) return new Map();
+  const found = await inbox().query<{ id: string; text: string }>("select id, text from messages where id = any($1::bigint[])", [ids]);
+  return new Map(found.rows.map((row) => [Number(row.id), row.text]));
+}
