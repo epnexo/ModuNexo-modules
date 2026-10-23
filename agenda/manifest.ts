@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "agenda",
-  version: "0.1.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.1.1", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Agenda",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -17,6 +17,15 @@ export default defineModule({
     { key: "bookings.write", label: "Book, cancel and reschedule" },
   ],
   nav: [{ label: "Agenda", href: "/agenda", icon: "calendar", permission: "agenda.read" }],
+  dashboard: {
+    stats: [
+      { key: "today", label: "Bookings today", href: "/agenda", permission: "agenda.read", sql: "select count(*) from bookings b cross join settings s where b.status = 'booked' and (b.starts_at at time zone s.timezone)::date = (now() at time zone s.timezone)::date" },
+      { key: "upcoming", label: "Bookings to come", href: "/agenda", permission: "agenda.read", sql: "select count(*) from bookings where status = 'booked' and starts_at >= now()" },
+    ],
+    alerts: [
+      { key: "no_hours", label: "No opening hours are set, so nobody can book", href: "/agenda/settings", severity: "warning", permission: "agenda.read", sql: "select case when exists (select 1 from weekly_hours) then 0 else 1 end" },
+    ],
+  },
   events: [{ name: "booking.updated", permission: "agenda.read" }],
   pages: [
     { path: "/agenda", entry: "./web/agenda-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "agenda.read" },

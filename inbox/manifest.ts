@@ -4,7 +4,7 @@ import { DELIVER_ATTEMPTS } from "./lib/limits.ts";
 
 export default defineModule({
   id: "inbox",
-  version: "0.3.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.3.1", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Inbox",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -31,6 +31,17 @@ export default defineModule({
     { name: "link_contact", entry: "./jobs/link-contact.ts", timeoutSeconds: 30, maxAttempts: LINK_ATTEMPTS },
   ],
   nav: [{ label: "Inbox", href: "/inbox", icon: "app", permission: "inbox.read" }],
+  dashboard: {
+    stats: [
+      { key: "conversations", label: "Conversations", href: "/inbox", permission: "inbox.read", sql: "select count(*) from conversations" },
+      { key: "unread", label: "Unread conversations", href: "/inbox", permission: "inbox.read", sql: "select count(*) from conversations where unread_count > 0" },
+      { key: "recent_messages", label: "Messages in the last 24 hours", href: "/inbox", permission: "inbox.read", sql: "select count(*) from messages where created_at > now() - interval '24 hours'" },
+    ],
+    alerts: [
+      { key: "waiting", label: "Unread conversations waiting over an hour", href: "/inbox", severity: "warning", permission: "inbox.read", sql: "select count(*) from conversations where unread_count > 0 and last_message_at < now() - interval '1 hour'" },
+      { key: "failed_replies", label: "Replies that failed to send this week", href: "/inbox", severity: "error", permission: "inbox.read", sql: "select count(*) from messages where direction = 'out' and status = 'failed' and created_at > now() - interval '7 days'" },
+    ],
+  },
   pages: [
     { path: "/inbox", entry: "./web/page.tsx", kind: "page", dynamic: "force-dynamic", permission: "inbox.read" },
     { path: "/inbox/reply", entry: "./web/reply.ts", kind: "route", methods: ["POST"], permission: "inbox.write" },

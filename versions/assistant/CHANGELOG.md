@@ -1,5 +1,10 @@
 # assistant
 
+## 0.1.1 - 2026-10-23
+
+- Reports to the dashboard: the replies of the last 24 hours and the conversations it stopped, and alerts for replies that failed and for the assistant being switched off. Needs a platform with SDK 0.1.1 or later (the optional `dashboard` field of the manifest).
+- No migration; nothing else changed.
+
 ## 0.1.0 - 2026-10-23
 
 - First release. Answers customers' messages by itself with a language model (OpenAI-compatible, so a local server or a paid

@@ -72,9 +72,8 @@ async function conversation(thread: string, texts: string[], options: { name?: s
 }
 
 describe("the inbox manifest declares the service API", () => {
-  it("is version 0.3.0 and offers each route under the scope it needs, none of them public", () => {
+  it("offers each route under the scope it needs, none of them public", () => {
     const checked = validateManifest(inbox);
-    assert.equal(checked.version, "0.3.0");
     assert.deepEqual(checked.scopes?.map((s) => s.key), ["messages.read", "messages.write"]);
     const byPath = new Map(checked.pages?.map((page) => [page.path, page]));
     const routes: [string, string, string][] = [

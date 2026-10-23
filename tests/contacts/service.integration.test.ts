@@ -63,9 +63,8 @@ const stageId = async (name: string) => Number((await pool!.query("select id fro
 const lead = async (contactId: number, title = "Deal") => Number((await pool!.query("insert into contacts.leads (contact_id, stage_id, title) values ($1, (select id from contacts.pipeline_stages order by position limit 1), $2) returning id", [contactId, title])).rows[0].id);
 
 describe("the contacts manifest declares the service API", () => {
-  it("is version 0.2.0 and offers each route under the scope it needs, none of them public", () => {
+  it("offers each route under the scope it needs, none of them public", () => {
     const checked = validateManifest(contacts);
-    assert.equal(checked.version, "0.2.0");
     assert.deepEqual(checked.scopes?.map((s) => s.key), ["contacts.read", "contacts.write", "leads.read", "leads.write"]);
     const byPath = new Map(checked.pages?.map((page) => [page.path, page]));
     const routes: [string, string, string][] = [

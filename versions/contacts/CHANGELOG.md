@@ -1,5 +1,10 @@
 # contacts
 
+## 0.2.1 - 2026-10-23
+
+- Reports to the dashboard: the number of contacts, of open leads and their value, and an alert for open leads not moved for 7 days. Needs a platform with SDK 0.1.1 or later (the optional `dashboard` field of the manifest).
+- No migration; nothing else changed.
+
 ## 0.2.0 - 2026-10-23
 
 - Service API under `/svc/contacts/` with the scopes `contacts.read`, `contacts.write`, `leads.read` and `leads.write`: read a

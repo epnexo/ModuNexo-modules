@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "assistant",
-  version: "0.1.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.1.1", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Assistant",
   platform: `^${SDK_VERSION}`,
   dependsOn: { inbox: "^0.3.0" },
@@ -23,6 +23,16 @@ export default defineModule({
   jobs: [{ name: "answer", entry: "./jobs/answer.ts", timeoutSeconds: 120, maxAttempts: 3 }],
   subscriptions: [{ event: "inbox.message.received", job: "answer" }],
   nav: [{ label: "Assistant", href: "/assistant", icon: "bolt", permission: "assistant.read" }],
+  dashboard: {
+    stats: [
+      { key: "replies", label: "Replies in the last 24 hours", href: "/assistant", permission: "assistant.read", sql: "select count(*) from replies where status = 'sent' and created_at > now() - interval '24 hours'" },
+      { key: "stopped", label: "Conversations stopped", href: "/assistant", permission: "assistant.read", sql: "select count(*) from paused" },
+    ],
+    alerts: [
+      { key: "failed_replies", label: "Replies that failed in the last 24 hours", href: "/assistant", severity: "error", permission: "assistant.read", sql: "select count(*) from replies where status = 'failed' and created_at > now() - interval '24 hours'" },
+      { key: "switched_off", label: "The assistant is switched off", href: "/assistant/settings", severity: "info", permission: "assistant.read", sql: "select count(*) from config where not enabled" },
+    ],
+  },
   pages: [
     { path: "/assistant", entry: "./web/assistant-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "assistant.read" },
     { path: "/assistant/settings", entry: "./web/settings-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "assistant.read" },

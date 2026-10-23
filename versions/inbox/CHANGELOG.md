@@ -1,5 +1,10 @@
 # inbox
 
+## 0.3.1 - 2026-10-23
+
+- Reports to the dashboard: conversations, unread ones and the messages of the last 24 hours, and alerts for unread conversations waiting over an hour and for replies that failed to send this week. Needs a platform with SDK 0.1.1 or later (the optional `dashboard` field of the manifest).
+- No migration; nothing else changed.
+
 ## 0.3.0 - 2026-10-23
 
 - Service API under `/svc/inbox/` with the scopes `messages.read` and `messages.write`: list conversations (all, or only those with

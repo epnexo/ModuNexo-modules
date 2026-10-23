@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "contacts",
-  version: "0.2.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.2.1", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Contacts",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -16,6 +16,16 @@ export default defineModule({
     { label: "Contacts", href: "/contacts", icon: "users", permission: "contacts.read" },
     { label: "Pipeline", href: "/pipeline", icon: "dashboard", permission: "contacts.read" },
   ],
+  dashboard: {
+    stats: [
+      { key: "people", label: "Contacts", href: "/contacts", permission: "contacts.read", sql: "select count(*) from contacts" },
+      { key: "open_leads", label: "Open leads", href: "/pipeline", permission: "contacts.read", sql: "select count(*) from leads l join pipeline_stages s on s.id = l.stage_id where s.kind = 'open'" },
+      { key: "open_value", label: "Value of open leads", href: "/pipeline", permission: "contacts.read", sql: "select coalesce(round(sum(l.amount)), 0)::bigint from leads l join pipeline_stages s on s.id = l.stage_id where s.kind = 'open'" },
+    ],
+    alerts: [
+      { key: "stale_leads", label: "Open leads not moved for 7 days", href: "/pipeline", severity: "warning", permission: "contacts.read", sql: "select count(*) from leads l join pipeline_stages s on s.id = l.stage_id where s.kind = 'open' and l.updated_at < now() - interval '7 days'" },
+    ],
+  },
   scopes: [
     { key: "contacts.read", label: "Read contacts" },
     { key: "contacts.write", label: "Create and change contacts" },
