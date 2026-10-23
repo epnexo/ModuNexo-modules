@@ -55,6 +55,11 @@ offer yet (section 4).
 | 8 | `results` | Read-only dashboards: funnel, ads, bot, hygiene. | pages; reads other modules by **events or HTTP (gap)** | contacts, agenda, attribution, inbox | M |
 | 9 | `lab` | Runs scripted persona conversations against the brain and scores them with a judge model. | jobs (long run), events, llm | agent-bridge | M |
 
+**The `assistant` module (built, v0.1.0) is the route chosen for answering customers by itself:** it listens to the inbox's event,
+asks a language model through the platform's own model capability (OpenAI-compatible: a local server or a paid provider) and sends
+the answer through the inbox's service API. It is off until an administrator switches it on. `agent-bridge` above, which hands
+each turn to an external brain over HTTP, stays as an option for a brain that already exists; it is not needed for this.
+
 Onboarding, doctor, mock servers and seed data are tooling, not modules.
 
 Why this order: `contacts` is referenced by everything and depends on nothing; `inbox` is the hub; `whatsapp` proves the
@@ -85,8 +90,10 @@ Ordered by what blocks first. Each is a small feature in the platform repo, done
 2. **A way for a page to know who is viewing** (their permissions). Today the reply form is shown to everyone and the
    gate refuses the send.
 3. **A same-origin helper in the SDK.** The inbox copies the rule; every form-posting module will.
-4. **Cross-module reads without a database foreign key.** The pattern now exists (`contacts` has a service API, section 3), but
-   there is no SDK helper yet to call another module's `/svc` route, nor a way for a module to hold a token for another.
+4. ~~Cross-module reads without a database foreign key.~~ This gap does not exist: a module that lists another in `dependsOn` reads
+   its data through `getDb(id).reader(other)`, a read-only handle enforced by Postgres, and subscribes to its events (the
+   `assistant` does both with the inbox). Writes still go through the other module's service API. What is missing is only an SDK
+   helper to call another module's `/svc` route (today the caller builds the request and holds a token in its own settings).
 5. **Roles as data.** Only `admin` and `operator` exist.
 6. **Storage adapter for S3** (the files capability has the local adapter).
 7. **OpenAPI contract** for `/hooks`, `/svc` and `/api/events`, so a brain or a channel can be built against it.
