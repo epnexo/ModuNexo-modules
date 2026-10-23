@@ -123,6 +123,13 @@ while it is on each customer's messages are read by the model provider you confi
 - **It stops by itself** in a conversation, and shows why on `/assistant`, when a person has written in it (`human`), when the model
   asked for a person (`handoff`; any text around the marker is still sent), or at the hourly limit (`limit`, default 10 replies per
   conversation). It stays stopped until someone presses Resume. You can also stop one by hand.
+- **If the customer writes again while it works**, it throws away the answer it was preparing (it was about an older message) and
+  answers the newest one with everything in view, up to three rounds. Just before sending it checks again that the assistant is still
+  on, that the conversation is not stopped and that no person has written meanwhile; if any changed, nothing is sent.
+- **Resume starts the conversation again from its newest message**: a person who wrote earlier, or the replies of the last hour, no
+  longer stop it at once. If a person writes after that, it stops again.
+- If the connection to the inbox drops while a reply is being sent, the assistant cannot know whether it went out, so it stops in
+  that conversation (shown as *a person wrote*) rather than risk answering twice. Press Resume if it did not go out.
 - A failing model or inbox makes the job retry (3 attempts); the error shows the status or a fixed phrase, never the address,
   the key, the token or what the provider said.
 
