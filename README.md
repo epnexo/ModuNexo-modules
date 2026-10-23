@@ -55,6 +55,19 @@ a job, an event, secret settings and a live page. Pack and install it like any o
   sent again, so the receiving side should ignore a `messageId` it has already seen.
 - **Permissions.** `inbox.read` opens the page and receives the event; `inbox.write` can reply. A page cannot ask the SDK
   who is looking, so the reply form is shown to everyone who can read and the gate refuses the send to the rest.
+- **The person** (0.2.0). The inbox does not keep contacts. Each conversation holds `contact_ref` (what the channel calls the
+  person; the `threadRef` when the message names nobody), `contact_name` (a snapshot: the first message that carries a name
+  sets it, a later one never replaces it, and a new thread of a person known by name in that channel starts with it) and
+  `contact_id`, the id of the contact in the `contacts` module, empty until linked. The webhook's body and answers did not change.
+- **Linking to contacts** (optional). Set the settings `contacts_url` (the platform's own address, for example
+  `http://127.0.0.1:3000`) and `contacts_token` (a service token of `contacts` with `contacts.read` and `contacts.write`:
+  `tokens create contacts --name inbox --scope contacts.read --scope contacts.write`). While either is empty nothing is asked.
+  Once both are set, the first message of a conversation that has no `contact_id` queues a job `link_contact` (5 attempts, one
+  waiting per conversation) that looks the person up by identity `<channel>:<reference>`, creates them when nobody holds it,
+  and keeps the id. A failure never changes the webhook's answer, and the retry shows the HTTP status or a fixed phrase, never
+  the address, the token or what the service said. The address is whatever an administrator sets, so point it only at your own platform.
+- **Upgrading from 0.1.0.** Migration `0002` copies each contact's reference and name onto its conversations, sets `contact_id`
+  to empty and drops the `contacts` table of the inbox; messages, threads, unread counts and dedupe keys are untouched.
 - **Not yet.** Attachments, adapters for WhatsApp, Instagram or Messenger (their `GET` handshake cannot be a public route
   yet), assigning conversations, search, deleting, and sending replies that were queued before an outbound URL was set. The
   AI agent is an external service that talks to this module with a service token, not part of it.

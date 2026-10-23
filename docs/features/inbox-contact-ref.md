@@ -13,10 +13,12 @@ Objective: the `inbox` (v0.2.0) stops owning contacts. A conversation keeps the 
 
 ## Tasks
 
-- T1 (S1-S4) migration 0002, store, reads, delivery; the existing tests move to the new columns; a migration test over data written by 0001. inline.
-- T2 (S5) settings, job `link_contact`, enqueue after a message; tests with a local fake of the contacts service. inline.
-- T3 (S1-S6) README, version 0.2.0, pack, real upgrade 0.1.0 to 0.2.0 over data on an isolated worktree and database.
+- [x] T1 (S1-S4) migration 0002, store, reads, delivery; the existing tests move to the new columns; a migration test over data written by 0001. inline.
+- [x] T2 (S5) settings, job `link_contact`, enqueue after a message; tests with a local fake of the contacts service. inline.
+- [x] T3 (S1-S6) README, version 0.2.0, pack, real upgrade 0.1.0 to 0.2.0 over data on an isolated worktree and database.
 
 ## Log
 
 - L1: "hazlo ahora, refactoriza el inbox" (after the service API of contacts was published, and the pending list said the refactor unblocks the agent).
+- L2: proved end to end on an isolated worktree and database, with the real build, the web server and the worker. Phase 1: inbox 0.1.0 installed, two signed messages received. Phase 2: contacts 0.2.0 installed and inbox upgraded to 0.2.0 (`upgraded inbox 0.2.0`): both conversations kept their reference and name, `contact_id` empty, both messages intact, the `contacts` table gone. Phase 3: with `contacts_url` and `contacts_token` set, one message from a new person (Grace) and one in the conversation that came from 0.1.0 (Ada) each queued a `link_contact` job; the worker ran both on the first attempt, the contacts module got two contacts through its service API (`web:c-2`, `web:c-1`), and each conversation holds the id. The conversation with no new message (`t-9`) stayed unlinked, as designed. Events: four `inbox.message.received`, two `contacts.contact.created`.
+- L3: the first run of that script failed on my side (secrets must be given on standard input, not as arguments, which the platform enforces on purpose); fixed in the script, not in the module.

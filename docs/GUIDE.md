@@ -46,7 +46,7 @@ offer yet (section 4).
 | # | Module | What it does | Needs | Depends on (by events/HTTP) | Size |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `contacts` (built, v0.2.0, with its service API) | People, pipeline stages, deals, stage history, CSV import. Emits `contact.created`, `lead.stage_changed`. | pages, events | nothing | M |
-| 2 | `inbox` (exists) | Conversations and messages, reply window, live updates. Becomes the hub every channel feeds. | public route, jobs, events, files | contacts | L |
+| 2 | `inbox` (built, v0.2.0, keeps only a contact reference) | Conversations and messages, reply window, live updates. Becomes the hub every channel feeds. | public route, jobs, events, files | contacts | L |
 | 3 | `whatsapp` | Meta Cloud API: receive, send, templates, media. | public route with **GET handshake (gap)**, jobs (template sync), files, secrets | inbox | L |
 | 4 | `agent-bridge` | Sends each turn to an external brain over HTTP, serves the brain's callbacks (messages, context, stage, handoff, bookings) and an LLM proxy. | jobs (outbox with retries), events, service tokens, llm | inbox, contacts, agenda | L |
 | 5 | `agenda` (built, v0.1.0, without Zoom and Google) | Availability, slots, bookings, rescheduling, Zoom and Google connectors. | pages, events, jobs, service tokens, secrets | contacts | L |
