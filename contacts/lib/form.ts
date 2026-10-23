@@ -30,5 +30,8 @@ export function fieldsOf(form: FormData): Record<string, string> {
   return fields;
 }
 
-/** A row id from a form field, or null when it is not a whole number. */
-export const idOf = (raw: string | undefined): number | null => (raw !== undefined && /^\d{1,15}$/.test(raw) ? Number(raw) : null);
+/** A row id from a form field or a JSON value, or null when it is not a whole number above zero. */
+export function idOf(raw: unknown): number | null {
+  const text = typeof raw === "number" ? String(raw) : typeof raw === "string" ? raw : "";
+  return /^\d{1,15}$/.test(text) && Number(text) > 0 ? Number(text) : null;
+}

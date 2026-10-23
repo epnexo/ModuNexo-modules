@@ -101,19 +101,20 @@ export async function getContact(id: number): Promise<ContactRow | null> {
   return found.rows[0] === undefined ? null : toRow(found.rows[0]);
 }
 
-/** The newest 100, or those whose name, phone, email or identity contain the search (case does not matter, no wildcards). */
-export async function listContacts(search = ""): Promise<ContactRow[]> {
+export async function contactByIdentity(identity: string): Promise<ContactRow | null> {
+  const found = await getDb(MODULE).query<RawContact>(`select ${COLUMNS} from contacts where identity = $1`, [identity]);
+  return found.rows[0] === undefined ? null : toRow(found.rows[0]);
+}
+
+/** The newest `limit` (100 by default), or those whose name, phone, email or identity contain the search (case does not matter, no wildcards). */
+export async function listContacts(search = "", limit = LIST_LIMIT): Promise<ContactRow[]> {
   const needle = search.trim().toLowerCase();
-  if (needle === "") {
-    const all = await getDb(MODULE).query<RawContact>(`select ${COLUMNS} from contacts order by id desc limit ${LIST_LIMIT}`);
-    return all.rows.map(toRow);
-  }
   const found = await getDb(MODULE).query<RawContact>(
     `select ${COLUMNS} from contacts
-      where strpos(lower(name), $1) > 0 or strpos(lower(coalesce(phone, '')), $1) > 0
+      where $1 = '' or strpos(lower(name), $1) > 0 or strpos(lower(coalesce(phone, '')), $1) > 0
          or strpos(lower(coalesce(email, '')), $1) > 0 or strpos(lower(coalesce(identity, '')), $1) > 0
-      order by id desc limit ${LIST_LIMIT}`,
-    [needle],
+      order by id desc limit $2`,
+    [needle, limit],
   );
   return found.rows.map(toRow);
 }

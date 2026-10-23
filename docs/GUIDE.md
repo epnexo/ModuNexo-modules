@@ -45,7 +45,7 @@ offer yet (section 4).
 
 | # | Module | What it does | Needs | Depends on (by events/HTTP) | Size |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `contacts` (built, v0.1.0) | People, pipeline stages, deals, stage history, CSV import. Emits `contact.created`, `lead.stage_changed`. | pages, events | nothing | M |
+| 1 | `contacts` (built, v0.2.0, with its service API) | People, pipeline stages, deals, stage history, CSV import. Emits `contact.created`, `lead.stage_changed`. | pages, events | nothing | M |
 | 2 | `inbox` (exists) | Conversations and messages, reply window, live updates. Becomes the hub every channel feeds. | public route, jobs, events, files | contacts | L |
 | 3 | `whatsapp` | Meta Cloud API: receive, send, templates, media. | public route with **GET handshake (gap)**, jobs (template sync), files, secrets | inbox | L |
 | 4 | `agent-bridge` | Sends each turn to an external brain over HTTP, serves the brain's callbacks (messages, context, stage, handoff, bookings) and an LLM proxy. | jobs (outbox with retries), events, service tokens, llm | inbox, contacts, agenda | L |
@@ -85,8 +85,8 @@ Ordered by what blocks first. Each is a small feature in the platform repo, done
 2. **A way for a page to know who is viewing** (their permissions). Today the reply form is shown to everyone and the
    gate refuses the send.
 3. **A same-origin helper in the SDK.** The inbox copies the rule; every form-posting module will.
-4. **Cross-module reads without a database foreign key.** A documented pattern (event projection or service-token
-   call) and, ideally, an SDK helper to call another module's `/svc` route.
+4. **Cross-module reads without a database foreign key.** The pattern now exists (`contacts` has a service API, section 3), but
+   there is no SDK helper yet to call another module's `/svc` route, nor a way for a module to hold a token for another.
 5. **Roles as data.** Only `admin` and `operator` exist.
 6. **Storage adapter for S3** (the files capability has the local adapter).
 7. **OpenAPI contract** for `/hooks`, `/svc` and `/api/events`, so a brain or a channel can be built against it.

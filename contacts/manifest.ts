@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "contacts",
-  version: "0.1.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.2.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Contacts",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -15,6 +15,12 @@ export default defineModule({
   nav: [
     { label: "Contacts", href: "/contacts", icon: "users", permission: "contacts.read" },
     { label: "Pipeline", href: "/pipeline", icon: "dashboard", permission: "contacts.read" },
+  ],
+  scopes: [
+    { key: "contacts.read", label: "Read contacts" },
+    { key: "contacts.write", label: "Create and change contacts" },
+    { key: "leads.read", label: "Read the stages and the leads" },
+    { key: "leads.write", label: "Create leads and move them between stages" },
   ],
   events: [
     { name: "contact.created", permission: "contacts.read" },
@@ -29,5 +35,13 @@ export default defineModule({
     { path: "/pipeline/lead", entry: "./web/lead-create.ts", kind: "route", methods: ["POST"], permission: "contacts.write" },
     { path: "/pipeline/move", entry: "./web/lead-move.ts", kind: "route", methods: ["POST"], permission: "contacts.write" },
     { path: "/pipeline/stage", entry: "./web/stage-save.ts", kind: "route", methods: ["POST"], permission: "contacts.write" },
+    { path: "/svc/contacts/contact", entry: "./web/svc-contact.ts", kind: "route", methods: ["GET"], scope: "contacts.read" },
+    { path: "/svc/contacts/contacts", entry: "./web/svc-contacts.ts", kind: "route", methods: ["GET"], scope: "contacts.read" },
+    { path: "/svc/contacts/contacts/create", entry: "./web/svc-contact-create.ts", kind: "route", methods: ["POST"], scope: "contacts.write" },
+    { path: "/svc/contacts/contacts/update", entry: "./web/svc-contact-update.ts", kind: "route", methods: ["POST"], scope: "contacts.write" },
+    { path: "/svc/contacts/stages", entry: "./web/svc-stages.ts", kind: "route", methods: ["GET"], scope: "leads.read" },
+    { path: "/svc/contacts/leads", entry: "./web/svc-leads.ts", kind: "route", methods: ["GET"], scope: "leads.read" },
+    { path: "/svc/contacts/leads/create", entry: "./web/svc-lead-create.ts", kind: "route", methods: ["POST"], scope: "leads.write" },
+    { path: "/svc/contacts/leads/move", entry: "./web/svc-lead-move.ts", kind: "route", methods: ["POST"], scope: "leads.write" },
   ],
 });
