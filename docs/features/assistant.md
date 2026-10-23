@@ -16,12 +16,13 @@ Objective: a module `assistant` that answers customers' messages by itself, with
 
 ## Tasks
 
-- T1 (S2, S5, S6, S9) migration, settings of the module, conversation state, the prompt and the marker, with tests. inline.
-- T2 (S3, S4, S6, S7, S8) the job: the checks, the model, the send; with a fake model and the real inbox route behind a local server. inline.
-- T3 (S9) form routes, the two pages, the manifest. inline.
+- [x] T1 (S2, S5, S6, S9) migration, settings of the module, conversation state, the prompt and the marker, with tests. inline.
+- [x] T2 (S3, S4, S6, S7, S8) the job: the checks, the model, the send; with a fake model and the real inbox route behind a local server. inline.
+- [x] T3 (S9) form routes, the two pages, the manifest. inline.
 - T4 (S1-S9) README, changelog, pack, real install on an isolated worktree and database with a fake model; an independent verifier at the end (it replies to customers by itself).
 
 ## Log
 
 - L1: "que la IA conteste sola a los clientes" (after the explanation of the three ways to connect an AI: MCP server, integrated assistant, external brain).
 - L2: the platform has a read-only channel between modules (`reader`, for a module that lists the other in `dependsOn`); the guide's gap 4 was wrong about that and is corrected with this feature.
+- L3: end-to-end on an isolated worktree and database with the real build, web server and worker, and a fake OpenAI-compatible model (inbox 0.3.0 and assistant 0.1.0 installed from the archives). A: switched off (the default), a customer wrote and nothing was answered and the model got 0 requests. B: switched on from the form (303), a customer wrote, the model was asked with 2 messages (system plus the customer's line), the answer was stored in the inbox as a queued reply and `assistant.replies` has `sent`, `fake-model`, 20 and 8 tokens. C: "I want to talk to a human person" got "I will pass you to a person." and the conversation stopped with reason `handoff`; the next customer line got no answer. D: a person replied from the inbox form before the assistant's wait was over, the customer wrote again, nothing was answered and the conversation stopped with reason `human`, the claim released as failed with error `human`. E: `/assistant` showed Switched on, Active, Stopped, both reasons in words and the reply text. 2 model requests in all.
