@@ -114,7 +114,7 @@ const insertConversation = async (over: { contact_id?: number | null; name?: str
 describe("the manifest", () => {
   it("declares the contacts address and token as settings, the job, and stays valid", () => {
     const checked = validateManifest(inbox);
-    assert.equal(checked.version, "0.2.0");
+    assert.equal(checked.version, "0.3.0");
     assert.equal(checked.settings?.find((s) => s.key === "contacts_url")?.type, "string");
     assert.equal(checked.settings?.find((s) => s.key === "contacts_token")?.type, "secret");
     assert.equal(checked.settings?.find((s) => s.key === "contacts_url")?.required, undefined, "the link is optional");

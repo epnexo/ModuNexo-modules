@@ -74,6 +74,23 @@ a job, an event, secret settings and a live page. Pack and install it like any o
   the address, the token or what the service said. The address is whatever an administrator sets, so point it only at your own platform.
 - **Upgrading from 0.1.0.** Migration `0002` copies each contact's reference and name onto its conversations, sets `contact_id`
   to empty and drops the `contacts` table of the inbox; messages, threads, unread counts and dedupe keys are untouched.
+- **Service API** (0.3.0), for an agent or another service. Create a token with the scopes you need, then call it:
+
+```bash
+npm run modunexo -- tokens create inbox --name agent --scope messages.read --scope messages.write
+curl -H "Authorization: Bearer mdnx_..." "https://host/svc/inbox/conversations?unread=true"
+curl -H "Authorization: Bearer mdnx_..." -X POST https://host/svc/inbox/messages/send -d '{"conversationId":12,"text":"Hello!"}'
+```
+
+  | Route | Scope | Does |
+  | --- | --- | --- |
+  | `GET /svc/inbox/conversations?limit=&unread=` | `messages.read` | `{ conversations }`, most recent activity first; each has `id`, `channel`, `contactRef`, `contactName`, `contactId`, `unread`, `lastMessageAt`, `lastText`; `limit` 1 to 100 (default 50), `unread=true` keeps those with unread messages |
+  | `GET /svc/inbox/messages?conversationId=&limit=&afterId=` | `messages.read` | `{ conversation, messages }`, oldest first: the newest `limit` (1 to 200, default 100) or, with `afterId`, those after that message id. Does not mark anything as read; 404 `not_found` |
+  | `POST /svc/inbox/messages/send` | `messages.write` | `{ conversationId, text }`: stored as the reply form does, 201 `{ id, status }`; 400 for a text that is blank, over 4000 characters or holds a NUL |
+  | `POST /svc/inbox/conversations/read` | `messages.write` | `{ conversationId }`: clears its unread count, `{ ok: true }` |
+
+  JSON in and out; a body over 16 KiB is 413. A conversation cannot be created or deleted over the API: conversations come from the
+  webhook. To follow a conversation without missing messages, keep the highest message `id` you have seen and ask with `afterId`.
 - **Not yet.** Attachments, adapters for WhatsApp, Instagram or Messenger (their `GET` handshake cannot be a public route
   yet), assigning conversations, search, deleting, and sending replies that were queued before an outbound URL was set. The
   AI agent is an external service that talks to this module with a service token, not part of it.

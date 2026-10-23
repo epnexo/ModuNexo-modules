@@ -4,7 +4,7 @@ import { DELIVER_ATTEMPTS } from "./lib/limits.ts";
 
 export default defineModule({
   id: "inbox",
-  version: "0.2.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.3.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Inbox",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -20,6 +20,10 @@ export default defineModule({
     { key: "outbound_secret", label: "Outbound secret", type: "secret", description: "Shared key that signs the replies sent to the outbound URL." },
     { key: "contacts_url", label: "Contacts address", type: "string", description: "Address of this platform (for example http://127.0.0.1:3000), used to link each conversation to its contact in the contacts module. Leave empty to skip the link." },
     { key: "contacts_token", label: "Contacts token", type: "secret", description: "A service token of the contacts module with the scopes contacts.read and contacts.write." },
+  ],
+  scopes: [
+    { key: "messages.read", label: "Read conversations and messages" },
+    { key: "messages.write", label: "Send replies and mark conversations as read" },
   ],
   events: [{ name: "message.received", permission: "inbox.read" }],
   jobs: [
@@ -37,5 +41,9 @@ export default defineModule({
       methods: ["POST"],
       public: { signature: { secret: "webhook_secret", header: "x-signature", encoding: "hex", prefix: "sha256=" }, ratePerMinute: 120, maxBodyBytes: 65536 },
     },
+    { path: "/svc/inbox/conversations", entry: "./web/svc-conversations.ts", kind: "route", methods: ["GET"], scope: "messages.read" },
+    { path: "/svc/inbox/messages", entry: "./web/svc-messages.ts", kind: "route", methods: ["GET"], scope: "messages.read" },
+    { path: "/svc/inbox/messages/send", entry: "./web/svc-send.ts", kind: "route", methods: ["POST"], scope: "messages.write" },
+    { path: "/svc/inbox/conversations/read", entry: "./web/svc-read.ts", kind: "route", methods: ["POST"], scope: "messages.write" },
   ],
 });

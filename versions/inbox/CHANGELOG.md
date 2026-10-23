@@ -1,5 +1,12 @@
 # inbox
 
+## 0.3.0 - 2026-10-23
+
+- Service API under `/svc/inbox/` with the scopes `messages.read` and `messages.write`: list conversations (all, or only those with
+  unread messages), read a conversation's messages (the newest, or those after a message id), send a reply and mark a conversation
+  as read. Conversations cannot be created or deleted over the API.
+- No migration; the webhook, the pages and the reply form did not change.
+
 ## 0.2.0 - 2026-10-23
 
 - The inbox no longer keeps contacts. A conversation holds `contact_ref`, a `contact_name` snapshot and `contact_id`, the id of
