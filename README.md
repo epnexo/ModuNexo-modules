@@ -27,6 +27,21 @@ Each module has its own version (in `manifest.ts` and `package.json`, which must
 version of each module; the earlier ones are kept in `versions/<module>/<version>/`, with their hashes and a changelog per module.
 See `versions/README.md`.
 
+## The dashboard
+
+The platform's dashboard (`/`) shows what the modules report. Every module here declares a `dashboard` in its manifest: a few
+figures and the alerts that need someone's attention, each a read-only `select` on the module's own tables and each behind the
+module's read permission, so a person only sees what they may open. A test (`tests/dashboard/`) fails if a module of this
+repository declares none, if a statement does not run against the real tables, or if a card is not behind a permission.
+Needs a platform with SDK 0.1.1 or later; an older one refuses the archive with its usual platform message.
+
+| Module | Figures | Alerts |
+| --- | --- | --- |
+| `contacts` | contacts, open leads, value of open leads | open leads not moved for 7 days |
+| `agenda` | bookings today, bookings to come | no opening hours set |
+| `inbox` | conversations, unread, messages in 24 hours | unread waiting over an hour, replies that failed this week |
+| `assistant` | replies in 24 hours, conversations stopped | replies that failed, switched off |
+
 ## Develop
 
 The platform is linked as a local dependency (`file:../ModuNexo/packages/...`), so clone `ModuNexo` and `ModuNexo-modules` side by side and run `npm install` here after

@@ -45,17 +45,17 @@ offer yet (section 4).
 
 | # | Module | What it does | Needs | Depends on (by events/HTTP) | Size |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `contacts` (built, v0.2.0, with its service API) | People, pipeline stages, deals, stage history, CSV import. Emits `contact.created`, `lead.stage_changed`. | pages, events | nothing | M |
-| 2 | `inbox` (built, v0.3.0, keeps only a contact reference, with its service API) | Conversations and messages, reply window, live updates. Becomes the hub every channel feeds. | public route, jobs, events, files | contacts | L |
+| 1 | `contacts` (built, v0.2.1, with its service API) | People, pipeline stages, deals, stage history, CSV import. Emits `contact.created`, `lead.stage_changed`. | pages, events | nothing | M |
+| 2 | `inbox` (built, v0.3.1, keeps only a contact reference, with its service API) | Conversations and messages, reply window, live updates. Becomes the hub every channel feeds. | public route, jobs, events, files | contacts | L |
 | 3 | `whatsapp` | Meta Cloud API: receive, send, templates, media. | public route with **GET handshake (gap)**, jobs (template sync), files, secrets | inbox | L |
 | 4 | `agent-bridge` | Sends each turn to an external brain over HTTP, serves the brain's callbacks (messages, context, stage, handoff, bookings) and an LLM proxy. | jobs (outbox with retries), events, service tokens, llm | inbox, contacts, agenda | L |
-| 5 | `agenda` (built, v0.1.0, without Zoom and Google) | Availability, slots, bookings, rescheduling, Zoom and Google connectors. | pages, events, jobs, service tokens, secrets | contacts | L |
+| 5 | `agenda` (built, v0.1.1, without Zoom and Google) | Availability, slots, bookings, rescheduling, Zoom and Google connectors. | pages, events, jobs, service tokens, secrets | contacts | L |
 | 6 | `social-channels` | Instagram, Messenger, TikTok through Zernio (one module sharing the client, or three). | public routes with **GET handshake (gap)**, secrets | inbox | M |
 | 7 | `attribution` | Which ad a lead came from; sends conversions to Meta CAPI when a stage changes. | events, jobs (retries), secrets | inbox, contacts | M |
 | 8 | `results` | Read-only dashboards: funnel, ads, bot, hygiene. | pages; reads other modules by **events or HTTP (gap)** | contacts, agenda, attribution, inbox | M |
 | 9 | `lab` | Runs scripted persona conversations against the brain and scores them with a judge model. | jobs (long run), events, llm | agent-bridge | M |
 
-**The `assistant` module (built, v0.1.0) is the route chosen for answering customers by itself:** it listens to the inbox's event,
+**The `assistant` module (built, v0.1.1) is the route chosen for answering customers by itself:** it listens to the inbox's event,
 asks a language model through the platform's own model capability (OpenAI-compatible: a local server or a paid provider) and sends
 the answer through the inbox's service API. It is off until an administrator switches it on. `agent-bridge` above, which hands
 each turn to an external brain over HTTP, stays as an option for a brain that already exists; it is not needed for this.
