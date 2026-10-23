@@ -126,6 +126,8 @@ while it is on each customer's messages are read by the model provider you confi
 - **If the customer writes again while it works**, it throws away the answer it was preparing (it was about an older message) and
   answers the newest one with everything in view, up to three rounds. Just before sending it checks again that the assistant is still
   on, that the conversation is not stopped and that no person has written meanwhile; if any changed, nothing is sent.
+- If the customer keeps writing through all three rounds, the last answer is sent and the message still waiting gets a job of its own,
+  so no customer message is left without an assistant looking at it.
 - **Resume starts the conversation again from its newest message**: a person who wrote earlier, or the replies of the last hour, no
   longer stop it at once. If a person writes after that, it stops again.
 - If the connection to the inbox drops while a reply is being sent, the assistant cannot know whether it went out, so it stops in

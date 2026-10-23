@@ -1,4 +1,4 @@
-import { LlmError, chat, getDb } from "@modunexo/sdk";
+import { LlmError, chat, enqueueJob, getDb } from "@modunexo/sdk";
 import { loadConfig } from "./config.ts";
 import { inboxTarget, latestInbound, recentMessages, sendReply, sentIds } from "./inbox.ts";
 import { buildMessages, readReply } from "./prompt.ts";
@@ -49,6 +49,18 @@ async function personWrote(conversationId: number): Promise<boolean> {
   const ours = new Set((await db.query<{ message_id: string }>("select message_id from replies where conversation_id = $1 and message_id is not null", [conversationId])).rows.map((r) => Number(r.message_id)));
   const from = (await resumedBaseline(conversationId))?.afterMessageId ?? 0;
   return (await sentIds(conversationId)).some((id) => id > from && !ours.has(id));
+}
+
+/**
+ * The last round cannot start over, so a customer message that arrived meanwhile gets a job of its own: the jobs the inbox
+ * queued for it found this one busy and left. A failure to queue is not reported: the reply it follows is already sent.
+ */
+async function queueFollowUp(conversationId: number, messageId: number): Promise<void> {
+  try {
+    await enqueueJob("assistant", "answer", { event: { payload: { conversationId, messageId } } }, { dedupeKey: `answer:${conversationId}:${messageId}` });
+  } catch {
+    // Nothing to do: the next message of the conversation wakes the assistant again.
+  }
 }
 
 type Step = { kind: "done"; outcome: Outcome } | { kind: "again"; newer: number };
@@ -188,7 +200,10 @@ async function answerOnce(ctx: { input: AnswerInput; now: () => Date; sleep: Non
     }
     // After the reply is recorded, so a job that found the claim busy is covered: anything it left to us is seen here.
     const after = await latestInbound(conversationId);
-    if (after !== null && after.id > last.id && ctx.canStartOver) return { kind: "again", newer: after.id };
+    if (after !== null && after.id > last.id) {
+      if (ctx.canStartOver) return { kind: "again", newer: after.id };
+      await queueFollowUp(conversationId, after.id);
+    }
     return done("answered");
   } catch (error) {
     await release(claimed, "error", now()); // a no-op when it was released above

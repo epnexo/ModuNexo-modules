@@ -428,14 +428,27 @@ describe("answerMessage: customers who write while it works", { concurrency: fal
     assert.deepEqual(llmCalls[1]!.body.messages.slice(1).map((m) => m.content).slice(-2), ["and do you ship?", "We open at 9 on weekdays."]);
   });
 
-  it("goes round at most three times when the customer keeps writing, and sends the last answer", async (t) => {
+  it("goes round at most three times when the customer keeps writing, sends the last answer, and queues a job for the message that is still waiting", async (t) => {
     if (skipReason) return t.skip(skipReason);
     const c = await conversation(["in:one"]);
-    llmHook = async (call) => { await addCustomer(c, `more ${call}`); };
+    let newest = 0;
+    llmHook = async (call) => { newest = await addCustomer(c, `more ${call}`); };
     assert.equal(await run(c), "answered");
     assert.equal(llmCalls.length, 3);
     assert.equal((await outbound(c.id)).length, 1);
     assert.deepEqual((await replies()).map((r) => r.status), ["failed", "failed", "sent"]);
+    const queued = (await pool!.query("select name, payload, dedupe_key from core.jobs where module_id = 'assistant'")).rows;
+    assert.equal(queued.length, 1, "the last message is not left without a job");
+    assert.deepEqual(queued[0].payload, { event: { payload: { conversationId: c.id, messageId: newest } } });
+    assert.equal(queued[0].dedupe_key, `answer:${c.id}:${newest}`);
+    assert.equal(queued[0].name, "answer");
+  });
+
+  it("queues no follow-up when nobody wrote while it worked", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const c = await conversation(["in:hello"]);
+    assert.equal(await run(c), "answered");
+    assert.equal(Number((await pool!.query("select count(*)::int as n from core.jobs where module_id = 'assistant'")).rows[0].n), 0);
   });
 
   it("does not send what the model wrote if it was switched off while the model was thinking", async (t) => {
