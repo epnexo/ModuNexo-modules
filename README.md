@@ -20,6 +20,12 @@ npm run modunexo -- modules apply <hex>              # place, build, restart wit
 
 `pack` needs the platform checkout beside this folder (`../ModuNexo`, or set `MODUNEXO_PLATFORM`).
 
+## Versions
+
+Each module has its own version (in `manifest.ts` and `package.json`, which must agree). `dist/` holds only the current packed
+version of each module; the earlier ones are kept in `versions/<module>/<version>/`, with their hashes and a changelog per module.
+See `versions/README.md`.
+
 ## Develop
 
 The platform is linked as a local dependency (`file:../ModuNexo/packages/...`), so clone `ModuNexo` and `ModuNexo-modules` side by side and run `npm install` here after
