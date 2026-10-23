@@ -1,4 +1,4 @@
-import { getDb } from "@modunexo/sdk";
+import { getDb, type DbQueryable } from "@modunexo/sdk";
 import type { Checked } from "./check.ts";
 import { isTimeZone } from "./time.ts";
 
@@ -7,14 +7,14 @@ const MODULE = "agenda";
 export type Settings = { timezone: string; slotMinutes: number; bufferMinutes: number; horizonDays: number };
 export type Window = { weekday: number; startMinute: number; endMinute: number };
 
-export async function loadSettings(): Promise<Settings> {
-  const found = await getDb(MODULE).query<{ timezone: string; slot_minutes: number; buffer_minutes: number; horizon_days: number }>("select timezone, slot_minutes, buffer_minutes, horizon_days from settings where id = 1");
+export async function loadSettings(db: DbQueryable = getDb(MODULE)): Promise<Settings> {
+  const found = await db.query<{ timezone: string; slot_minutes: number; buffer_minutes: number; horizon_days: number }>("select timezone, slot_minutes, buffer_minutes, horizon_days from settings where id = 1");
   const row = found.rows[0]!;
   return { timezone: row.timezone, slotMinutes: row.slot_minutes, bufferMinutes: row.buffer_minutes, horizonDays: row.horizon_days };
 }
 
-export async function loadHours(): Promise<Window[]> {
-  const found = await getDb(MODULE).query<{ weekday: number; start_minute: number; end_minute: number }>("select weekday, start_minute, end_minute from weekly_hours order by weekday, start_minute");
+export async function loadHours(db: DbQueryable = getDb(MODULE)): Promise<Window[]> {
+  const found = await db.query<{ weekday: number; start_minute: number; end_minute: number }>("select weekday, start_minute, end_minute from weekly_hours order by weekday, start_minute");
   return found.rows.map((row) => ({ weekday: row.weekday, startMinute: row.start_minute, endMinute: row.end_minute }));
 }
 
