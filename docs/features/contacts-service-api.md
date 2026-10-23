@@ -17,8 +17,9 @@ Objective: a service-token API in `contacts` (v0.2.0) so other modules, agents a
 ## Tasks
 
 - [x] T1 (S2-S9) the eight routes, a lookup by identity, a `limit` on the list, the manifest scopes and version 0.2.0, with tests. inline. 18 tests; the repo's 185 pass and `tsc --noEmit` is clean. `idOf` now refuses 0 for the forms too (an id is above zero).
-- T2 (S1) README section, pack, `modules add` review. inline.
+- [x] T2 (S1) README section, pack, `modules add` review. inline. Real upgrade 0.1.0 to 0.2.0 on an isolated worktree and database.
 
 ## Log
 
 - L1: "empieza por la ruta de servicio de contacts" (after the pending list, where it was recommended because it unblocks the inbox, the agent and the results).
+- L2: real upgrade proved on an isolated worktree and database: 0.1.0 installed, then `modules add` + `modules apply` of 0.2.0 (`upgraded contacts 0.2.0`). Over HTTP with service tokens: no token 401; create 201; the same identity 409 with the holder's id; lookup by identity 200; partial update 200; lead create 201; move 200; leads list shows the new stage; a read-only token creating 403 and reading leads 403. Outbox: `contact.created`, `lead.stage_changed`.
