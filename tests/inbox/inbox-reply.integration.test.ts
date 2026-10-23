@@ -69,11 +69,10 @@ beforeEach(async () => {
   if (skipReason) return;
   seen = [];
   answer = 200;
-  for (const table of ["core.events", "core.jobs", "inbox.messages", "inbox.conversations", "inbox.contacts"]) await pool!.query(`delete from ${table}`);
+  for (const table of ["core.events", "core.jobs", "inbox.messages", "inbox.conversations"]) await pool!.query(`delete from ${table}`);
   await settings.set("inbox", "outbound_url", `${origin}/in`, "test");
   await settings.set("inbox", "outbound_secret", OUT_SECRET, "test");
-  const contact = await pool!.query("insert into inbox.contacts (channel, ref, name) values ('web', 'c-1', 'Ada') returning id");
-  const made = await pool!.query("insert into inbox.conversations (channel, thread_ref, contact_id, unread_count) values ('web', 't-1', $1, 3) returning id", [contact.rows[0].id]);
+  const made = await pool!.query("insert into inbox.conversations (channel, thread_ref, contact_ref, contact_name, unread_count) values ('web', 't-1', 'c-1', 'Ada', 3) returning id");
   conversation = Number(made.rows[0].id);
 });
 

@@ -6,19 +6,20 @@ export interface Received {
 }
 
 /**
- * Stores one inbound message. The contact and the conversation are created when they are new, the unread count grows,
+ * Stores one inbound message. The conversation is created when it is new, the unread count grows,
  * and the event is published in the same transaction, so a write that rolls back announces nothing. A message the
  * channel already delivered (same channel and message id) changes nothing and announces nothing.
  */
 export async function receiveMessage(input: Inbound): Promise<Received> {
   return getDb("inbox").transaction(async (tx) => {
-    const contact = await tx.query<{ id: string }>(
-      "insert into contacts (channel, ref, name) values ($1, $2, $3) on conflict (channel, ref) do update set name = coalesce(contacts.name, excluded.name) returning id",
-      [input.channel, input.contact.ref, input.contact.name],
-    );
+    // The name is a snapshot: the first message that carries one sets it, a later one never replaces it, and a new thread
+    // of a person this channel already knows by name starts with that name.
     const conversation = await tx.query<{ id: string }>(
-      "insert into conversations (channel, thread_ref, contact_id) values ($1, $2, $3) on conflict (channel, thread_ref) do update set contact_id = conversations.contact_id returning id",
-      [input.channel, input.threadRef, contact.rows[0]!.id],
+      `insert into conversations (channel, thread_ref, contact_ref, contact_name)
+       values ($1, $2, $3, coalesce($4, (select contact_name from conversations where channel = $1 and contact_ref = $3 and contact_name is not null order by id limit 1)))
+       on conflict (channel, thread_ref) do update set contact_name = coalesce(conversations.contact_name, excluded.contact_name)
+       returning id`,
+      [input.channel, input.threadRef, input.contact.ref, input.contact.name],
     );
     const conversationId = Number(conversation.rows[0]!.id);
     const stored = await tx.query<{ id: string }>(

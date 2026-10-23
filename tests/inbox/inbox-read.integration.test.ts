@@ -39,13 +39,12 @@ after(async () => {
 
 beforeEach(async () => {
   if (skipReason) return;
-  for (const table of ["inbox.messages", "inbox.conversations", "inbox.contacts"]) await pool!.query(`delete from ${table}`);
+  for (const table of ["inbox.messages", "inbox.conversations"]) await pool!.query(`delete from ${table}`);
 });
 
 /** A conversation with `texts` as its messages, oldest first; returns its id. */
 async function conversation(thread: string, texts: string[], options: { name?: string | null; unread?: number; last?: string } = {}): Promise<number> {
-  const contact = await pool!.query("insert into inbox.contacts (channel, ref, name) values ('web', $1, $2) returning id", [`c-${thread}`, options.name ?? null]);
-  const made = await pool!.query("insert into inbox.conversations (channel, thread_ref, contact_id, unread_count, last_message_at) values ('web', $1, $2, $3, $4) returning id", [thread, contact.rows[0].id, options.unread ?? 0, options.last ?? "2026-10-21T10:00:00Z"]);
+  const made = await pool!.query("insert into inbox.conversations (channel, thread_ref, contact_ref, contact_name, unread_count, last_message_at) values ('web', $1, $2, $3, $4, $5) returning id", [thread, `c-${thread}`, options.name ?? null, options.unread ?? 0, options.last ?? "2026-10-21T10:00:00Z"]);
   const id = Number(made.rows[0].id);
   for (const [index, text] of texts.entries()) {
     await pool!.query("insert into inbox.messages (conversation_id, channel, direction, text, status) values ($1, 'web', $2, $3, $4)", [id, index % 2 === 0 ? "in" : "out", text, index % 2 === 0 ? "received" : "sent"]);

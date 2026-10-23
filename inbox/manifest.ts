@@ -3,7 +3,7 @@ import { DELIVER_ATTEMPTS } from "./lib/limits.ts";
 
 export default defineModule({
   id: "inbox",
-  version: "0.1.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.2.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Inbox",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},

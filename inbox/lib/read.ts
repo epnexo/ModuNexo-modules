@@ -33,7 +33,7 @@ type RawConversation = {
 };
 
 const CONVERSATIONS =
-  "select v.id, v.channel, k.name, k.ref, v.unread_count, v.last_message_at, (select m.text from messages m where m.conversation_id = v.id order by m.id desc limit 1) as last_text from conversations v join contacts k on k.id = v.contact_id";
+  "select v.id, v.channel, v.contact_name as name, v.contact_ref as ref, v.unread_count, v.last_message_at, (select m.text from messages m where m.conversation_id = v.id order by m.id desc limit 1) as last_text from conversations v";
 
 const shape = (row: RawConversation): ConversationRow => ({ id: Number(row.id), channel: row.channel, contactName: row.name, contactRef: row.ref, unread: row.unread_count, lastMessageAt: row.last_message_at, lastText: row.last_text });
 

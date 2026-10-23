@@ -43,7 +43,6 @@ const wipe = async () => {
   await pool!.query("delete from core.jobs");
   await pool!.query("delete from inbox.messages");
   await pool!.query("delete from inbox.conversations");
-  await pool!.query("delete from inbox.contacts");
 };
 const count = async (table: string) => Number((await pool!.query(`select count(*)::int as n from ${table}`)).rows[0].n);
 
@@ -68,7 +67,7 @@ describe("POST /hooks/inbox/messages", { concurrency: false }, () => {
     assert.equal(response.status, 200);
     const body = (await response.json()) as { ok: boolean; duplicate: boolean };
     assert.deepEqual(body, { ok: true, duplicate: false });
-    const rows = (await pool!.query("select c.ref, c.name, v.channel, v.thread_ref, v.unread_count, m.direction, m.text, m.status, m.provider_message_id from inbox.messages m join inbox.conversations v on v.id = m.conversation_id join inbox.contacts c on c.id = v.contact_id")).rows;
+    const rows = (await pool!.query("select v.contact_ref as ref, v.contact_name as name, v.channel, v.thread_ref, v.unread_count, m.direction, m.text, m.status, m.provider_message_id from inbox.messages m join inbox.conversations v on v.id = m.conversation_id")).rows;
     assert.deepEqual(rows, [{ ref: "c-1", name: "Ada", channel: "web", thread_ref: "t-1", unread_count: 1, direction: "in", text: "hello", status: "received", provider_message_id: "m-1" }]);
     const events = (await pool!.query("select type, payload from core.events")).rows;
     assert.equal(events.length, 1);
@@ -83,7 +82,7 @@ describe("POST /hooks/inbox/messages", { concurrency: false }, () => {
     await post(message());
     await post(message({ messageId: "m-2", text: "again" }));
     await post(message({ messageId: "m-3", threadRef: "t-2", contact: { ref: "c-2" } }));
-    assert.equal(await count("inbox.contacts"), 2);
+    assert.deepEqual((await pool!.query("select distinct contact_ref from inbox.conversations order by 1")).rows, [{ contact_ref: "c-1" }, { contact_ref: "c-2" }]);
     assert.deepEqual((await pool!.query("select thread_ref, unread_count from inbox.conversations order by thread_ref")).rows, [
       { thread_ref: "t-1", unread_count: 2 },
       { thread_ref: "t-2", unread_count: 1 },
@@ -149,7 +148,7 @@ describe("POST /hooks/inbox/messages", { concurrency: false }, () => {
       const answer = (await response.json()) as { error: string };
       assert.equal(typeof answer.error, "string");
     }
-    assert.equal(await count("inbox.messages") + (await count("inbox.contacts")) + (await count("core.events")), 0);
+    assert.equal(await count("inbox.messages") + (await count("inbox.conversations")) + (await count("core.events")), 0);
   });
 
   it("works without a contact, naming the conversation after its thread", async (t) => {
@@ -157,7 +156,7 @@ describe("POST /hooks/inbox/messages", { concurrency: false }, () => {
     await wipe();
     const response = await post({ channel: "web", threadRef: "t-9", messageId: "m-9", text: "hi" });
     assert.equal(response.status, 200);
-    assert.deepEqual((await pool!.query("select ref, name from inbox.contacts")).rows, [{ ref: "t-9", name: null }]);
+    assert.deepEqual((await pool!.query("select contact_ref, contact_name from inbox.conversations")).rows, [{ contact_ref: "t-9", contact_name: null }]);
   });
 
   it("does not write the text of a message to the log", async (t) => {

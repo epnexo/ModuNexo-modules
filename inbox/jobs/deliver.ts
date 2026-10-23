@@ -32,7 +32,7 @@ export default async function deliver(ctx: JobContext): Promise<void> {
   if (typeof messageId !== "number" || !Number.isSafeInteger(messageId)) return;
   const db = getDb("inbox");
   const found = await db.query<Pending>(
-    "select m.id, m.text, c.channel, c.thread_ref, k.ref as contact_ref from messages m join conversations c on c.id = m.conversation_id join contacts k on k.id = c.contact_id where m.id = $1 and m.direction = 'out' and m.status = 'queued'",
+    "select m.id, m.text, c.channel, c.thread_ref, c.contact_ref from messages m join conversations c on c.id = m.conversation_id where m.id = $1 and m.direction = 'out' and m.status = 'queued'",
     [messageId],
   );
   const message = found.rows[0];
