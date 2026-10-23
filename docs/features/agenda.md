@@ -21,8 +21,9 @@ Objective: a module `agenda` (weekly availability, bookings that cannot clash, a
 - [x] T4 (S4, S5) bookings: book, reschedule, cancel, clash control, events. inline. 16 tests, includes simultaneous requests.
 - [x] T5 (S6, S7) form routes and service routes. inline. 21 tests.
 - [x] T6 (S6) the two pages and the manifest. inline. 9 tests plus 7 for the week arithmetic; `tsc --noEmit` clean.
-- T7 (S1-S8) README, pack, real install in an isolated worktree and database, smoke over HTTP.
+- [x] T7 (S1-S8) README, pack, real install in an isolated worktree and database, smoke over HTTP. No independent verifier: a new module with its own schema, no change to stored data; the clash control is proved by simultaneous-request tests and the access by the platform gate and token scopes.
 
 ## Log
 
 - L1: "sí, esa v1 está bien, empieza" (after the proposal: availability, bookings, week page, `booking.updated`, service-token route for availability and booking; Zoom and Google out).
+- L2: real install proved on an isolated worktree and database (`modules add` + `modules apply` built and migrated). Over HTTP, with a service token: availability 200, booking 201, the same slot again 409 `not_available`, a read-only token booking 403, no token 401; a same-origin form booking 303 and a foreign origin 403; two `agenda.booking.updated` events with change `created`. The scratch shell redirected pages to `/setup` because that database has no site identity yet; the response body held the page with the booking.
