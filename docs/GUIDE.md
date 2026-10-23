@@ -24,6 +24,13 @@ below is a reading of the code, so treat it as a proposal to adjust.
   module's handler runs. Deduplication is the module's job.
 - **Secrets are module settings** (`type: "secret"`), encrypted with the platform key, never environment variables of
   the module.
+- **Every module reports to the dashboard.** The manifest declares `dashboard`: a few `stats` (a figure each) and the
+  `alerts` that need someone's attention (a count each, shown only above 0, with a severity). Each is one read-only
+  `select` on the module's own tables, with unqualified names, no `;`, and a `permission` so a person sees only what they
+  may open (`tests/dashboard/` fails if a module has none, if a statement does not run, or if a card has no permission).
+  A statement cannot read another module's settings, so "a required setting is unset" is not an alert the module writes:
+  the platform raises that one itself. Adding a dashboard to a module without a migration is a patch version, so the
+  `dependsOn` ranges of the modules that need it keep holding.
 
 ## 2. The loop for each module
 

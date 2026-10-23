@@ -33,7 +33,7 @@ The platform's dashboard (`/`) shows what the modules report. Every module here 
 figures and the alerts that need someone's attention, each a read-only `select` on the module's own tables and each behind the
 module's read permission, so a person only sees what they may open. A test (`tests/dashboard/`) fails if a module of this
 repository declares none, if a statement does not run against the real tables, or if a card is not behind a permission.
-Needs a platform with SDK 0.1.1 or later; an older one refuses the archive with its usual platform message.
+Needs a platform with SDK 0.1.1 or later; an older one refuses the archive with `unknown field "dashboard"`.
 
 | Module | Figures | Alerts |
 | --- | --- | --- |
