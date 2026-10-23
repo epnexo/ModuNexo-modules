@@ -7,7 +7,7 @@ import pg from "pg";
 import answerJob from "../../assistant/jobs/answer.ts";
 import { answerMessage } from "../../assistant/lib/answer.ts";
 import { saveConfig, type Config } from "../../assistant/lib/config.ts";
-import { pausedReason } from "../../assistant/lib/state.ts";
+import { pausedReason, resumeConversation } from "../../assistant/lib/state.ts";
 import assistant from "../../assistant/manifest.ts";
 import inbox from "../../inbox/manifest.ts";
 import { POST as inboxSend } from "../../inbox/web/svc-send.ts";
@@ -40,6 +40,8 @@ let llmAnswer = "We open at 9 on weekdays.";
 let llmStatus = 200;
 let platformMode: "ok" | "forbidden" | "boom" | "drop" | "not_found" = "ok";
 let platformCalls = 0;
+let llmHook: ((call: number) => Promise<void>) | null = null;
+let platformHook: ((call: number) => Promise<void>) | null = null;
 
 const CONFIG: Config = { enabled: true, instructions: "We sell shoes. Be friendly.", waitSeconds: 0, historyMessages: 20, maxRepliesPerHour: 10 };
 
@@ -64,8 +66,9 @@ before(async () => {
   llmServer = createServer((req: IncomingMessage, res: ServerResponse) => {
     const chunks: Buffer[] = [];
     req.on("data", (chunk: Buffer) => chunks.push(chunk));
-    req.on("end", () => {
+    req.on("end", async () => {
       llmCalls.push({ auth: req.headers.authorization, body: JSON.parse(Buffer.concat(chunks).toString("utf8")) });
+      if (llmHook) await llmHook(llmCalls.length);
       res.statusCode = llmStatus;
       res.setHeader("content-type", "application/json");
       if (llmStatus !== 200) return res.end(JSON.stringify({ error: { message: `provider says no, key ${LLM_KEY}` } }));
@@ -77,6 +80,7 @@ before(async () => {
     req.on("data", (chunk: Buffer) => chunks.push(chunk));
     req.on("end", async () => {
       platformCalls += 1;
+      if (platformHook) await platformHook(platformCalls);
       if (platformMode === "drop") return req.socket.destroy();
       if (platformMode === "not_found") {
         res.statusCode = 404;
@@ -115,6 +119,8 @@ beforeEach(async () => {
   llmStatus = 200;
   platformMode = "ok";
   platformCalls = 0;
+  llmHook = null;
+  platformHook = null;
   for (const table of ["core.events", "core.jobs", "inbox.messages", "inbox.conversations", "assistant.replies", "assistant.paused"]) await pool!.query(`delete from ${table}`);
   await saveConfig(CONFIG);
   await settings.set("assistant", "llm.url", `${llmOrigin}/v1`, "test");
@@ -238,11 +244,14 @@ describe("answerMessage: one reply per customer message", { concurrency: false }
     assert.equal((await outbound(c.id)).length, 1);
   });
 
-  it("does not answer while another reply for the conversation is in flight", async (t) => {
+  it("does not answer a message another job is already answering, and says it is busy when the reply in flight is for an earlier message", async (t) => {
     if (skipReason) return t.skip(skipReason);
-    const c = await conversation(["in:hello"]);
-    await pool!.query("insert into assistant.replies (conversation_id, in_reply_to, status, created_at) values ($1, 1, 'sending', $2)", [c.id, "2026-10-23T11:59:00Z"]);
-    assert.equal(await run(c), "answered_already");
+    const same = await conversation(["in:hello"]);
+    await pool!.query("insert into assistant.replies (conversation_id, in_reply_to, status, created_at) values ($1, $2, 'sending', $3)", [same.id, same.ids[0], "2026-10-23T11:59:00Z"]);
+    assert.equal(await run(same), "answered_already");
+    const other = await conversation(["in:hello"]);
+    await pool!.query("insert into assistant.replies (conversation_id, in_reply_to, status, created_at) values ($1, 999999, 'sending', $2)", [other.id, "2026-10-23T11:59:00Z"]);
+    assert.equal(await run(other), "busy");
     assert.equal(llmCalls.length, 0);
   });
 
@@ -386,6 +395,110 @@ describe("answerMessage: when something fails", { concurrency: false }, () => {
     await assert.rejects(run(c), refusal(/token/i, []));
     assert.equal(llmCalls.length, 0, "no model call is paid for when the answer could not be sent");
     assert.equal(platformCalls, 0);
+  });
+});
+
+describe("answerMessage: customers who write while it works", { concurrency: false }, () => {
+  const addCustomer = async (c: { id: number }, text: string) =>
+    Number((await pool!.query("insert into inbox.messages (conversation_id, channel, direction, text, status, created_at) values ($1, 'web', 'in', $2, 'received', $3) returning id", [c.id, text, NOW.toISOString()])).rows[0].id);
+
+  it("throws its answer away and answers the newest message, with both in view, when one arrives while the model is thinking", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const c = await conversation(["in:first question"]);
+    llmHook = async (call) => { if (call === 1) await addCustomer(c, "second question"); };
+    assert.equal(await run(c), "answered");
+    assert.equal(llmCalls.length, 2);
+    assert.deepEqual(llmCalls[1]!.body.messages.slice(1).map((m) => m.content), ["first question", "second question"]);
+    assert.equal((await outbound(c.id)).length, 1, "only the answer to the newest message was sent");
+    const rows = await replies();
+    assert.deepEqual(rows.map((r) => [r.status, r.error]), [["failed", "superseded"], ["sent", null]]);
+    const newest = (await pool!.query("select max(id) as id from inbox.messages where direction = 'in' and conversation_id = $1", [c.id])).rows[0].id;
+    assert.equal(Number(rows[1].in_reply_to), Number(newest));
+  });
+
+  it("answers a message that arrives while its own reply is being sent", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const c = await conversation(["in:first question"]);
+    platformHook = async (call) => { if (call === 1) await addCustomer(c, "and do you ship?"); };
+    assert.equal(await run(c), "answered");
+    assert.equal(llmCalls.length, 2);
+    assert.equal((await outbound(c.id)).length, 2);
+    assert.deepEqual((await replies()).map((r) => r.status), ["sent", "sent"]);
+    // The customer's line arrived while the reply was being stored, so it comes first; the history follows the order of the inbox.
+    assert.deepEqual(llmCalls[1]!.body.messages.slice(1).map((m) => m.content).slice(-2), ["and do you ship?", "We open at 9 on weekdays."]);
+  });
+
+  it("goes round at most three times when the customer keeps writing, and sends the last answer", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const c = await conversation(["in:one"]);
+    llmHook = async (call) => { await addCustomer(c, `more ${call}`); };
+    assert.equal(await run(c), "answered");
+    assert.equal(llmCalls.length, 3);
+    assert.equal((await outbound(c.id)).length, 1);
+    assert.deepEqual((await replies()).map((r) => r.status), ["failed", "failed", "sent"]);
+  });
+
+  it("does not send what the model wrote if it was switched off while the model was thinking", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const c = await conversation(["in:hello"]);
+    llmHook = async () => { await saveConfig({ ...CONFIG, enabled: false }); };
+    assert.equal(await run(c), "disabled");
+    assert.deepEqual(await outbound(c.id), []);
+    assert.deepEqual((await replies()).map((r) => r.status), ["failed"]);
+  });
+
+  it("does not send it if the conversation was stopped by hand while the model was thinking", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const c = await conversation(["in:hello"]);
+    llmHook = async () => { await pool!.query("insert into assistant.paused (conversation_id, reason) values ($1, 'manual')", [c.id]); };
+    assert.equal(await run(c), "paused");
+    assert.deepEqual(await outbound(c.id), []);
+  });
+
+  it("does not send it, and stops, if a person wrote while the model was thinking", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const c = await conversation(["in:hello"]);
+    llmHook = async () => { await pool!.query("insert into inbox.messages (conversation_id, channel, direction, text, status) values ($1, 'web', 'out', 'Marta here', 'sent')", [c.id]); };
+    assert.equal(await run(c), "human");
+    assert.equal(await pausedReason(c.id), "human");
+    assert.deepEqual((await outbound(c.id)).map((m) => m.text), ["Marta here"]);
+  });
+});
+
+describe("answerMessage: resuming a stopped conversation", { concurrency: false }, () => {
+  const latestId = async (id: number) => Number((await pool!.query("select max(id) as id from inbox.messages where conversation_id = $1", [id])).rows[0].id);
+  const addCustomer = async (id: number, text: string) =>
+    Number((await pool!.query("insert into inbox.messages (conversation_id, channel, direction, text, status, created_at) values ($1, 'web', 'in', $2, 'received', $3) returning id", [id, text, NOW.toISOString()])).rows[0].id);
+
+  it("answers again after a person's message stopped it and Resume was pressed, until a person writes again", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const c = await conversation(["in:hello", "out:Marta here", "in:can I come tomorrow?"]);
+    assert.equal(await run(c), "human");
+    assert.equal(await resumeConversation(c.id, await latestId(c.id), NOW), true);
+    const next = await addCustomer(c.id, "are you there?");
+    assert.equal(await run({ id: c.id, ids: [next] }), "answered");
+    assert.equal(await pausedReason(c.id), null);
+    await pool!.query("insert into inbox.messages (conversation_id, channel, direction, text, status) values ($1, 'web', 'out', 'Marta again', 'sent')", [c.id]);
+    const later = await addCustomer(c.id, "thanks");
+    assert.equal(await run({ id: c.id, ids: [later] }), "human");
+  });
+
+  it("starts the hourly count again when a stopped conversation is resumed", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    await saveConfig({ ...CONFIG, maxRepliesPerHour: 2 });
+    const c = await conversation(["in:hello"]);
+    await pool!.query("insert into assistant.replies (conversation_id, in_reply_to, status, created_at) values ($1, 901, 'sent', $2), ($1, 902, 'sent', $3)", [c.id, "2026-10-23T11:20:00Z", "2026-10-23T11:45:00Z"]);
+    assert.equal(await run(c), "limit");
+    assert.equal(await resumeConversation(c.id, await latestId(c.id), NOW), true);
+    const next = await addCustomer(c.id, "hello again");
+    assert.equal(await run({ id: c.id, ids: [next] }), "answered");
+  });
+
+  it("counts a message a person tried to send even if its delivery failed", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const c = await conversation(["in:hello"]);
+    await pool!.query("insert into inbox.messages (conversation_id, channel, direction, text, status, error) values ($1, 'web', 'out', 'Marta tried', 'failed', 'HTTP 500')", [c.id]);
+    assert.equal(await run(c), "human");
   });
 });
 

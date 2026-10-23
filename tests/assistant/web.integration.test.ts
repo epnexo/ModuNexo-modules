@@ -56,7 +56,7 @@ after(async () => {
 
 beforeEach(async () => {
   if (skipReason) return;
-  for (const table of ["inbox.messages", "inbox.conversations", "assistant.replies", "assistant.paused"]) await pool!.query(`delete from ${table}`);
+  for (const table of ["inbox.messages", "inbox.conversations", "assistant.replies", "assistant.paused", "assistant.resumed"]) await pool!.query(`delete from ${table}`);
   await saveConfig(CONFIG);
   await settings.set("assistant", "llm.url", "https://models.example/v1", "test");
   await settings.set("assistant", "inbox_url", "http://127.0.0.1:3000", "test");
@@ -256,6 +256,18 @@ describe("the form routes", { concurrency: false }, () => {
     assert.equal((await resumeRoute(form("/assistant/resume", { conversationId: String(id) }))).status, 303);
     assert.equal(await pausedReason(id), null);
     assert.equal((await resumeRoute(form("/assistant/resume", { conversationId: String(id) }))).status, 303, "pressing it twice is harmless");
+  });
+
+  it("resume remembers the newest message of the conversation as the point to start again from, only if it was stopped", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const id = await conversation("Ada", "c-1");
+    const last = await message(id, "in", "hello");
+    await resumeRoute(form("/assistant/resume", { conversationId: String(id) }));
+    assert.deepEqual((await pool!.query("select * from assistant.resumed")).rows, [], "nothing was stopped, nothing to remember");
+    await pauseConversation(id, "human");
+    await resumeRoute(form("/assistant/resume", { conversationId: String(id) }));
+    const row = (await pool!.query("select conversation_id, after_message_id from assistant.resumed")).rows[0];
+    assert.deepEqual([Number(row.conversation_id), Number(row.after_message_id)], [id, last]);
   });
 
   it("pause and resume answer 400 for an id that is not a number and 404 for a conversation the inbox does not have", async (t) => {

@@ -18,9 +18,9 @@ export async function recentMessages(conversationId: number, limit: number): Pro
   return found.rows.map((row) => ({ id: Number(row.id), direction: row.direction, text: row.text })).reverse();
 }
 
-/** The ids of the messages sent in the conversation (the newest 200 that were not lost in delivery). */
+/** The ids of the messages sent in the conversation (the newest 200), including those whose delivery failed: someone did try to write. */
 export async function sentIds(conversationId: number): Promise<number[]> {
-  const found = await inbox().query<{ id: string }>("select id from messages where conversation_id = $1 and direction = 'out' and status <> 'failed' order by id desc limit 200", [conversationId]);
+  const found = await inbox().query<{ id: string }>("select id from messages where conversation_id = $1 and direction = 'out' order by id desc limit 200", [conversationId]);
   return found.rows.map((row) => Number(row.id));
 }
 
@@ -89,4 +89,10 @@ export async function messageTexts(ids: number[]): Promise<Map<number, string>> 
   if (ids.length === 0) return new Map();
   const found = await inbox().query<{ id: string; text: string }>("select id, text from messages where id = any($1::bigint[])", [ids]);
   return new Map(found.rows.map((row) => [Number(row.id), row.text]));
+}
+
+/** The id of the newest message of the conversation, in either direction; 0 when there is none. */
+export async function latestMessageId(conversationId: number): Promise<number> {
+  const found = await inbox().query<{ id: string }>("select coalesce(max(id), 0) as id from messages where conversation_id = $1", [conversationId]);
+  return Number(found.rows[0]!.id);
 }

@@ -5,7 +5,7 @@ import pg from "pg";
 import { validateManifest } from "@modunexo/sdk";
 import assistant from "../../assistant/manifest.ts";
 import { configInput, loadConfig, saveConfig } from "../../assistant/lib/config.ts";
-import { listPaused, pauseConversation, pausedReason, resumeConversation } from "../../assistant/lib/state.ts";
+import { listPaused, pauseConversation, pausedReason, resumeConversation, resumedBaseline } from "../../assistant/lib/state.ts";
 import inbox from "../../inbox/manifest.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
@@ -45,6 +45,7 @@ after(async () => {
 beforeEach(async () => {
   if (skipReason) return;
   await pool!.query("delete from assistant.paused");
+  await pool!.query("delete from assistant.resumed");
   await saveConfig({ enabled: false, instructions: "", waitSeconds: 5, historyMessages: 20, maxRepliesPerHour: 10 });
 });
 
@@ -112,9 +113,22 @@ describe("the conversations the assistant has stopped", { concurrency: false }, 
     assert.equal(await pausedReason(7), "human");
     await pauseConversation(7, "limit");
     assert.equal(await pausedReason(7), "human", "the first reason stays");
-    assert.equal(await resumeConversation(7), true);
+    assert.equal(await resumeConversation(7, 41, new Date("2026-10-23T12:00:00Z")), true);
     assert.equal(await pausedReason(7), null);
-    assert.equal(await resumeConversation(7), false, "nothing to resume");
+    assert.equal(await resumeConversation(7, 99, new Date("2026-10-23T12:05:00Z")), false, "nothing to resume");
+  });
+
+  it("remembers where a resumed conversation starts again, and only when it was really stopped", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    assert.equal(await resumedBaseline(8), null);
+    await resumeConversation(8, 5, new Date("2026-10-23T12:00:00Z"));
+    assert.equal(await resumedBaseline(8), null, "a conversation that was not stopped keeps no baseline");
+    await pauseConversation(8, "human");
+    await resumeConversation(8, 41, new Date("2026-10-23T12:00:00Z"));
+    assert.deepEqual(await resumedBaseline(8), { afterMessageId: 41, at: new Date("2026-10-23T12:00:00Z") });
+    await pauseConversation(8, "limit");
+    await resumeConversation(8, 77, new Date("2026-10-23T13:00:00Z"));
+    assert.deepEqual(await resumedBaseline(8), { afterMessageId: 77, at: new Date("2026-10-23T13:00:00Z") }, "the latest resume wins");
   });
 
   it("lists the stopped conversations with their reason, the newest first", async (t) => {

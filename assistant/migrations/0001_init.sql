@@ -18,6 +18,14 @@ create table paused (
   since timestamptz not null default now()
 );
 
+-- Set when a stopped conversation is resumed: what came before no longer counts. A person who wrote earlier, or the replies of
+-- the hour before, do not stop it again at once.
+create table resumed (
+  conversation_id bigint primary key,
+  after_message_id bigint not null,
+  at timestamptz not null
+);
+
 -- One row per reply the assistant decided to write. 'sending' is a claim: it is taken before the model is asked.
 create table replies (
   id bigserial primary key,
