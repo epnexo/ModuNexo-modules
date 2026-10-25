@@ -112,7 +112,7 @@ Ordered by what blocks first. Each is a small feature in the platform repo, done
 - The archive packs, and `modules add` lists its public routes, jobs, events, permissions and settings as intended.
 - Installed on a real instance: the pages answer, a signed request to its webhook is accepted, a bad signature gets 401,
   a failing build leaves the serving build untouched.
-- A reader can learn from the module's README section: its contract, permissions, settings and what it does not do yet.
+- A reader can learn from the module's page under `docs/modules/`: its contract, permissions, settings and what it does not do yet.
 - Nothing was added to the platform repository except a gap listed in section 4.
 
 ## 6. Open decisions
