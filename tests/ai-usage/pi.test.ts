@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { createPiCollector } from "../src/collectors/pi.ts";
+import { createPiCollector } from "../../modules/ai-usage/src/collectors/pi.ts";
 
 const root = fileURLToPath(new URL("./fixtures/pi/sessions", import.meta.url));
 const project = join(root, "--work-demo-pi--");

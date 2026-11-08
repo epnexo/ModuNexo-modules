@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { groupModels } from "../web/group.ts";
-import type { ModelRow } from "../web/queries.ts";
+import { groupModels } from "../../modules/ai-usage/web/group.ts";
+import type { ModelRow } from "../../modules/ai-usage/web/queries.ts";
 
 const row = (model: string | null, tool: string, totalTokens: number, sessions: number): ModelRow => ({ model, tool, totalTokens, sessions });
 

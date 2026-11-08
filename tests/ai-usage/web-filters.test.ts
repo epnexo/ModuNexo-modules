@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { DEFAULT_PERIOD, parseFilters, periodStart, toolColorSlot, withFilters } from "../web/filters.ts";
+import { DEFAULT_PERIOD, parseFilters, periodStart, toolColorSlot, withFilters } from "../../modules/ai-usage/web/filters.ts";
 
 const TOOLS = ["claude-code", "codex", "pi", "opencode"];
 

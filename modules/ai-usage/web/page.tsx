@@ -1,4 +1,4 @@
-import { describeDbError, getPool } from "@epnexo/core/pool";
+import { getDb } from "@modunexo/sdk";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PERIOD_LABELS, parseFilters, periodStart, type Filters } from "./filters.ts";
@@ -38,7 +38,7 @@ interface PageData {
 }
 
 async function loadPageData(raw: Awaited<SearchParams>, now: Date): Promise<PageData> {
-  const db = getPool();
+  const db = getDb("ai-usage");
   const tools = await getTools(db);
   const parsed = parseFilters(raw, tools.map((tool) => tool.slug));
   const since = periodStart(parsed.period, now);
@@ -90,7 +90,7 @@ export default async function AiUsagePage({ searchParams }: { searchParams: Sear
         <Header />
         <div className="page-body">
           <Notice tone="error" title="AI usage data is unavailable">
-            {describeDbError(error).message}
+            The database could not be reached. Check that the platform database is up and try again.
           </Notice>
         </div>
       </div>

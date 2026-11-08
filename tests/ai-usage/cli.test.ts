@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { parseIngestArgs } from "../src/cli/args.ts";
-import { createCollectors } from "../src/collectors/index.ts";
+import { parseIngestArgs } from "../../modules/ai-usage/src/cli/args.ts";
+import { createCollectors } from "../../modules/ai-usage/src/collectors/index.ts";
 
 describe("parseIngestArgs", () => {
   it("defaults to every tool and the home directory roots", () => {

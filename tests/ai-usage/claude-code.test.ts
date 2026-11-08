@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { createClaudeCodeCollector } from "../src/collectors/claude-code.ts";
+import { createClaudeCodeCollector } from "../../modules/ai-usage/src/collectors/claude-code.ts";
 
 const root = fileURLToPath(new URL("./fixtures/claude/projects", import.meta.url));
 const main = join(root, "-work-demo-app", "sess-0001.jsonl");

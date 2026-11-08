@@ -5,35 +5,47 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, beforeEach, describe, it, type TestContext } from "node:test";
 import { fileURLToPath } from "node:url";
-import { Registry, coreManifest, discoverModules, migrate } from "@epnexo/core";
-import { openTestPool, resolveTestDatabaseUrl } from "@epnexo/core/testing";
+import { createPool } from "@modunexo/core/pool";
+import { Registry } from "@modunexo/core/registry";
+import { migrate } from "@modunexo/core/runner";
+import { createScratchDatabase } from "@modunexo/core/testing";
+import aiUsage from "../../modules/ai-usage/manifest.ts";
 import type pg from "pg";
-import type { Collector, UsageRecord } from "../src/collector.ts";
+import type { Collector, UsageRecord } from "../../modules/ai-usage/src/collector.ts";
 import { createOpenCodeDb } from "./helpers/opencode-db.ts";
-import { createClaudeCodeCollector } from "../src/collectors/claude-code.ts";
-import { createCodexCollector } from "../src/collectors/codex.ts";
-import { createOpenCodeCollector } from "../src/collectors/opencode.ts";
-import { createPiCollector } from "../src/collectors/pi.ts";
-import { ingest } from "../src/ingest.ts";
+import { createClaudeCodeCollector } from "../../modules/ai-usage/src/collectors/claude-code.ts";
+import { createCodexCollector } from "../../modules/ai-usage/src/collectors/codex.ts";
+import { createOpenCodeCollector } from "../../modules/ai-usage/src/collectors/opencode.ts";
+import { createPiCollector } from "../../modules/ai-usage/src/collectors/pi.ts";
+import { ingest } from "../../modules/ai-usage/src/ingest.ts";
 
 const fixtures = fileURLToPath(new URL("./fixtures", import.meta.url));
-const modulesDir = fileURLToPath(new URL("../..", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/ai-usage/", import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;
+let scratchUrl: string | undefined;
+let dropScratch: (() => Promise<void>) | undefined;
 let work: string;
 
 before(async () => {
-  ({ pool, skipReason } = await openTestPool());
-  if (!pool) return;
+  const scratch = await createScratchDatabase();
+  if (!scratch.url) {
+    skipReason = scratch.skipReason;
+    return;
+  }
+  scratchUrl = scratch.url;
+  dropScratch = scratch.drop;
+  pool = createPool(scratch.url);
   const registry = new Registry();
-  registry.register(coreManifest);
-  for (const manifest of await discoverModules(modulesDir)) registry.register(manifest);
-  await migrate(pool, registry);
+  registry.registerCore();
+  registry.register(aiUsage);
+  await migrate(pool, registry, { moduleDirs: { "ai-usage": MODULE_DIR } });
 });
 
 after(async () => {
   await pool?.end();
+  await dropScratch?.();
 });
 
 beforeEach(async () => {
@@ -240,14 +252,14 @@ describe("ingest (integration)", () => {
   });
 
   test("the ingest command exits non-zero and names failed files by tool and key only", async (t) => {
-    const url = resolveTestDatabaseUrl();
+    const url = scratchUrl;
     if (!url || process.getuid?.() === 0) return t.skip("needs a test database and a non-root user to make a file unreadable");
     const dir = join(work, "cli-codex");
     cpSync(join(fixtures, "codex"), dir, { recursive: true });
     const locked = join(dir, "2026/10/01/rollout-2026-10-01T10-00-00-cdx-0001.jsonl");
     chmodSync(locked, 0o000);
     try {
-      const run = spawnSync(process.execPath, ["--import", "tsx", join(modulesDir, "ai-usage/src/cli/ingest.ts"), "--tool", "codex", "--codex-dir", dir], {
+      const run = spawnSync(process.execPath, ["--import", "tsx", join(MODULE_DIR, "src/cli/ingest.ts"), "--tool", "codex", "--codex-dir", dir], {
         env: { ...process.env, DATABASE_URL: url },
         encoding: "utf8",
       });

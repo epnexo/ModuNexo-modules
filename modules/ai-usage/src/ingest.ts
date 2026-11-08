@@ -24,6 +24,14 @@ export interface IngestReport {
   tokensInDatabase: number;
 }
 
+/** Anything that runs a parameterised statement: a `pg` client here, a module's transaction handle in the service route. */
+export interface Sql {
+  query(sql: string, params?: unknown[]): Promise<{ rows: Array<Record<string, any>> }>;
+}
+
+/** What a write adds up while it runs. */
+export type InsertCounts = Pick<IngestReport, "sessionsInserted" | "eventsInserted" | "tokensInserted">;
+
 export interface IngestOptions {
   /** Rows per statement. */
   batchSize?: number;
@@ -136,12 +144,12 @@ const chunks = <T>(items: T[], size: number): T[][] => {
   return out;
 };
 
-async function upsertSessions(
-  client: pg.PoolClient,
+export async function upsertSessions(
+  client: Sql,
   toolId: number,
   sessions: SessionRecord[],
   batchSize: number,
-  report: IngestReport,
+  report: InsertCounts,
 ): Promise<Map<string, number>> {
   const ids = new Map<string, number>();
   for (const batch of chunks(sessions, batchSize)) {
@@ -198,8 +206,8 @@ export function mergeDuplicateEvents(events: UsageRecord[]): UsageRecord[] {
  * Store activity items once per tool (the first file to report an item owns it), then return this file's exact
  * counters: everything it owns, however many times it has been read.
  */
-async function storeActivity(
-  client: pg.PoolClient,
+export async function storeActivity(
+  client: Sql,
   toolId: number,
   key: string,
   items: ActivityItem[],
@@ -228,7 +236,7 @@ async function storeActivity(
      from ai_usage.activity_items where tool_id = $1 and source_key = $2`,
     [toolId, key],
   );
-  const row = totals.rows[0];
+  const row = totals.rows[0]!;
   return { messageCount: Number(row.prompts), toolCallCount: Number(row.tool_calls), durationMs: Number(row.duration_ms) };
 }
 
@@ -236,13 +244,13 @@ async function storeActivity(
  * Upsert by the natural key. On conflict every counter keeps the larger value: a message that was still
  * streaming when it was first read grows, and nothing a later partial read reports can lower it.
  */
-async function upsertEvents(
-  client: pg.PoolClient,
+export async function upsertEvents(
+  client: Sql,
   toolId: number,
   sessionIds: Map<string, number>,
   events: UsageRecord[],
   batchSize: number,
-  report: IngestReport,
+  report: InsertCounts,
 ): Promise<void> {
   for (const batch of chunks(events, batchSize)) {
     const result = await client.query(

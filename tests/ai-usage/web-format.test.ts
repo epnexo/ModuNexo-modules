@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { NOT_AVAILABLE, formatCompact, formatCount, formatPercent, formatUtcDay, formatUtcDayShort, formatUtcMinute } from "../web/format.ts";
+import { NOT_AVAILABLE, formatCompact, formatCount, formatPercent, formatUtcDay, formatUtcDayShort, formatUtcMinute } from "../../modules/ai-usage/web/format.ts";
 
 describe("formatCompact", () => {
   it("uses three significant digits and trims trailing zeros", () => {

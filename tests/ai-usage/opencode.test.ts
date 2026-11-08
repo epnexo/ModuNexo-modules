@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
-import { createOpenCodeCollector } from "../src/collectors/opencode.ts";
+import { createOpenCodeCollector } from "../../modules/ai-usage/src/collectors/opencode.ts";
 import { createOpenCodeDb, OPENCODE_T0 } from "./helpers/opencode-db.ts";
 
 let dir: string;

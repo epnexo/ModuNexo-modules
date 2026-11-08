@@ -18,7 +18,7 @@ import {
   stackShares,
   thinLabels,
   topWithOther,
-} from "../web/chart.ts";
+} from "../../modules/ai-usage/web/chart.ts";
 
 describe("niceCeiling", () => {
   it("rounds up to 1, 2, 2.5, 5 or 10 times a power of ten", () => {
