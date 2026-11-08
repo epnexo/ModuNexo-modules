@@ -11,9 +11,10 @@ import { createScratchDatabase } from "@modunexo/core/testing";
 import agenda from "../../modules/agenda/manifest.ts";
 import assistant from "../../modules/assistant/manifest.ts";
 import contacts from "../../modules/contacts/manifest.ts";
+import documents from "../../modules/documents/manifest.ts";
 import inbox from "../../modules/inbox/manifest.ts";
 
-const MODULES = [contacts, agenda, inbox, assistant];
+const MODULES = [contacts, agenda, inbox, assistant, documents];
 const dir = (id: string) => fileURLToPath(new URL(`../../modules/${id}/`, import.meta.url));
 
 let pool: pg.Pool | undefined;
@@ -49,6 +50,8 @@ beforeEach(async () => {
   await pool!.query("delete from inbox.conversations");
   await pool!.query("delete from assistant.replies");
   await pool!.query("delete from assistant.paused");
+  await pool!.query("delete from documents.documents");
+  await pool!.query("delete from documents.templates");
 });
 
 const guard = (name: string, run: () => Promise<void>) =>
@@ -207,5 +210,24 @@ describe("assistant", { concurrency: false }, () => {
     await sql("update assistant.config set enabled = true");
     assert.equal(await alert("assistant", "switched_off"), undefined);
     await sql("update assistant.config set enabled = false");
+  });
+});
+
+describe("documents", { concurrency: false }, () => {
+  guard("counts the documents by stage and warns about sent ones unsigned for a week", async () => {
+    const template = Number((await sql("insert into documents.templates (slug, name, kind, ref_prefix, body_html) values ('t', 'T', 'nda', 'NDA', '<p/>') returning id"))[0].id);
+    let n = 0;
+    const doc = (status: string, age: string) =>
+      sql(`insert into documents.documents (ref, template_id, template_body_snapshot, title, counterparty_name, status, updated_at) values ($1, $2, '<p/>', 'D', 'Beta', $3, now() - interval '${age}')`, [`D-${++n}`, template, status]);
+    await doc("generated", "1 day");
+    await doc("sent", "1 day");
+    await doc("sent", "10 days");
+    await doc("completed", "10 days");
+    await doc("draft", "10 days");
+    assert.equal(await stat("documents", "generated"), 1);
+    assert.equal(await stat("documents", "awaiting"), 2);
+    assert.equal(await stat("documents", "completed"), 1);
+    const stale = await alert("documents", "stale_sent");
+    assert.deepEqual([stale?.count, stale?.severity, stale?.href], [1, "warning", "/documents"]);
   });
 });

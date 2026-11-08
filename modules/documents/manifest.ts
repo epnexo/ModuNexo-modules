@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "documents",
-  version: "0.4.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.4.1", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Documents",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -22,6 +22,16 @@ export default defineModule({
     { key: "documents.send", label: "Send a document to be signed" },
   ],
   nav: [{ label: "Documents", href: "/documents", icon: "file", permission: "documents.read" }],
+  dashboard: {
+    stats: [
+      { key: "generated", label: "Documents ready to send", href: "/documents", permission: "documents.read", sql: "select count(*) from documents where status = 'generated'" },
+      { key: "awaiting", label: "Awaiting signature", href: "/documents", permission: "documents.read", sql: "select count(*) from documents where status = 'sent'" },
+      { key: "completed", label: "Signed documents", href: "/documents", permission: "documents.read", sql: "select count(*) from documents where status = 'completed'" },
+    ],
+    alerts: [
+      { key: "stale_sent", label: "Documents unsigned for 7 days", href: "/documents", severity: "warning", permission: "documents.read", sql: "select count(*) from documents where status = 'sent' and updated_at < now() - interval '7 days'" },
+    ],
+  },
   pages: [
     { path: "/documents", entry: "./web/page.tsx", kind: "page", dynamic: "force-dynamic", permission: "documents.read" },
     { path: "/documents/new", entry: "./web/page-new-document.tsx", kind: "page", dynamic: "force-dynamic", permission: "documents.write" },
