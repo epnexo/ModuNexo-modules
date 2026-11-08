@@ -19,7 +19,7 @@ Branch: feat/documents (worktree of modunexo-modules). Delivery: ask-on-risk. Te
 - [x] T3 (S4,S6) files on the platform files API, new migration. Route: inline.
 - [x] T4 (S5) settings instead of environment variables. Risk: none. Route: inline.
 - [x] T5 (S6) test helpers on the new core testing API; run the integration tests against a scratch database. Route: inline.
-- [ ] T6 (S7) type-check clean, pack, install on a scratch platform, open the page with real data. Route: inline.
+- [x] T6 (S7) type-check clean, pack, install on a scratch platform, open the page with real data. Risk: none. Route: inline.
 - [x] T8 (S9) replace the server actions in `web/actions.ts` with POST routes carrying `permission`. Risk: item 2 (permissions). Route: inline, own commit.
 - [x] T7 (S2) decide what replaces the `import-nda` CLI that opens its own pg pool. Risk: none. Route: inline.
 
@@ -39,3 +39,4 @@ Branch: feat/documents (worktree of modunexo-modules). Delivery: ask-on-risk. Te
 - Tests: integration tests skip without a database. To get one, run `eval "$(mnx-test-db start 55432)"` in the worktree (it starts a throwaway Postgres on 127.0.0.1 and exports `TEST_DATABASE_URL`), then `npm test`, then `mnx-test-db stop 55432`. The script lives in `~/.local/bin` (outside the repos). Never point tests at a real database. The port for this worktree is 55432.
 - One failure is already known and is not ours: `tests/assistant/answer.integration.test.ts` fails at the original commit too.
 - Repo rules: public repo, so no hostnames, addresses, tokens or personal data in any file or fixture (use `192.0.2.x`); English for code, comments, UI text and commits; conventional commits, no AI attribution; stage explicit paths and scan the diff before each commit; no push unless the owner asks.
+- L10 (2026-11-08): T6 observed on a throwaway copy of ModuNexo 0.3.0 (not the user's checkout) with `mnx-test-db` on 55432. `modules pack` 200 KB; `add` showed pages, permissions, the 5 settings and 5 migrations; `apply` placed, built (`next build`), migrated and installed 0.4.0. With an admin session: /documents, /documents/settings, /documents/templates and /documents/new answer 200; a template was created (redirect to /documents/templates/1) and a new document reached the PDF engine using `engine.python` read through the real settings reader, which answered `WeasyPrint is not installed for the interpreter set in the Documents settings.` (503 on the preview). Not seen: a real PDF, because no Python with WeasyPrint exists on this machine (S8: the engine becomes a separate service). Full documents suite against the database: 806 pass, 0 fail, 5 skipped. Pack warning to act on later: the module declares no `dashboard`.
