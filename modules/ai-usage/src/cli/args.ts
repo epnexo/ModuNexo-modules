@@ -8,9 +8,12 @@ export interface IngestArgs {
   codexDir: string | undefined;
   piDir: string | undefined;
   opencodeDir: string | undefined;
+  /** The platform address: when set, usage is sent to it instead of written to a database. */
+  url: string | undefined;
+  stateFile: string | undefined;
 }
 
-/** `--tool` and one `--<tool>-dir` per tool; each directory also comes from AI_USAGE_<TOOL>_DIR (CLAUDE, CODEX, PI, OPENCODE). */
+/** `--url` (or AI_USAGE_URL) switches to sending; the token is only read from AI_USAGE_TOKEN so it stays out of the shell history. `--tool` and one `--<tool>-dir` per tool; each directory also comes from AI_USAGE_<TOOL>_DIR (CLAUDE, CODEX, PI, OPENCODE). */
 export function parseIngestArgs(argv: string[], env: Record<string, string | undefined>): IngestArgs {
   const { values } = parseArgs({
     args: argv,
@@ -20,6 +23,8 @@ export function parseIngestArgs(argv: string[], env: Record<string, string | und
       "codex-dir": { type: "string" },
       "pi-dir": { type: "string" },
       "opencode-dir": { type: "string" },
+      url: { type: "string" },
+      "state-file": { type: "string" },
     },
     strict: true,
   });
@@ -32,5 +37,7 @@ export function parseIngestArgs(argv: string[], env: Record<string, string | und
     codexDir: values["codex-dir"] ?? env.AI_USAGE_CODEX_DIR,
     piDir: values["pi-dir"] ?? env.AI_USAGE_PI_DIR,
     opencodeDir: values["opencode-dir"] ?? env.AI_USAGE_OPENCODE_DIR,
+    url: values.url ?? env.AI_USAGE_URL,
+    stateFile: values["state-file"] ?? env.AI_USAGE_STATE_FILE,
   };
 }

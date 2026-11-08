@@ -100,7 +100,7 @@ async function ensureTool(pool: pg.Pool, collector: Collector): Promise<number> 
 }
 
 /** The path is hashed because it contains project and session names. */
-const sourceKey = (path: string) => createHash("sha256").update(path).digest("hex");
+export const sourceKey = (path: string) => createHash("sha256").update(path).digest("hex");
 
 async function ingestFile(
   pool: pg.Pool,
