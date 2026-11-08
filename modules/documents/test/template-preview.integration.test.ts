@@ -195,7 +195,7 @@ describe("template preview: failures", () => {
       assert.equal(response.status, status);
       assert.match(response.headers.get("content-type")!, /^text\/plain/);
       const text = await response.text();
-      if (status === 503) assert.match(text, /Python setting/);
+      if (status === 503) assert.match(text, /Documents settings/);
       assert.doesNotMatch(text, /BODYSECRET|PROFILESECRET|documents-preview/);
       assert.match(printed(logged), new RegExp(reason));
       assert.doesNotMatch(printed(logged), /BODYSECRET|PROFILESECRET|Acme/);
