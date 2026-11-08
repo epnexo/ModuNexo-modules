@@ -1,71 +1,61 @@
-import { type FileHandle, open } from "node:fs/promises";
 import { basename } from "node:path";
-import { Readable } from "node:stream";
-import { getDb } from "@modunexo/sdk";
+import { type FileMeta, type StoredFile, getDb, getFile } from "@modunexo/sdk";
 import { parseDocumentId } from "../src/document-rules.ts";
-import { getDocumentPdfPath } from "../src/document-store.ts";
-import { documentsDir, resolveInside } from "../src/file-store.ts";
+import { getDocumentPdf } from "../src/document-store.ts";
 import { logFailure } from "./log.ts";
 import type { Queryable } from "./queries.ts";
 
 /**
- * `GET /documents/[id]/pdf`: stream the stored PDF as a download, or with `?inline=1` for the browser's own viewer (the
- * same handler, so the 404, 500 and containment behavior cannot differ). The id is parsed strictly, and the path in the database is
- * treated as hostile: it must resolve to a regular file inside the documents folder, or the answer is a plain 404.
+ * `GET /documents/[id]/pdf`: send the stored PDF as a download, or with `?inline=1` for the browser's own viewer (the
+ * same handler, so the 404 and 500 behavior cannot differ). The id is parsed strictly. The bytes come from the
+ * platform's file store by the id kept on the document; this module never reads a path.
  */
 
 const notFound = () => new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+const failed = (message: string) => new Response(message, { status: 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
 
 /** A file name that is safe in a header: letters, digits, dot, hyphen and underscore. */
 const headerName = (stored: string): string => basename(stored).replace(/[^A-Za-z0-9._-]/g, "_") || "document.pdf";
 
-/** Not there: the file is missing, or something in its path is not a folder. */
-const isMissing = (error: unknown) => ["ENOENT", "ENOTDIR"].includes((error as { code?: string } | null)?.code ?? "");
+export interface DownloadOptions {
+  inline?: boolean;
+  /** The platform's `getFile`; tests pass their own. */
+  getFile?: (moduleId: string, id: string) => Promise<StoredFile | null>;
+}
 
-const failed = () => new Response("The document could not be read.", { status: 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
-
-export async function downloadPdf(db: Queryable, dir: string, idParam: string, files: { open?: typeof open; inline?: boolean } = {}): Promise<Response> {
+export async function downloadPdf(db: Queryable, idParam: string, options: DownloadOptions = {}): Promise<Response> {
   const id = parseDocumentId(idParam);
   if (id === null) return notFound();
 
-  let stored: string | null;
+  let stored: { name: string; fileId: string } | null;
   try {
-    stored = await getDocumentPdfPath(db, id);
+    stored = await getDocumentPdf(db, id);
   } catch (error) {
     logFailure("could not load the document file", error);
-    return new Response("The document could not be loaded.", { status: 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+    return failed("The document could not be loaded.");
   }
   if (stored === null) return notFound();
 
-  // The file is opened here, before any response exists, so every way it can fail still has a status to answer with.
-  let handle: FileHandle | undefined;
+  let file: StoredFile | null;
   try {
-    const path = resolveInside(dir, stored, { followLinks: true });
-    if (path === null) return notFound();
-    handle = await (files.open ?? open)(/* turbopackIgnore: true */ path, "r");
-    const info = await handle.stat();
-    if (!info.isFile()) {
-      await handle.close();
-      return notFound();
-    }
-    const stream = handle.createReadStream();
-    stream.on("error", (error) => logFailure("could not stream the document file", error));
-    return new Response(Readable.toWeb(stream) as ReadableStream, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Length": String(info.size),
-        "Content-Disposition": `${files.inline ? "inline" : "attachment"}; filename="${headerName(stored)}"`,
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
+    file = await (options.getFile ?? getFile)("documents", stored.fileId);
   } catch (error) {
-    await handle?.close().catch(() => {});
-    if (isMissing(error)) return notFound();
     logFailure("could not open the document file", error);
-    return failed();
+    return failed("The document could not be read.");
   }
+  if (file === null) return notFound();
+
+  const meta: FileMeta = file.meta;
+  return new Response(file.stream, {
+    status: 200,
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Length": String(meta.size),
+      "Content-Disposition": `${options.inline ? "inline" : "attachment"}; filename="${headerName(stored.name)}"`,
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }
 
 /** True when the request asks for the inline variant: `?inline=1`, nothing else. */
@@ -79,5 +69,5 @@ export function wantsInline(url: string): boolean {
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }): Promise<Response> {
   const { id } = await context.params;
-  return downloadPdf(getDb("documents"), documentsDir(), id, { inline: wantsInline(request.url) });
+  return downloadPdf(getDb("documents"), id, { inline: wantsInline(request.url) });
 }

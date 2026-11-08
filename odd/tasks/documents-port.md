@@ -16,7 +16,7 @@ Branch: feat/documents (worktree of modunexo-modules). Delivery: ask-on-risk. Te
 ## Tasks
 - [x] T1 (S1,S3,S7) manifest, package.json, permissions, nav, pages, metadata. Route: inline.
 - [x] T2 (S2) data layer: replace getPool/describeDbError/inTransaction. Route: inline.
-- [ ] T3 (S4,S6) files on the platform files API, new migration. Route: inline.
+- [x] T3 (S4,S6) files on the platform files API, new migration. Route: inline.
 - [ ] T4 (S5) settings instead of environment variables. Route: inline.
 - [x] T5 (S6) test helpers on the new core testing API; run the integration tests against a scratch database. Route: inline.
 - [ ] T6 (S7) type-check clean, pack, install on a scratch platform, open the page with real data. Route: inline.
@@ -30,3 +30,4 @@ Branch: feat/documents (worktree of modunexo-modules). Delivery: ask-on-risk. Te
 - L1 (2026-11-08, user): "sí, empecemos a portar documents"
 - L2: Findings. The old API is used in ~20 files; stores already take a small `Queryable`, so they stay. Tests are mostly integration and skip without a database (237 skipped in the repo): T5 needs a scratch Postgres.
 - L6 (2026-11-08): T8 observed. The seven server actions are now eight POST routes with `permission` (`documents.write`, and `documents.send` for send and clear-send). Each route checks `Origin` against `Host`, caps the body at 1 MB, and answers a safe 500. Forms post with `fetch` so errors still show without a reload; redirects are followed only for paths on this site. 13 new tests; breaking the origin check on purpose made 2 of them fail. Full run: 1122 pass, 1 fail (the pre-existing assistant one).
+- L7 (2026-11-08): T3 observed. The generated PDF is stored with `putFile` in the same transaction as its row (the row keeps `pdf_file_id`; `pdf_path` is now only the display name); the download route reads it with `getFile`; the disk helpers (`documentsDir`, `resolveInside`, `moveIntoPlace`) are gone; migration 0005 adds the nullable column (additive); the manifest declares `files` for PDFs only, with no `permission`. The recovery of a commit whose answer was lost is kept. Rows from before the file store have no PDF (none exist on a new platform). The upload of the PDF to DocuSeal is still manual (`not-uploaded` in `send-signature`): that is Phase 1, not T3. Full run: 1112 pass, 1 fail (the pre-existing assistant one). Risk: item 1 (a migration; additive column only).

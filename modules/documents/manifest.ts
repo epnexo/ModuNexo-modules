@@ -2,12 +2,13 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "documents",
-  version: "0.2.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.3.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Documents",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
   schema: "documents", // the Postgres schema this module owns
   migrationsDir: "migrations",
+  files: { maxBytes: 20 * 1024 * 1024, accept: ["application/pdf"] }, // generated PDFs; no `permission`, so only this module's own route serves them
   permissions: [
     { key: "documents.read", label: "Read documents and templates" },
     { key: "documents.write", label: "Create and change documents, templates and the owner profile" },

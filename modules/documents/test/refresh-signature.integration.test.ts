@@ -48,6 +48,7 @@ async function sentDocument(status = "sent"): Promise<number> {
     counterpartyName: "Beta",
     data: { values: {}, profile: {} },
     pdfPath: "NDA-2026-001-beta.pdf",
+    pdfFileId: "file-1",
     signatureFields: { pages: 3, fields: [] },
   });
   await pool!.query("update documents.documents set status = $2, docuseal_template_id = 42, docuseal_submission_id = 77, signing_links = $3::jsonb where id = $1", [id, status, JSON.stringify(LINKS)]);

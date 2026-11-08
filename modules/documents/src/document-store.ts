@@ -16,17 +16,20 @@ export interface NewDocument {
   /** The values asked for this document and the profile values the body used, so it can be rebuilt later. */
   data: { values: Record<string, string>; profile: Record<string, string> };
   /** Relative to the documents folder. */
+  /** The display name of the PDF (REF-counterparty.pdf). */
   pdfPath: string;
+  /** The id the platform's file store gave the PDF. */
+  pdfFileId: string;
   signatureFields: { pages: number; fields: SignatureField[] };
 }
 
 /** Insert a generated document. The `ref` is unique, so a number can never be used twice. */
 export async function insertGeneratedDocument(db: Queryable, document: NewDocument): Promise<number> {
   const { rows } = await db.query(
-    `insert into documents.documents (ref, template_id, template_body_snapshot, title, counterparty_name, data, status, pdf_path, signature_fields)
-     values ($1, $2, $3, $4, $5, $6::jsonb, 'generated', $7, $8::jsonb)
+    `insert into documents.documents (ref, template_id, template_body_snapshot, title, counterparty_name, data, status, pdf_path, pdf_file_id, signature_fields)
+     values ($1, $2, $3, $4, $5, $6::jsonb, 'generated', $7, $8, $9::jsonb)
      returning id`,
-    [document.ref, document.templateId, document.templateBodySnapshot, document.title, document.counterpartyName, JSON.stringify(document.data), document.pdfPath, JSON.stringify(document.signatureFields)],
+    [document.ref, document.templateId, document.templateBodySnapshot, document.title, document.counterpartyName, JSON.stringify(document.data), document.pdfPath, document.pdfFileId, JSON.stringify(document.signatureFields)],
   );
   return Number(rows[0]!.id);
 }
@@ -105,10 +108,11 @@ export async function getDocument(db: Queryable, id: number): Promise<DocumentDe
   };
 }
 
-/** The stored location of a document's PDF, relative to the documents folder. Treat it as untrusted. */
-export async function getDocumentPdfPath(db: Queryable, id: number): Promise<string | null> {
-  const { rows } = await db.query("select pdf_path from documents.documents where id = $1", [id]);
-  return hasStoredPdf(rows[0]?.pdf_path) ? rows[0].pdf_path : null;
+/** The display name and the file-store id of a document's PDF, or null when it has none (a row from before the file store has no id). */
+export async function getDocumentPdf(db: Queryable, id: number): Promise<{ name: string; fileId: string } | null> {
+  const { rows } = await db.query("select pdf_path, pdf_file_id from documents.documents where id = $1", [id]);
+  const row = rows[0];
+  return row && hasStoredPdf(row.pdf_path) && typeof row.pdf_file_id === "string" && row.pdf_file_id !== "" ? { name: row.pdf_path, fileId: row.pdf_file_id } : null;
 }
 
 /** The id of the document with this reference, or null: how a creation finds out whether its commit happened. */

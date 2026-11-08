@@ -25,6 +25,12 @@ describe("documents manifest", () => {
     }
   });
 
+  it("declares its files as PDFs only, with no permission, so a browser can only get one through the module's own route", () => {
+    assert.deepEqual(documents.files?.accept, ["application/pdf"]);
+    assert.equal(documents.files?.permission, undefined);
+    assert.ok((documents.files?.maxBytes ?? 0) > 0);
+  });
+
   it("ships ordered migrations and raises the version with them", () => {
     const files = readdirSync(migrationsDir).filter((name) => name.endsWith(".sql")).sort();
     assert.ok(files.length >= 1);

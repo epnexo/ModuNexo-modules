@@ -10,7 +10,7 @@ import type { PdfEngine, RenderFailure, RenderResult } from "../src/pdf-engine.t
 import type { Transactional } from "../src/transaction.ts";
 import { saveProfile } from "../src/profile-store.ts";
 import { archiveTemplate, createTemplate } from "../src/template-store.ts";
-import { type TestDb, openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, fakeFiles, openMigratedPool } from "./helpers/db.ts";
 
 let pool: TestDb | undefined;
 let skipReason: string | undefined;
@@ -29,6 +29,7 @@ afterEach(async () => {
 });
 
 beforeEach(async () => {
+  fakeFiles?.stored.splice(0);
   dir = await mkdtemp(join(tmpdir(), "documents-create-"));
   if (!pool) return;
   await pool.query("delete from documents.documents");
@@ -71,7 +72,10 @@ async function seed(extra: { body?: string; counterpartyMarker?: string | null; 
 const make = (templateId: number, engine: PdfEngine, fields: Record<string, string | undefined> = FIELDS) => createDocument({ db: pool!, engine, dir, now: NOW }, { templateId, fields });
 const count = async (table: string) => Number((await pool!.query(`select count(*) as n from documents.${table}`)).rows[0].n);
 const lastNumber = async () => (await pool!.query("select last_number from documents.counters where prefix = 'NDA' and year = 2026")).rows[0]?.last_number as number | undefined;
+/** What is left in the scratch folder: nothing, once a creation ends. */
 const files = async () => (await readdir(dir)).sort();
+/** The PDFs the platform's file store holds. */
+const stored = () => fakeFiles!.stored;
 
 describe("createDocument: success", () => {
   test("numbers the document, renders it, stores the row and the file, and answers with the id and reference", async () => {
@@ -91,9 +95,14 @@ describe("createDocument: success", () => {
     assert.equal(row.template_body_snapshot, BODY);
     assert.equal(row.pdf_path, "NDA-2026-001-beta-ltd-co.pdf");
     assert.deepEqual(row.signature_fields, { pages: 3, fields: [{ id: "firma-1", page: 2, x: 0.1, y: 0.4, w: 0.38, h: 0.07 }] });
-    assert.equal(await readFile(join(dir, row.pdf_path), "utf8"), "%PDF-fake");
-    assert.deepEqual(await files(), ["NDA-2026-001-beta-ltd-co.pdf"], "no temporary file is left");
-    assert.equal((await stat(join(dir, row.pdf_path))).mode & 0o077, 0, "the file is private to its owner");
+    assert.equal(stored().length, 1);
+    const [pdf] = stored();
+    assert.equal(Buffer.from(pdf!.bytes).toString("utf8"), "%PDF-fake");
+    assert.equal(pdf!.meta.name, "NDA-2026-001-beta-ltd-co.pdf");
+    assert.equal(pdf!.meta.ref, "document:NDA-2026-001");
+    assert.equal(row.pdf_file_id, pdf!.meta.id, "the document keeps the id the file store gave");
+    assert.ok(pdf!.tx !== undefined, "the PDF was stored in the same transaction as the row");
+    assert.deepEqual(await files(), [], "no temporary file is left");
     assert.equal(calls.length, 1);
   });
 
@@ -141,7 +150,8 @@ describe("createDocument: success", () => {
     const results = await Promise.all(Array.from({ length: 4 }, (_, i) => make(id, fakeEngine().engine, { ...FIELDS, B_NOMBRE: `Party ${i}` })));
     assert.ok(results.every((r) => r.ok));
     assert.deepEqual(results.map((r) => (r.ok ? r.ref : "")).sort(), ["NDA-2026-001", "NDA-2026-002", "NDA-2026-003", "NDA-2026-004"]);
-    assert.equal((await files()).length, 4);
+    assert.equal(stored().length, 4);
+    assert.deepEqual(await files(), [], "no temporary file is left");
     assert.equal(await lastNumber(), 4);
   });
 
@@ -157,7 +167,8 @@ describe("createDocument: success", () => {
 describe("createDocument: nothing is stored when it fails", () => {
   const assertNothingLeft = async () => {
     assert.equal(await count("documents"), 0, "no row");
-    assert.deepEqual(await files(), [], "no file, temporary or final");
+    assert.deepEqual(await files(), [], "no temporary file");
+    assert.deepEqual(stored(), [], "no stored PDF");
     assert.equal(await lastNumber(), undefined, "no number consumed");
   };
 
@@ -184,17 +195,19 @@ describe("createDocument: nothing is stored when it fails", () => {
     await pool!.query("insert into documents.documents (ref, template_id, template_body_snapshot, title, counterparty_name) values ('NDA-2026-001', $1, 'x', 't', 'c')", [id]);
     await assert.rejects(make(id, fakeEngine().engine), { code: "23505" });
     assert.deepEqual(await files(), []);
+    assert.deepEqual(stored(), [], "the PDF stored in the failed transaction is gone with it");
     assert.equal(await lastNumber(), undefined);
     assert.equal(await count("documents"), 1);
   });
 
-  test("a file that cannot be moved into place leaves nothing", async () => {
+  test("a file store that refuses the PDF leaves no row, no stored file and no consumed number", async () => {
     const id = await seed();
-    await mkdir(join(dir, "NDA-2026-001-beta-ltd-co.pdf"));
-    await assert.rejects(make(id, fakeEngine().engine));
+    fakeFiles!.failNextPut(new Error("the store is full"));
+    await assert.rejects(make(id, fakeEngine().engine), /the store is full/);
     assert.equal(await count("documents"), 0);
     assert.equal(await lastNumber(), undefined);
-    assert.deepEqual(await files(), ["NDA-2026-001-beta-ltd-co.pdf"], "only the folder the test made");
+    assert.deepEqual(stored(), []);
+    assert.deepEqual(await files(), [], "no temporary file");
   });
 
   test("a folder that cannot be written to fails cleanly", async (t) => {
@@ -236,35 +249,37 @@ function failingCommit(how: { committed: boolean; code?: string; verifyFails?: b
 }
 const makeWith = (db: Transactional, templateId: number, engine: PdfEngine = fakeEngine().engine) => createDocument({ db, engine, dir, now: NOW }, { templateId, fields: FIELDS });
 
-describe("createDocument: the commit fails after the PDF was moved into place", () => {
-  test("a commit that did not happen leaves no row, no final file and no consumed number", async () => {
+describe("createDocument: the commit fails after the PDF was stored", () => {
+  test("a commit that did not happen leaves no row, no stored file and no consumed number", async () => {
     const id = await seed();
     await assert.rejects(makeWith(failingCommit({ committed: false }), id), /Connection terminated/);
     assert.equal(await count("documents"), 0);
+    assert.deepEqual(stored(), []);
     assert.deepEqual(await files(), []);
     assert.equal(await lastNumber(), undefined);
   });
 
-  test("a commit refused by the server with an error code is a certain rollback: the file goes", async () => {
+  test("a commit refused by the server with an error code is a certain rollback: the stored file goes with it", async () => {
     const id = await seed();
     await assert.rejects(makeWith(failingCommit({ committed: false, code: "40001", verifyFails: true }), id), { code: "40001" });
+    assert.deepEqual(stored(), []);
     assert.deepEqual(await files(), []);
     assert.equal(await count("documents"), 0);
   });
 
-  test("a commit that did happen although the failure was reported keeps the file and answers with the document", async () => {
+  test("a commit that did happen although the failure was reported keeps the stored file and answers with the document", async () => {
     const id = await seed();
     const result = await makeWith(failingCommit({ committed: true }), id);
     assert.ok(result.ok, "the row exists, so the document was created");
-    assert.deepEqual(await files(), ["NDA-2026-001-beta-ltd-co.pdf"]);
+    assert.deepEqual(stored().map((file) => file.meta.name), ["NDA-2026-001-beta-ltd-co.pdf"]);
     assert.equal(await count("documents"), 1);
     assert.equal(await lastNumber(), 1);
   });
 
-  test("when the outcome cannot be found out, the file stays: a file without a row is harmless, a row without its file is not", async () => {
+  test("when the outcome cannot be found out, the stored file stays: a file without a row is harmless, a row without its file is not", async () => {
     const id = await seed();
     await assert.rejects(makeWith(failingCommit({ committed: true, verifyFails: true }), id), /Connection terminated/);
-    assert.deepEqual(await files(), ["NDA-2026-001-beta-ltd-co.pdf"]);
+    assert.deepEqual(stored().map((file) => file.meta.name), ["NDA-2026-001-beta-ltd-co.pdf"]);
     assert.equal(await count("documents"), 1);
   });
 });

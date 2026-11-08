@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { type DbQueryable, putFile } from "@modunexo/sdk";
 import { takeNumber } from "./counter-store.ts";
 import { COUNTERPARTY_FIELD, type DocumentFieldSpec, documentFields, validateDocumentValues } from "./document-rules.ts";
 import { findDocumentIdByRef, insertGeneratedDocument } from "./document-store.ts";
-import { ensureDir, moveIntoPlace, pdfFileName, removeQuietly } from "./file-store.ts";
+import { ensureDir, pdfFileName, removeQuietly } from "./file-store.ts";
 import { buildDocumentHtml } from "./document-html.ts";
 import { listMarkers, splitMarkers } from "./markers.ts";
 import { formatReference } from "./reference.ts";
@@ -62,8 +64,6 @@ class Unfilled extends Error {
   }
 }
 
-/** True for an error the server sent back with its SQLSTATE: the statement was refused, so nothing was committed. */
-const refusedByServer = (error: unknown) => /^[0-9A-Z]{5}$/.test(String((error as { code?: unknown } | null)?.code));
 
 /**
  * The fields a template asks for a new document: its per-document markers, with the counterparty name first, labelled
@@ -96,9 +96,9 @@ export async function createDocument(deps: CreateDeps, input: { templateId: numb
   const year = now.getUTCFullYear();
 
   const temporary = join(deps.dir, `.tmp-${randomUUID()}.pdf`);
-  let finalPath: string | undefined;
   let issued: string | undefined;
   try {
+    // The row and the stored PDF are written in one transaction: the platform keeps the file exactly when the row commits.
     return await inTransaction(deps.db, async (tx): Promise<CreateResult> => {
       const ref = formatReference(template.refPrefix, year, await takeNumber(tx, template.refPrefix, year));
       issued = ref;
@@ -115,6 +115,7 @@ export async function createDocument(deps: CreateDeps, input: { templateId: numb
       if (!rendered.ok) throw new RenderRefused(rendered.reason);
 
       const pdfPath = pdfFileName(ref, counterpartyName);
+      const stored = await putFile("documents", { name: pdfPath, data: await readFile(temporary), ref: `document:${ref}` }, { tx: tx as unknown as DbQueryable });
       const id = await insertGeneratedDocument(tx, {
         ref,
         templateId: template.id,
@@ -123,25 +124,28 @@ export async function createDocument(deps: CreateDeps, input: { templateId: numb
         counterpartyName,
         data: { values, profile: used },
         pdfPath,
+        pdfFileId: stored.id,
         signatureFields: { pages: rendered.pages, fields: rendered.fields },
       });
-      await moveIntoPlace(temporary, join(deps.dir, pdfPath));
-      finalPath = join(deps.dir, pdfPath);
       return { ok: true, id, ref };
     });
   } catch (error) {
-    await removeQuietly(temporary);
     if (error instanceof RenderRefused) return { ok: false, kind: "render", reason: error.reason };
     if (error instanceof Unresolved) return { ok: false, kind: "invalid", errors: error.errors, values: counterpartyMarker === null ? { ...checked.values, [COUNTERPARTY_FIELD]: checked.counterpartyName } : checked.values };
     if (error instanceof Unfilled) return { ok: false, kind: "unfilled", markers: error.markers };
-    if (finalPath) {
-      const outcome = refusedByServer(error) ? "rolled-back" : await commitOutcome(deps.db, issued!);
-      if (typeof outcome === "number") return { ok: true, id: outcome, ref: issued! };
-      if (outcome === "rolled-back") await removeQuietly(finalPath);
+    // A failure that came with no answer from the server may be a commit that did happen: the document is then there, and the platform keeps its PDF.
+    if (issued && !refusedByServer(error)) {
+      const outcome = await commitOutcome(deps.db, issued);
+      if (typeof outcome === "number") return { ok: true, id: outcome, ref: issued };
     }
     throw error;
+  } finally {
+    await removeQuietly(temporary);
   }
 }
+
+/** An error the server itself answered with (a five-character code): the transaction was certainly rolled back. */
+const refusedByServer = (error: unknown) => /^[0-9A-Z]{5}$/.test(String((error as { code?: unknown } | null)?.code));
 
 /** After a commit that ended without an answer: the id when the document exists, "rolled-back" when it does not, "unknown" when that cannot be found out. */
 async function commitOutcome(db: Transactional, ref: string): Promise<number | "rolled-back" | "unknown"> {

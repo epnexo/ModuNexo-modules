@@ -48,6 +48,7 @@ async function insert(extra: { fields?: unknown[]; pdfPath?: string | null; ref?
     counterpartyName: extra.counterpartyName ?? "Beta",
     data: { values: { B_NOMBRE: "Beta" }, profile: extra.profile ?? { A_CORTO: "Acme", A_NOMBRE: "Acme Corp" } },
     pdfPath: "NDA-2026-001-beta.pdf",
+    pdfFileId: "file-1",
     signatureFields: { pages: 3, fields: (extra.fields ?? BOXES) as never },
   });
   if (extra.pdfPath !== undefined) await pool!.query("update documents.documents set pdf_path = $2 where id = $1", [id, extra.pdfPath]);

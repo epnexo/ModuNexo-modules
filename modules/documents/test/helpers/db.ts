@@ -6,6 +6,7 @@ import { createScratchDatabase } from "@modunexo/core/testing";
 import type pg from "pg";
 import type { Transactional } from "../../src/transaction.ts";
 import documents from "../../manifest.ts";
+import { type FakeFiles, installFakeFiles } from "./files.ts";
 
 const MODULE_DIR = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -14,6 +15,9 @@ const MODULE_DIR = fileURLToPath(new URL("../../", import.meta.url));
  * on one connection between begin and commit, like the platform's handle.
  */
 export type TestDb = pg.Pool & Transactional;
+
+/** The fake file store of the current test database, for the tests that look at what was stored. */
+export let fakeFiles: FakeFiles | undefined;
 
 function withTransaction(pool: pg.Pool): TestDb {
   return Object.assign(pool, {
@@ -26,6 +30,7 @@ function withTransaction(pool: pg.Pool): TestDb {
         return done;
       } catch (error) {
         await client.query("rollback").catch(() => undefined);
+        fakeFiles?.dropFor(client as never);
         throw error;
       } finally {
         client.release();
@@ -47,8 +52,10 @@ export async function openMigratedPool(_suffix: string): Promise<{ pool?: TestDb
   registry.register(documents);
   await migrate(pool, registry, { moduleDirs: { documents: MODULE_DIR } });
   await pool.query("insert into core.modules (id, state, installed_version) values ('documents', 'enabled', $1)", [documents.version]);
+  fakeFiles = installFakeFiles();
   const end = pool.end.bind(pool);
   pool.end = (async () => {
+    fakeFiles?.uninstall();
     await end();
     await scratch.drop();
   }) as typeof pool.end;

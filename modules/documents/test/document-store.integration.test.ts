@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
 import type pg from "pg";
-import { getDocument, getDocumentPdfPath, insertGeneratedDocument } from "../src/document-store.ts";
+import { getDocument, getDocumentPdf, insertGeneratedDocument } from "../src/document-store.ts";
 import { createTemplate } from "../src/template-store.ts";
 import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 
@@ -26,7 +26,7 @@ const test = (name: string, run: () => Promise<void>) =>
     await run();
   });
 
-async function insert(extra: { ref?: string; pdfPath?: string } = {}) {
+async function insert(extra: { ref?: string; pdfPath?: string; pdfFileId?: string } = {}) {
   const created = await createTemplate(pool!, { name: "Mutual NDA", slug: "nda", kind: "nda", refPrefix: "NDA", bodyHtml: "<p>x</p>", counterpartyMarker: null });
   assert.ok(created.ok);
   const templateId = created.ok ? created.id : 0;
@@ -38,6 +38,7 @@ async function insert(extra: { ref?: string; pdfPath?: string } = {}) {
     counterpartyName: "Beta",
     data: { values: { B_NOMBRE: "Beta" }, profile: { A_NOMBRE: "Acme" } },
     pdfPath: extra.pdfPath ?? "NDA-2026-001-beta.pdf",
+    pdfFileId: extra.pdfFileId ?? "file-1",
     signatureFields: { pages: 3, fields: [] },
   });
   return id;
@@ -99,7 +100,7 @@ describe("document store", () => {
 
   test("returns null for an unknown id", async () => {
     assert.equal(await getDocument(pool!, 999999), null);
-    assert.equal(await getDocumentPdfPath(pool!, 999999), null);
+    assert.equal(await getDocumentPdf(pool!, 999999), null);
   });
 
   test("copes with a row that has no layout or data (a document from before this task)", async () => {
@@ -107,29 +108,31 @@ describe("document store", () => {
     await pool!.query("update documents.documents set data = '{}'::jsonb, signature_fields = null, pdf_path = null where id = $1", [id]);
     const document = await getDocument(pool!, id);
     assert.deepEqual([document?.pages, document?.values, document?.profile, document?.hasPdf], [null, {}, {}, false]);
-    assert.equal(await getDocumentPdfPath(pool!, id), null);
+    assert.equal(await getDocumentPdf(pool!, id), null);
   });
 
-  test("one rule says a document has a PDF, for the detail page and for the download: a blank path is none", async () => {
+  test("one rule says a document has a PDF, for the detail page and for the download: a blank name is none, and so is a missing file id", async () => {
     const id = await insert();
     for (const blank of ["", "   "]) {
       await pool!.query("update documents.documents set pdf_path = $2 where id = $1", [id, blank]);
       assert.equal((await getDocument(pool!, id))?.hasPdf, false, JSON.stringify(blank));
-      assert.equal(await getDocumentPdfPath(pool!, id), null, JSON.stringify(blank));
+      assert.equal(await getDocumentPdf(pool!, id), null, JSON.stringify(blank));
     }
-    await pool!.query("update documents.documents set pdf_path = 'a.pdf' where id = $1", [id]);
-    assert.deepEqual([(await getDocument(pool!, id))?.hasPdf, await getDocumentPdfPath(pool!, id)], [true, "a.pdf"]);
+    await pool!.query("update documents.documents set pdf_path = 'a.pdf', pdf_file_id = null where id = $1", [id]);
+    assert.equal(await getDocumentPdf(pool!, id), null, "a row from before the file store has no PDF to download");
+    await pool!.query("update documents.documents set pdf_file_id = 'file-1' where id = $1", [id]);
+    assert.deepEqual([(await getDocument(pool!, id))?.hasPdf, await getDocumentPdf(pool!, id)], [true, { name: "a.pdf", fileId: "file-1" }]);
   });
 
-  test("hands out the stored path", async () => {
+  test("hands out the stored name and file id", async () => {
     const id = await insert({ pdfPath: "NDA-2026-001-beta.pdf" });
-    assert.equal(await getDocumentPdfPath(pool!, id), "NDA-2026-001-beta.pdf");
+    assert.deepEqual(await getDocumentPdf(pool!, id), { name: "NDA-2026-001-beta.pdf", fileId: "file-1" });
   });
 
   test("refuses a second document with the same reference", async () => {
     await insert();
     const { rows } = await pool!.query("select id from documents.templates limit 1");
-    const again = insertGeneratedDocument(pool!, { ref: "NDA-2026-001", templateId: Number(rows[0].id), templateBodySnapshot: "x", title: "t", counterpartyName: "c", data: { values: {}, profile: {} }, pdfPath: "x.pdf", signatureFields: { pages: 1, fields: [] } });
+    const again = insertGeneratedDocument(pool!, { ref: "NDA-2026-001", templateId: Number(rows[0].id), templateBodySnapshot: "x", title: "t", counterpartyName: "c", data: { values: {}, profile: {} }, pdfPath: "x.pdf", pdfFileId: "file-x", signatureFields: { pages: 1, fields: [] } });
     await assert.rejects(again, { code: "23505" });
   });
 });

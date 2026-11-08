@@ -10,7 +10,7 @@ import type { PdfEngine } from "../src/pdf-engine.ts";
 import { saveProfile } from "../src/profile-store.ts";
 import { createTemplate } from "../src/template-store.ts";
 import type { VariableSettings } from "../src/variables.ts";
-import { type TestDb, openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, fakeFiles, openMigratedPool } from "./helpers/db.ts";
 
 let pool: TestDb | undefined;
 let skipReason: string | undefined;
@@ -28,6 +28,7 @@ afterEach(async () => {
   await rm(dir, { recursive: true, force: true });
 });
 beforeEach(async () => {
+  fakeFiles?.stored.splice(0);
   dir = await mkdtemp(join(tmpdir(), "documents-create-references-"));
   rendered = [];
   renders = 0;
@@ -106,7 +107,8 @@ describe("createDocument with values that use other fields", () => {
     assert.equal(row.title, "Mutual NDA — Beta S.A.");
     assert.equal(row.counterparty_name, "Beta S.A.");
     assert.equal(row.pdf_path, pdfFileName("NDA-2026-001", "Beta S.A."));
-    assert.deepEqual(await folder(), [row.pdf_path]);
+    assert.deepEqual(fakeFiles!.stored.map((file) => file.meta.name), [row.pdf_path]);
+    assert.deepEqual(await folder(), [], "no temporary file is left");
   });
 
   test("a group typed in a value that is not a known marker is still printed as typed", async () => {
