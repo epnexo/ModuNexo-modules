@@ -14,7 +14,8 @@ export const DOCUMENTS_CSS = `
 .page-tabs a:hover { background: var(--panel-hover); color: var(--foreground); }
 .page-tabs a[aria-current="page"] { background: var(--surface); color: var(--foreground); font-weight: 500; box-shadow: var(--shadow-raised); }
 
-.page-body { display: flex; flex-direction: column; gap: 1.25rem; padding: 1.25rem 1.5rem 2rem; max-width: 72rem; }
+.page-body { --portlet-pad: 1rem; display: flex; flex-direction: column; gap: 1.25rem; padding: 1.25rem 1.5rem 2rem; max-width: 72rem; }
+code { font-family: var(--font-mono); font-size: 0.85em; }
 .muted { color: var(--muted-foreground); }
 .num { font-variant-numeric: tabular-nums; }
 .right { text-align: right; }

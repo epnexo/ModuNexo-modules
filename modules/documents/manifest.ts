@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "documents",
-  version: "0.5.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.5.1", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Documents",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -47,6 +47,7 @@ export default defineModule({
     { path: "/documents/[id]/signed-pdf", entry: "./web/signed-pdf-route.ts", kind: "route", methods: ["GET"], permission: "documents.read" },
     { path: "/documents/templates/create", entry: "./web/template-create.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
     { path: "/documents/templates/update", entry: "./web/template-update.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
+    { path: "/documents/templates/import-nda", entry: "./web/template-import-nda.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
     { path: "/documents/templates/archive", entry: "./web/template-archive.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
     { path: "/documents/settings/save", entry: "./web/profile-save.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
     { path: "/documents/create", entry: "./web/document-create.ts", kind: "route", methods: ["POST"], permission: "documents.write" },

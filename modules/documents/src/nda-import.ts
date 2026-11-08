@@ -53,18 +53,39 @@ async function readSkillFile(dir: string, relative: string, optional = false): P
   }
 }
 
+/** The three files of the skill, as text. The script is needed: the NDA's optional clause is read from it. */
+export interface NdaFiles {
+  templateHtml: string;
+  configText: string;
+  script: string;
+}
+
+/** The files do not describe an NDA the import can read. The message is safe to show. */
+export class ImportInputError extends Error {}
+
 export async function importNda(db: Transactional, skillDir: string): Promise<ImportReport> {
   const templateHtml = await readSkillFile(skillDir, "templates/nda.html");
   const configText = await readSkillFile(skillDir, "config.json");
   const script = await readSkillFile(skillDir, "scripts/nda.py", true);
+  return importNdaFiles(db, { templateHtml, configText, script });
+}
+
+/** The import itself, from the files' text: the CLI-less path, used by the web form that uploads them. */
+export async function importNdaFiles(db: Transactional, files: NdaFiles): Promise<ImportReport> {
+  const { templateHtml, configText, script } = files;
   let config: unknown;
   try {
     config = JSON.parse(configText);
   } catch {
-    throw new Error("config.json in the skill folder is not valid JSON.");
+    throw new ImportInputError("config.json in the skill folder is not valid JSON.");
   }
 
-  const ported = portNda({ templateHtml, script, config });
+  let ported: ReturnType<typeof portNda>;
+  try {
+    ported = portNda({ templateHtml, script, config });
+  } catch (error) {
+    throw new ImportInputError(error instanceof Error ? error.message : "The skill files could not be ported.", { cause: error });
+  }
   // One transaction: a failure in any write leaves none of them behind.
   const done = await inTransaction(db, async (tx) => {
     const profileAdded = await addMissingProfileKeys(tx, ported.profile);
