@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { DOCUMENTS_CSS } from "./styles.ts";
 
 export type Section = "documents" | "templates" | "profile";
 
@@ -12,6 +13,8 @@ const SECTIONS: { id: Section; label: string; href: string }[] = [
 /** Page bar shared by every page of the module: title and description on the left, the module's sections on the right. */
 export function PageBar({ title, description, current, actions }: { title: string; description?: ReactNode; current: Section; actions?: ReactNode }) {
   return (
+    <>
+    <style>{DOCUMENTS_CSS}</style>
     <header className="page-bar">
       <div className="page-bar-text">
         <h1>{title}</h1>
@@ -28,5 +31,6 @@ export function PageBar({ title, description, current, actions }: { title: strin
         {actions}
       </nav>
     </header>
+    </>
   );
 }
