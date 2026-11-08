@@ -1,28 +1,6 @@
 {
-  "name": "@epnexo/documents",
-  "version": "0.1.0",
+  "name": "@local/documents",
+  "version": "0.2.0",
   "private": true,
-  "type": "module",
-  "exports": {
-    "./manifest": "./manifest.ts",
-    "./web/page": "./web/page.tsx",
-    "./web/page-templates": "./web/page-templates.tsx",
-    "./web/page-template-new": "./web/page-template-new.tsx",
-    "./web/page-template-edit": "./web/page-template-edit.tsx",
-    "./web/page-settings": "./web/page-settings.tsx",
-    "./web/page-new-document": "./web/page-new-document.tsx",
-    "./web/page-document": "./web/page-document.tsx",
-    "./web/pdf-route": "./web/pdf-route.ts",
-    "./web/signed-pdf-route": "./web/signed-pdf-route.ts",
-    "./web/template-preview-route": "./web/template-preview-route.ts"
-  },
-  "dependencies": {
-    "@epnexo/core": "*",
-    "pg": "^8.13.0"
-  },
-  "peerDependencies": {
-    "next": ">=16",
-    "react": ">=19",
-    "react-dom": ">=19"
-  }
+  "type": "module"
 }

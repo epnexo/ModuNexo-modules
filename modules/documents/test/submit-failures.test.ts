@@ -1,3 +1,4 @@
+import { DbUnavailableError } from "@modunexo/sdk";
 import assert from "node:assert/strict";
 import { printed } from "./helpers/printed.ts";
 import { describe, it } from "node:test";
@@ -61,18 +62,18 @@ describe("submitNewDocumentWith: setting up the engine, the pool and the folder"
     assert.match(printed(logged), /TypeError/);
   });
 
-  it("names the database setting when the pool cannot be built for lack of DATABASE_URL", async (t) => {
+  it("tells the operator to install and enable the module when the platform gives no data handle", async (t) => {
     t.mock.method(console, "error", () => {});
     const outcome = await submitNewDocumentWith(() => {
-      throw new Error("DATABASE_URL is not set");
+      throw new DbUnavailableError();
     }, typed);
     assert.ok("state" in outcome);
-    if ("state" in outcome) assert.match(outcome.state.message!, /DATABASE_URL/);
+    if ("state" in outcome) assert.match(outcome.state.message!, /installed and enabled/);
   });
 
   it("carries on with the dependencies it was given when setting up works", async (t) => {
     t.mock.method(console, "error", () => {});
-    const down = { query: async () => Promise.reject(Object.assign(new Error("x"), { code: "ECONNREFUSED" })), connect: async () => Promise.reject(new Error("down")) };
+    const down = { query: async () => Promise.reject(Object.assign(new Error("x"), { code: "ECONNREFUSED" })), transaction: async () => Promise.reject(new Error("down")) };
     const outcome = await submitNewDocumentWith(() => ({ db: down, engine: { render: async () => ({ ok: false as const, reason: "timeout" as const }) }, dir: "/nowhere" }), typed);
     assert.ok("state" in outcome);
     if ("state" in outcome) assert.match(outcome.state.message!, /unreachable/);

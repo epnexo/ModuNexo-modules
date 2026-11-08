@@ -1,29 +1,56 @@
 import { fileURLToPath } from "node:url";
-import { Registry, coreManifest, discoverModules, migrate } from "@epnexo/core";
-import { openTestPool, resolveTestDatabaseUrl } from "@epnexo/core/testing";
+import { createPool } from "@modunexo/core/pool";
+import { Registry } from "@modunexo/core/registry";
+import { migrate } from "@modunexo/core/runner";
+import { createScratchDatabase } from "@modunexo/core/testing";
 import type pg from "pg";
+import type { Transactional } from "../../src/transaction.ts";
+import documents from "../../manifest.ts";
 
-const modulesDir = fileURLToPath(new URL("../../..", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../", import.meta.url));
 
-/** Environment whose test database is `<name>_<suffix>_test`, so each test file of the module gets its own database. */
-export function testEnv(suffix: string): NodeJS.ProcessEnv {
-  const base = resolveTestDatabaseUrl();
-  if (!base) return process.env;
-  const url = new URL(base);
-  url.pathname = url.pathname.replace(/_test$/, `_${suffix}_test`);
-  return { ...process.env, TEST_DATABASE_URL: url.toString() };
+/**
+ * A pool plus the `transaction` method `getDb(...)` has, so the stores run against it unchanged. `transaction` runs
+ * on one connection between begin and commit, like the platform's handle.
+ */
+export type TestDb = pg.Pool & Transactional;
+
+function withTransaction(pool: pg.Pool): TestDb {
+  return Object.assign(pool, {
+    async transaction<T>(run: (tx: { query: pg.Pool["query"] }) => Promise<T>): Promise<T> {
+      const client = await pool.connect();
+      try {
+        await client.query("begin");
+        const done = await run(client as never);
+        await client.query("commit");
+        return done;
+      } catch (error) {
+        await client.query("rollback").catch(() => undefined);
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+  }) as unknown as TestDb;
 }
 
-/** A pool on a fresh `documents` schema with every migration applied, or the reason there is none. */
-export async function openMigratedPool(suffix: string): Promise<{ pool?: pg.Pool; skipReason?: string }> {
-  const { pool, skipReason } = await openTestPool(testEnv(suffix));
-  if (!pool) return { skipReason };
-  await pool.query("drop schema if exists documents cascade");
-  const tracking = await pool.query("select to_regclass('core.schema_migrations') is not null as present");
-  if (tracking.rows[0].present) await pool.query("delete from core.schema_migrations where module_id = 'documents'");
+/**
+ * A pool on a scratch database with every `documents` migration applied, or the reason there is none. Ending the pool
+ * drops the scratch database. `suffix` is kept so each test file reads the same as before.
+ */
+export async function openMigratedPool(_suffix: string): Promise<{ pool?: TestDb; skipReason?: string }> {
+  const scratch = await createScratchDatabase();
+  if (!scratch.url) return { skipReason: scratch.skipReason };
+  const pool = createPool(scratch.url);
   const registry = new Registry();
-  registry.register(coreManifest);
-  for (const manifest of await discoverModules(modulesDir)) registry.register(manifest);
-  await migrate(pool, registry);
-  return { pool };
+  registry.registerCore();
+  registry.register(documents);
+  await migrate(pool, registry, { moduleDirs: { documents: MODULE_DIR } });
+  await pool.query("insert into core.modules (id, state, installed_version) values ('documents', 'enabled', $1)", [documents.version]);
+  const end = pool.end.bind(pool);
+  pool.end = (async () => {
+    await end();
+    await scratch.drop();
+  }) as typeof pool.end;
+  return { pool: withTransaction(pool) };
 }

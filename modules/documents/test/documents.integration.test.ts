@@ -1,40 +1,22 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { Registry, coreManifest, discoverModules, migrate } from "@epnexo/core";
-import { openTestPool, resolveTestDatabaseUrl } from "@epnexo/core/testing";
-import type pg from "pg";
+import { Registry } from "@modunexo/core/registry";
+import { migrate } from "@modunexo/core/runner";
+import documents from "../manifest.ts";
 import { listDocuments } from "../web/queries.ts";
+import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 
-const modulesDir = fileURLToPath(new URL("../..", import.meta.url));
-
-let pool: pg.Pool | undefined;
+let pool: TestDb | undefined;
 let skipReason: string | undefined;
 /** Rows counted right after the migration ran, before any test inserted anything. */
 let rowsAfterMigrate: Record<string, number> = {};
 
-/** The module gets its own database (`<name>_documents_test`) so parallel test files never see its rows. */
-function documentsTestEnv(): NodeJS.ProcessEnv {
-  const base = resolveTestDatabaseUrl();
-  if (!base) return process.env;
-  const url = new URL(base);
-  url.pathname = url.pathname.replace(/_test$/, "_documents_test");
-  return { ...process.env, TEST_DATABASE_URL: url.toString() };
-}
-
 const TABLES = ["templates", "documents", "counters", "settings"];
 
 before(async () => {
-  ({ pool, skipReason } = await openTestPool(documentsTestEnv()));
+  ({ pool, skipReason } = await openMigratedPool("documents"));
   if (!pool) return;
-  // Start from nothing so "zero rows after migrate" is checked against a fresh schema on every run.
-  await pool.query("drop schema if exists documents cascade");
-  const tracking = await pool.query("select to_regclass('core.schema_migrations') is not null as present");
-  if (tracking.rows[0].present) await pool.query("delete from core.schema_migrations where module_id = 'documents'");
-  const registry = new Registry();
-  registry.register(coreManifest);
-  for (const manifest of await discoverModules(modulesDir)) registry.register(manifest);
-  await migrate(pool, registry);
   for (const table of TABLES) {
     rowsAfterMigrate[table] = Number((await pool.query(`select count(*) as n from documents.${table}`)).rows[0].n);
   }
@@ -90,9 +72,10 @@ describe("documents schema", () => {
 
   test("applies nothing on a second run", async () => {
     const registry = new Registry();
-    registry.register(coreManifest);
-    for (const manifest of await discoverModules(modulesDir)) registry.register(manifest);
-    assert.deepEqual((await migrate(pool!, registry)).applied, []);
+    registry.registerCore();
+    registry.register(documents);
+    const moduleDir = fileURLToPath(new URL("../", import.meta.url));
+    assert.deepEqual((await migrate(pool!, registry, { moduleDirs: { documents: moduleDir } })).applied, []);
   });
 
   test("rejects an unknown template kind and a duplicate slug", async () => {

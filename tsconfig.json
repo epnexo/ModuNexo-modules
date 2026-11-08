@@ -2,5 +2,5 @@
   "extends": "../ModuNexo/tsconfig.base.json",
   "compilerOptions": { "jsx": "react-jsx", "types": ["node"] },
   "include": ["modules/**/*.ts", "modules/**/*.tsx", "tests/**/*.ts"],
-  "exclude": ["node_modules", "dist", "modules/documents"]
+  "exclude": ["node_modules", "dist"]
 }

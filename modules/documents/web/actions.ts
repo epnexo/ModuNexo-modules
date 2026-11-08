@@ -1,6 +1,6 @@
 "use server";
 
-import { getPool } from "@epnexo/core/pool";
+import { getDb } from "@modunexo/sdk";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { docusealFromEnv } from "../src/docuseal-client.ts";
@@ -26,29 +26,29 @@ function fields(formData: FormData): FormInput {
 }
 
 export async function createTemplateAction(_previous: TemplateFormState, formData: FormData): Promise<TemplateFormState> {
-  const outcome = await submitNewTemplate(getPool(), fields(formData));
+  const outcome = await submitNewTemplate(getDb("documents"), fields(formData));
   if ("redirectTo" in outcome) redirect(outcome.redirectTo);
   return outcome.state;
 }
 
 export async function updateTemplateAction(_previous: TemplateFormState, formData: FormData): Promise<TemplateFormState> {
-  const outcome = await submitTemplateUpdate(getPool(), fields(formData));
+  const outcome = await submitTemplateUpdate(getDb("documents"), fields(formData));
   if ("redirectTo" in outcome) redirect(outcome.redirectTo);
   return outcome.state;
 }
 
 export async function archiveTemplateAction(_previous: ArchiveFormState, formData: FormData): Promise<ArchiveFormState> {
-  const outcome = await submitArchive(getPool(), fields(formData));
+  const outcome = await submitArchive(getDb("documents"), fields(formData));
   if ("redirectTo" in outcome) redirect(outcome.redirectTo);
   return outcome.state;
 }
 
 export async function saveProfileAction(_previous: ProfileFormState, formData: FormData): Promise<ProfileFormState> {
-  return submitProfile(getPool(), fields(formData));
+  return submitProfile(getDb("documents"), fields(formData));
 }
 
 export async function createDocumentAction(_previous: DocumentFormState, formData: FormData): Promise<DocumentFormState> {
-  const outcome = await submitNewDocumentWith(() => ({ db: getPool(), engine: pdfEngineFromEnv(), dir: documentsDir() }), fields(formData));
+  const outcome = await submitNewDocumentWith(() => ({ db: getDb("documents"), engine: pdfEngineFromEnv(), dir: documentsDir() }), fields(formData));
   if ("redirectTo" in outcome) redirect(outcome.redirectTo);
   return outcome.state;
 }
@@ -56,7 +56,7 @@ export async function createDocumentAction(_previous: DocumentFormState, formDat
 /** The pool and the DocuSeal client (null when `DOCUSEAL_URL` or `DOCUSEAL_API_TOKEN` is missing), built when an action runs. */
 function signingDeps() {
   const client = docusealFromEnv(process.env);
-  return { db: getPool(), docuseal: client.ok ? client.value : null };
+  return { db: getDb("documents"), docuseal: client.ok ? client.value : null };
 }
 
 export async function sendForSignatureAction(_previous: DocumentFormState, formData: FormData): Promise<DocumentFormState> {
@@ -66,7 +66,7 @@ export async function sendForSignatureAction(_previous: DocumentFormState, formD
 }
 
 export async function clearUnfinishedSendAction(_previous: ClearSendFormState, formData: FormData): Promise<ClearSendFormState> {
-  const outcome = await submitClearSendWith(() => ({ db: getPool() }), fields(formData));
+  const outcome = await submitClearSendWith(() => ({ db: getDb("documents") }), fields(formData));
   if ("redirectTo" in outcome) redirect(outcome.redirectTo);
   return outcome.state;
 }

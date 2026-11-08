@@ -2,46 +2,38 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { inTransaction } from "../src/transaction.ts";
 
-/** A fake pool that records the statements and how its connection was released. */
-function fakePool(failOn?: string) {
-  const log: string[] = [];
-  const released: unknown[] = [];
-  const client = {
-    query: async (text: string) => {
-      log.push(text);
-      if (text === failOn) throw new Error(`${text} failed`);
-      return { rows: [] };
+/** A fake data handle that records what `transaction` was asked to run. */
+function fakeDb(failWith?: Error) {
+  const statements: string[] = [];
+  const tx = { query: async (text: string) => (statements.push(text), { rows: [], rowCount: 0 }) };
+  const db = {
+    query: async () => ({ rows: [] }),
+    transaction: async <T>(run: (t: typeof tx) => Promise<T>): Promise<T> => {
+      statements.push("begin");
+      try {
+        const done = await run(tx);
+        statements.push("commit");
+        return done;
+      } catch (error) {
+        statements.push("rollback");
+        throw failWith ?? error;
+      }
     },
-    release: (error?: Error | boolean) => void released.push(error),
   };
-  return { db: { query: async () => ({ rows: [] }), connect: async () => client }, log, released };
+  return { db, statements };
 }
 
 describe("inTransaction", () => {
-  it("begins, runs the work on the one connection, commits and releases it", async () => {
-    const { db, log, released } = fakePool();
+  it("runs the work on the handle the platform gives it and returns its result", async () => {
+    const { db, statements } = fakeDb();
     const result = await inTransaction(db, async (tx) => (await tx.query("work"), "done"));
     assert.equal(result, "done");
-    assert.deepEqual(log, ["begin", "work", "commit"]);
-    assert.deepEqual(released, [false]);
+    assert.deepEqual(statements, ["begin", "work", "commit"]);
   });
 
-  it("rolls back and rethrows when the work fails", async () => {
-    const { db, log, released } = fakePool();
+  it("rethrows the error of the work, after the platform rolled it back", async () => {
+    const { db, statements } = fakeDb();
     await assert.rejects(inTransaction(db, async () => Promise.reject(new Error("boom"))), /boom/);
-    assert.deepEqual(log, ["begin", "rollback"]);
-    assert.deepEqual(released, [false]);
-  });
-
-  it("rolls back when the commit fails", async () => {
-    const { db, log } = fakePool("commit");
-    await assert.rejects(inTransaction(db, async () => 1), /commit failed/);
-    assert.deepEqual(log, ["begin", "commit", "rollback"]);
-  });
-
-  it("releases the connection as broken when the rollback itself fails, and still rethrows the first error", async () => {
-    const { db, released } = fakePool("rollback");
-    await assert.rejects(inTransaction(db, async () => Promise.reject(new Error("first"))), /first/);
-    assert.deepEqual(released, [true]);
+    assert.deepEqual(statements, ["begin", "rollback"]);
   });
 });

@@ -11,10 +11,10 @@ import { saveProfile } from "../src/profile-store.ts";
 import { archiveTemplate, createTemplate } from "../src/template-store.ts";
 import { type PreviewDeps, previewTemplatePdf } from "../web/template-preview-route.ts";
 import type { Queryable } from "../web/queries.ts";
-import { openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 import { printed } from "./helpers/printed.ts";
 
-let pool: pg.Pool | undefined;
+let pool: TestDb | undefined;
 let skipReason: string | undefined;
 let base: string;
 let tmpBase: string;

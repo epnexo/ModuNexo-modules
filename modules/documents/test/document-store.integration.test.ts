@@ -3,9 +3,9 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import type pg from "pg";
 import { getDocument, getDocumentPdfPath, insertGeneratedDocument } from "../src/document-store.ts";
 import { createTemplate } from "../src/template-store.ts";
-import { openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 
-let pool: pg.Pool | undefined;
+let pool: TestDb | undefined;
 let skipReason: string | undefined;
 
 before(async () => {

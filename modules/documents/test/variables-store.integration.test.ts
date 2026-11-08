@@ -3,9 +3,9 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import type pg from "pg";
 import type { TemplateInput } from "../src/template-rules.ts";
 import { archiveTemplate, createTemplate, getTemplate, listTemplates, lockVariables, setVariables, updateTemplate } from "../src/template-store.ts";
-import { openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 
-let pool: pg.Pool | undefined;
+let pool: TestDb | undefined;
 let skipReason: string | undefined;
 
 before(async () => {

@@ -1,30 +1,15 @@
+import type { DbQueryable } from "@modunexo/sdk";
 import type { Queryable } from "../web/queries.ts";
 
-/** What a transaction needs from a pool: a way to check out one connection. A `pg.Pool` satisfies it. */
+/** What a transaction needs from the data handle: a way to run several statements as one unit. `getDb(...)` satisfies it. */
 export interface Transactional extends Queryable {
-  connect(): Promise<Queryable & { release(error?: Error | boolean): void }>;
+  transaction<T>(run: (tx: DbQueryable) => Promise<T>): Promise<T>;
 }
 
 /**
- * Run `work` on one connection between BEGIN and COMMIT. Any error rolls back and is rethrown; a failed rollback
- * releases the connection as broken, so the pool discards it instead of reusing it.
+ * Run `work` as one unit: all of its statements commit, or none does. An error rolls everything back and is rethrown.
+ * Do not call another service from inside `work`: the transaction stays open while it waits.
  */
-export async function inTransaction<T>(db: Transactional, work: (tx: Queryable) => Promise<T>): Promise<T> {
-  const client = await db.connect();
-  let broken = false;
-  try {
-    await client.query("begin");
-    const result = await work(client);
-    await client.query("commit");
-    return result;
-  } catch (error) {
-    try {
-      await client.query("rollback");
-    } catch {
-      broken = true;
-    }
-    throw error;
-  } finally {
-    client.release(broken);
-  }
+export function inTransaction<T>(db: Transactional, work: (tx: Queryable) => Promise<T>): Promise<T> {
+  return db.transaction((tx) => work(tx));
 }

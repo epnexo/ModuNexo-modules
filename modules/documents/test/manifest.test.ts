@@ -1,28 +1,33 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { Registry, coreManifest, discoverModules, readMigrationFiles } from "@epnexo/core";
+import { validateManifest } from "@modunexo/sdk";
+import documents from "../manifest.ts";
 
-const modulesDir = fileURLToPath(new URL("../..", import.meta.url));
+const moduleDir = fileURLToPath(new URL("../", import.meta.url));
+const migrationsDir = fileURLToPath(new URL("../migrations/", import.meta.url));
 
 describe("documents manifest", () => {
-  it("is discovered, valid and installs after the core", async () => {
-    const registry = new Registry();
-    registry.register(coreManifest);
-    for (const manifest of await discoverModules(modulesDir)) registry.register(manifest);
-
-    const documents = registry.get("documents");
-    assert.ok(documents);
-    assert.equal(documents.schema, "documents");
-    assert.deepEqual(documents.nav, [{ label: "Documents", href: "/documents" }]);
-    const order = registry.resolveOrder().map((m) => m.id);
-    assert.ok(order.indexOf("documents") > order.indexOf("core"));
+  it("is valid, owns its schema and guards every page with a permission", () => {
+    const checked = validateManifest(documents);
+    assert.equal(checked.schema, "documents");
+    assert.deepEqual(documents.nav, [{ label: "Documents", href: "/documents", icon: "file", permission: "documents.read" }]);
+    for (const page of documents.pages ?? []) assert.ok(page.permission, `${page.path} has no permission`);
   });
 
-  it("ships ordered migrations", async () => {
-    const manifest = (await discoverModules(modulesDir)).find((m) => m.id === "documents")!;
-    const files = readMigrationFiles(manifest.migrationsDir);
+  it("points every page and route at a file that exists, and every page exports its metadata", () => {
+    for (const page of documents.pages ?? []) {
+      const file = join(moduleDir, page.entry);
+      assert.ok(existsSync(file), `${page.path}: ${page.entry} is missing`);
+      if (page.kind === "page") assert.match(readFileSync(file, "utf8"), /export const metadata\b/, `${page.path} must export metadata`);
+    }
+  });
+
+  it("ships ordered migrations and raises the version with them", () => {
+    const files = readdirSync(migrationsDir).filter((name) => name.endsWith(".sql")).sort();
     assert.ok(files.length >= 1);
-    assert.equal(files[0]!.filename, "0001_init.sql");
+    assert.equal(files[0], "0001_init.sql");
   });
 });

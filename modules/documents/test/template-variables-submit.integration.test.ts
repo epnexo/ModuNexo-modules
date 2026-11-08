@@ -5,9 +5,9 @@ import { saveProfile } from "../src/profile-store.ts";
 import { archiveTemplate, createTemplate, getTemplate } from "../src/template-store.ts";
 import type { VariableSettings } from "../src/variables.ts";
 import { submitNewTemplate, submitTemplateUpdate } from "../web/submit.ts";
-import { openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 
-let pool: pg.Pool | undefined;
+let pool: TestDb | undefined;
 let skipReason: string | undefined;
 
 before(async () => {

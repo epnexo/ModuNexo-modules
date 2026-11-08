@@ -179,7 +179,7 @@ describe("document page: a sent document", () => {
     for (const text of ["Acme", "Beta Ltd", "ana@acme.test", "ben@beta.test", "Signed", "2026-10-12 10:00", "Opened", "2026-10-12 09:30"]) assert.ok(markup.includes(text), text);
     assert.match(markup, /<a [^>]*href="https:\/\/sign\.example\.test\/s\/AAA-link"[^>]*target="_blank"[^>]*rel="noopener noreferrer"[^>]*>/);
     assert.match(markup, /<code[^>]*>https:\/\/sign\.example\.test\/s\/AAA-link<\/code>/);
-    assert.match(markup, /href="http:\/\/192\.168\.1\.20:3000\/s\/BBB-link"/);
+    assert.match(markup, /href="http:\/\/192\.0\.2\.10:3000\/s\/BBB-link"/);
     assert.doesNotMatch(markup, /aria-label="Send for signature"/);
   });
 

@@ -1,4 +1,4 @@
-import { describeDbError } from "@epnexo/core/pool";
+import { describeDbError } from "../src/db-error.ts";
 import { describeDocusealError, refreshedMessage } from "../src/docuseal-messages.ts";
 import { parseDocumentId } from "../src/document-rules.ts";
 import { type RefreshDeps, refreshSignature } from "../src/refresh-signature.ts";

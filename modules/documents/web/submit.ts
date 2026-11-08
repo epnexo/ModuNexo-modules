@@ -1,4 +1,4 @@
-import { describeDbError } from "@epnexo/core/pool";
+import { describeDbError } from "../src/db-error.ts";
 import { PROFILE_FIELDS, validateProfile } from "../src/profile.ts";
 import { listMarkers, splitMarkers } from "../src/markers.ts";
 import { getProfile, saveProfile } from "../src/profile-store.ts";

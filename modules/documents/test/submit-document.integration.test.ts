@@ -8,9 +8,9 @@ import { type PdfEngine, createPdfEngine } from "../src/pdf-engine.ts";
 import { saveProfile } from "../src/profile-store.ts";
 import { archiveTemplate, createTemplate } from "../src/template-store.ts";
 import { submitNewDocument } from "../web/submit-document.ts";
-import { openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 
-let pool: pg.Pool | undefined;
+let pool: TestDb | undefined;
 let skipReason: string | undefined;
 let dir: string;
 
@@ -88,7 +88,7 @@ describe("submitNewDocument", () => {
     const templateId = await seed();
     let reads = 0;
     const profile = { get A_NOMBRE() { return reads++ < 2 ? "Acme" : undefined; } };
-    const db = { query: (text: string, values?: unknown[]) => (text.includes("documents.settings") ? Promise.resolve({ rows: [{ profile }] }) : pool!.query(text, values)), connect: () => pool!.connect() };
+    const db = { query: (text: string, values?: unknown[]) => (text.includes("documents.settings") ? Promise.resolve({ rows: [{ profile }] }) : pool!.query(text, values)), transaction: (run: never) => pool!.transaction(run) };
     const outcome = await submitNewDocument({ db: db as never, engine, dir }, { templateId, ...FIELDS });
     assert.ok("state" in outcome);
     if (!("state" in outcome)) return;
@@ -130,7 +130,7 @@ describe("submitNewDocument", () => {
   });
 
   test("answers a database failure with a safe message and keeps the values", async () => {
-    const down = { query: async () => Promise.reject(Object.assign(new Error("connect failed postgres://u:hunter2@db.internal/x"), { code: "ECONNREFUSED" })), connect: async () => Promise.reject(new Error("down")) };
+    const down = { query: async () => Promise.reject(Object.assign(new Error("connect failed postgres://u:hunter2@db.internal/x"), { code: "ECONNREFUSED" })), transaction: async () => Promise.reject(new Error("down")) };
     const outcome = await submitNewDocument({ db: down, engine, dir }, { templateId: "1", ...FIELDS });
     assert.ok("state" in outcome);
     if (!("state" in outcome)) return;

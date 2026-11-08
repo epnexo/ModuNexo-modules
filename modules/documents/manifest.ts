@@ -1,11 +1,29 @@
-import { defineManifest } from "@epnexo/core";
+import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
-export default defineManifest({
+export default defineModule({
   id: "documents",
-  version: "0.1.0",
+  version: "0.2.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Documents",
-  dependsOn: [],
-  schema: "documents",
+  platform: `^${SDK_VERSION}`,
+  dependsOn: {},
+  schema: "documents", // the Postgres schema this module owns
   migrationsDir: "migrations",
-  nav: [{ label: "Documents", href: "/documents" }],
+  permissions: [
+    { key: "documents.read", label: "Read documents and templates" },
+    { key: "documents.write", label: "Create and change documents, templates and the owner profile" },
+    { key: "documents.send", label: "Send a document to be signed" },
+  ],
+  nav: [{ label: "Documents", href: "/documents", icon: "file", permission: "documents.read" }],
+  pages: [
+    { path: "/documents", entry: "./web/page.tsx", kind: "page", dynamic: "force-dynamic", permission: "documents.read" },
+    { path: "/documents/new", entry: "./web/page-new-document.tsx", kind: "page", dynamic: "force-dynamic", permission: "documents.write" },
+    { path: "/documents/settings", entry: "./web/page-settings.tsx", kind: "page", dynamic: "force-dynamic", permission: "documents.write" },
+    { path: "/documents/templates", entry: "./web/page-templates.tsx", kind: "page", dynamic: "force-dynamic", permission: "documents.read" },
+    { path: "/documents/templates/new", entry: "./web/page-template-new.tsx", kind: "page", dynamic: "force-dynamic", permission: "documents.write" },
+    { path: "/documents/templates/[id]", entry: "./web/page-template-edit.tsx", kind: "page", dynamic: "force-dynamic", permission: "documents.write" },
+    { path: "/documents/templates/[id]/preview", entry: "./web/template-preview-route.ts", kind: "route", methods: ["GET"], permission: "documents.read" },
+    { path: "/documents/[id]", entry: "./web/page-document.tsx", kind: "page", dynamic: "force-dynamic", permission: "documents.read" },
+    { path: "/documents/[id]/pdf", entry: "./web/pdf-route.ts", kind: "route", methods: ["GET"], permission: "documents.read" },
+    { path: "/documents/[id]/signed-pdf", entry: "./web/signed-pdf-route.ts", kind: "route", methods: ["GET"], permission: "documents.read" },
+  ],
 });

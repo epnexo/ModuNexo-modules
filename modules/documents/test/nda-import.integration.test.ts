@@ -9,9 +9,9 @@ import { getProfile, saveProfile } from "../src/profile-store.ts";
 import { archiveTemplate, getTemplateBySlug, listTemplates, updateTemplate } from "../src/template-store.ts";
 import type { VariableSettings } from "../src/variables.ts";
 import { SCRIPT, SCRIPT_FULL, TEMPLATE, config } from "./helpers/nda-fixture.ts";
-import { openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 
-let pool: pg.Pool | undefined;
+let pool: TestDb | undefined;
 let skipReason: string | undefined;
 let skillDir: string;
 
@@ -137,13 +137,8 @@ describe("importNda", () => {
   test("writes the template and the profile in one transaction: a failing profile write leaves no template", async () => {
     const failsOnSettings = {
       query: pool!.query.bind(pool!),
-      connect: async () => {
-        const client = await pool!.connect();
-        return {
-          query: (text: string, values?: unknown[]) => (/documents\.settings/.test(text) ? Promise.reject(new Error("boom")) : client.query(text, values)),
-          release: (error?: Error | boolean) => client.release(error),
-        };
-      },
+      transaction: <T,>(run: (tx: { query: TestDb["query"] }) => Promise<T>) =>
+        pool!.transaction((tx) => run({ query: ((text: string, values?: unknown[]) => (/documents\.settings/.test(text) ? Promise.reject(new Error("boom")) : tx.query(text, values))) as never })),
     };
     await assert.rejects(importNda(failsOnSettings, skillDir), /boom/);
     assert.equal(Number((await pool!.query("select count(*) as n from documents.templates")).rows[0].n), 0);
@@ -306,13 +301,8 @@ describe("importNda: the NDA's variable settings", () => {
   test("the settings and the template are written together: a failing write leaves neither", async () => {
     const failsOnSettings = {
       query: pool!.query.bind(pool!),
-      connect: async () => {
-        const client = await pool!.connect();
-        return {
-          query: (text: string, values?: unknown[]) => (/documents\.settings/.test(text) ? Promise.reject(new Error("boom")) : client.query(text, values)),
-          release: (error?: Error | boolean) => client.release(error),
-        };
-      },
+      transaction: <T,>(run: (tx: { query: TestDb["query"] }) => Promise<T>) =>
+        pool!.transaction((tx) => run({ query: ((text: string, values?: unknown[]) => (/documents\.settings/.test(text) ? Promise.reject(new Error("boom")) : tx.query(text, values))) as never })),
     };
     await assert.rejects(importNda(failsOnSettings, skillDir), /boom/);
     assert.equal(await getTemplateBySlug(pool!, "nda"), null);

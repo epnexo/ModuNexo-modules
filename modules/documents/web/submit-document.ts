@@ -1,4 +1,4 @@
-import { describeDbError } from "@epnexo/core/pool";
+import { describeDbError } from "../src/db-error.ts";
 import { createDocument } from "../src/create-document.ts";
 import { type PdfEngine, describeRenderFailure } from "../src/pdf-engine.ts";
 import { parseTemplateId } from "../src/template-rules.ts";

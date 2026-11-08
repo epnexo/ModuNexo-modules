@@ -6,9 +6,9 @@ import type { DocusealClient, DocusealError, DocusealResult, SubmissionSigner } 
 import { insertGeneratedDocument } from "../src/document-store.ts";
 import { refreshSignature } from "../src/refresh-signature.ts";
 import { createTemplate } from "../src/template-store.ts";
-import { openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 
-let pool: pg.Pool | undefined;
+let pool: TestDb | undefined;
 let skipReason: string | undefined;
 
 before(async () => {

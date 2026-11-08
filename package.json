@@ -6,7 +6,7 @@
   "type": "module",
   "description": "Modules for the Modunexo platform, each packed as an archive you install with `modules add`.",
   "scripts": {
-    "test": "node --import tsx --test --test-force-exit tests/**/*.test.ts",
+    "test": "node --import tsx --test --test-force-exit tests/**/*.test.ts modules/documents/test/*.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "pack": "bash scripts/pack.sh"
   },

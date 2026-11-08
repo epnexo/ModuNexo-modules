@@ -1,4 +1,4 @@
-import { getPool } from "@epnexo/core/pool";
+import { getDb } from "@modunexo/sdk";
 import { docusealFromEnv } from "../src/docuseal-client.ts";
 import { describeDocusealError, docusealCode } from "../src/docuseal-messages.ts";
 import { parseDocumentId } from "../src/document-rules.ts";
@@ -77,6 +77,6 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const { id } = await context.params;
   return downloadSignedPdfWith(() => {
     const client = docusealFromEnv(process.env);
-    return { db: getPool(), docuseal: client.ok ? client.value : null };
+    return { db: getDb("documents"), docuseal: client.ok ? client.value : null };
   }, id);
 }

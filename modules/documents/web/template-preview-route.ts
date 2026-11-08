@@ -1,4 +1,4 @@
-import { getPool } from "@epnexo/core/pool";
+import { getDb } from "@modunexo/sdk";
 import { type PdfEngine, type RenderFailure, describeRenderFailure, pdfEngineFromEnv } from "../src/pdf-engine.ts";
 import { parseTemplateId } from "../src/template-rules.ts";
 import { type TemplatePreviewDeps, renderTemplatePreview } from "../src/template-preview.ts";
@@ -69,7 +69,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   let db;
   try {
     engine = pdfEngineFromEnv();
-    db = getPool();
+    db = getDb("documents");
   } catch (error) {
     logFailure("could not set up the template preview", error);
     return plain(500, "The template preview could not be built. Details are in the server log.");

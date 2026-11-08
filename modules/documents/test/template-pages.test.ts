@@ -78,7 +78,7 @@ describe("templates page", () => {
     quiet(t);
     const markup = html(await renderTemplatesPage(async () => Promise.reject(Object.assign(new Error("x"), { code: "42P01" }))));
     assert.match(markup, /Templates are unavailable/);
-    assert.match(markup, /npm run db:migrate/);
+    assert.match(markup, /install or upgrade the module/i);
     assert.match(markup, /href="\/documents"/);
   });
 });

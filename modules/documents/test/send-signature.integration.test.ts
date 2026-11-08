@@ -7,9 +7,9 @@ import { SEND_MAX_DURATION_MS, clearUnfinishedSend, sendForSignature } from "../
 import { createTemplate } from "../src/template-store.ts";
 import type { Transactional } from "../src/transaction.ts";
 import { printed } from "./helpers/printed.ts";
-import { openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 
-let pool: pg.Pool | undefined;
+let pool: TestDb | undefined;
 let skipReason: string | undefined;
 
 before(async () => {
@@ -475,7 +475,7 @@ describe("sendForSignature", () => {
       let fails = faults.recordFails ?? 0;
       let loses = faults.recordLosesAnswer ?? 0;
       let commit = faults.commitLosesAnswer ?? false;
-      const wrap = (target: pg.Pool | pg.PoolClient) => ({
+      const wrap = (target: { query: pg.Pool["query"] }) => ({
         query: async (text: string, values?: unknown[]) => {
           const isRecord = /update\s+documents\.documents[\s\S]*docuseal_submission_id\s*=\s*\$3/i.test(text);
           const fault = () => Object.assign(new Error(`connection reset ${LINK_A} ana@acme.test`), { code: "ECONNRESET" });
@@ -492,22 +492,22 @@ describe("sendForSignature", () => {
             await faults.onRecordFault?.();
             throw fault();
           }
-          if (commit && /^\s*commit\s*;?\s*$/i.test(text)) {
-            commit = false;
-            injected.commit += 1;
-            await target.query(text, values);
-            throw fault();
-          }
           return target.query(text, values);
         },
       });
       const db = {
         ...wrap(pool!),
-        connect: async () => {
-          const client = await pool!.connect();
-          return { ...wrap(client), release: (error?: Error | boolean) => client.release(error as never) };
+        transaction: async <T,>(run: (tx: ReturnType<typeof wrap>) => Promise<T>): Promise<T> => {
+          const done = await pool!.transaction((tx) => run(wrap(tx as never)));
+          // The platform commits for the module, so a lost commit answer is the commit happening and the call failing.
+          if (commit) {
+            commit = false;
+            injected.commit += 1;
+            throw Object.assign(new Error(`connection reset ${LINK_A} ana@acme.test`), { code: "ECONNRESET" });
+          }
+          return done;
         },
-      } as Transactional;
+      } as unknown as Transactional;
       return { db, injected };
     }
 

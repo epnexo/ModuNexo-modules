@@ -1,7 +1,7 @@
 import { type FileHandle, open } from "node:fs/promises";
 import { basename } from "node:path";
 import { Readable } from "node:stream";
-import { getPool } from "@epnexo/core/pool";
+import { getDb } from "@modunexo/sdk";
 import { parseDocumentId } from "../src/document-rules.ts";
 import { getDocumentPdfPath } from "../src/document-store.ts";
 import { documentsDir, resolveInside } from "../src/file-store.ts";
@@ -79,5 +79,5 @@ export function wantsInline(url: string): boolean {
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }): Promise<Response> {
   const { id } = await context.params;
-  return downloadPdf(getPool(), documentsDir(), id, { inline: wantsInline(request.url) });
+  return downloadPdf(getDb("documents"), documentsDir(), id, { inline: wantsInline(request.url) });
 }

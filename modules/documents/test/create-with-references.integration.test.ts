@@ -10,9 +10,9 @@ import type { PdfEngine } from "../src/pdf-engine.ts";
 import { saveProfile } from "../src/profile-store.ts";
 import { createTemplate } from "../src/template-store.ts";
 import type { VariableSettings } from "../src/variables.ts";
-import { openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 
-let pool: pg.Pool | undefined;
+let pool: TestDb | undefined;
 let skipReason: string | undefined;
 let dir: string;
 let rendered: string[];

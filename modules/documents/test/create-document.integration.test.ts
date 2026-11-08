@@ -10,9 +10,9 @@ import type { PdfEngine, RenderFailure, RenderResult } from "../src/pdf-engine.t
 import type { Transactional } from "../src/transaction.ts";
 import { saveProfile } from "../src/profile-store.ts";
 import { archiveTemplate, createTemplate } from "../src/template-store.ts";
-import { openMigratedPool } from "./helpers/db.ts";
+import { type TestDb, openMigratedPool } from "./helpers/db.ts";
 
-let pool: pg.Pool | undefined;
+let pool: TestDb | undefined;
 let skipReason: string | undefined;
 let dir: string;
 
@@ -220,16 +220,17 @@ function failingCommit(how: { committed: boolean; code?: string; verifyFails?: b
   const error = () => Object.assign(new Error(how.code ? "could not serialize access" : "Connection terminated unexpectedly"), how.code ? { code: how.code } : {});
   return {
     query: (text: string, values?: unknown[]) => (how.verifyFails && text.includes("where ref") ? Promise.reject(new Error("still down")) : pool!.query(text, values)),
-    async connect() {
-      const client = await pool!.connect();
-      return {
-        query: async (text: string, values?: unknown[]) => {
-          if (text !== "commit") return client.query(text, values);
-          await client.query(how.committed ? "commit" : "rollback");
-          throw error();
-        },
-        release: (broken?: Error | boolean) => client.release(broken),
-      };
+    // The platform commits for the module, so a failed commit is the call failing after the work ran: the commit really
+    // happened (the answer was lost) or it did not (the work is rolled back).
+    async transaction<T>(run: (tx: never) => Promise<T>): Promise<T> {
+      if (how.committed) {
+        await pool!.transaction(run as never);
+        throw error();
+      }
+      return pool!.transaction(async (tx) => {
+        await run(tx as never);
+        throw error();
+      });
     },
   } as unknown as Transactional;
 }
@@ -275,7 +276,7 @@ describe("createDocument: a marker that ends up without a value", () => {
     const profile = { get A_NOMBRE() { return reads++ < 2 ? "Acme" : undefined; } };
     return {
       query: (text: string, values?: unknown[]) => (text.includes("documents.settings") ? Promise.resolve({ rows: [{ profile }] }) : pool!.query(text, values)),
-      connect: () => pool!.connect(),
+      transaction: (run: never) => pool!.transaction(run),
     } as unknown as Transactional;
   };
 

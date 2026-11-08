@@ -1,4 +1,4 @@
-import { getPool } from "@epnexo/core/pool";
+import { getDb } from "@modunexo/sdk";
 import type { Metadata } from "next";
 import { docusealConfigured } from "../src/docuseal-client.ts";
 import { getDocument } from "../src/document-store.ts";
@@ -17,7 +17,7 @@ export default async function DocumentPage({ params, searchParams }: { params: P
     sent: typeof sent === "string" ? sent : undefined,
     refreshed: typeof refreshed === "string" ? refreshed : undefined,
     configured: docusealConfigured(),
-    loadOwner: async () => ownerSignerDefaults(await getProfile(getPool())),
-    load: (documentId) => getDocument(getPool(), documentId),
+    loadOwner: async () => ownerSignerDefaults(await getProfile(getDb("documents"))),
+    load: (documentId) => getDocument(getDb("documents"), documentId),
   });
 }
