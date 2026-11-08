@@ -17,8 +17,8 @@ const profileState = (extra: Partial<ProfileFormState> = {}): ProfileFormState =
 });
 
 const renderTemplate = (state: TemplateFormState, mode: "create" | "edit" = "create", counterpartyOptions: string[] = []) =>
-  renderToStaticMarkup(createElement(TemplateForm, { action: noop, initial: state, mode, id: mode === "edit" ? 7 : undefined, counterpartyOptions }));
-const renderProfile = (state: ProfileFormState) => renderToStaticMarkup(createElement(ProfileForm, { action: noop, initial: state }));
+  renderToStaticMarkup(createElement(TemplateForm, { endpoint: "/documents/test", initial: state, mode, id: mode === "edit" ? 7 : undefined, counterpartyOptions }));
+const renderProfile = (state: ProfileFormState) => renderToStaticMarkup(createElement(ProfileForm, { endpoint: "/documents/test", initial: state }));
 
 /** Every id referenced by an `aria-describedby` or a `for` attribute must exist in the markup. */
 function danglingReferences(markup: string): string[] {
@@ -144,14 +144,14 @@ describe("ProfileForm", () => {
 
 describe("ArchiveForm", () => {
   it("posts the checked id with a secondary button and explains what archiving does", () => {
-    const markup = renderToStaticMarkup(createElement(ArchiveForm, { action: noop, initial: {}, id: 7 }));
+    const markup = renderToStaticMarkup(createElement(ArchiveForm, { endpoint: "/documents/test", initial: {}, id: 7 }));
     assert.match(markup, /<input type="hidden" name="id" value="7"\/>/);
     assert.match(markup, /<button[^>]*class="btn"[^>]*>Archive template<\/button>/);
     assert.match(markup, /hidden from the list/i);
   });
 
   it("shows a message as an alert", () => {
-    const markup = renderToStaticMarkup(createElement(ArchiveForm, { action: noop, initial: { message: "This template no longer exists or is archived." }, id: 7 }));
+    const markup = renderToStaticMarkup(createElement(ArchiveForm, { endpoint: "/documents/test", initial: { message: "This template no longer exists or is archived." }, id: 7 }));
     assert.match(markup, /role="alert"/);
   });
 });

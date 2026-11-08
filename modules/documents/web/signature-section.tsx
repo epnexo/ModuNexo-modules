@@ -4,7 +4,7 @@ import { templateNameForPdf } from "../src/signature-payload.ts";
 import type { SigningLink } from "../src/signature-store.ts";
 import { Notice, Portlet } from "./components.tsx";
 import { ClearSendForm, SignatureForm, RefreshForm } from "./forms.tsx";
-import { clearUnfinishedSendAction, refreshSignatureAction, sendForSignatureAction } from "./actions.ts";
+import { ENDPOINTS } from "./endpoints.ts";
 import { formatCreated } from "./registry.ts";
 
 /** The signature part of the document page, for each state of a document. Everything shown from DocuSeal or the database is plain text. */
@@ -52,7 +52,7 @@ function UnfinishedSend({ document }: { document: DocumentDetail }) {
           <li>If it has a signature request for this document, do not send again: this page cannot link an existing request. Delete or archive that request in DocuSeal if you want to start over.</li>
           <li>When DocuSeal has no request for this document, clear the unfinished send below. Then you can send again.</li>
         </ol>
-        <ClearSendForm action={clearUnfinishedSendAction} initial={{}} documentId={document.id} />
+        <ClearSendForm endpoint={ENDPOINTS.clearSend} initial={{}} documentId={document.id} />
       </div>
     </Portlet>
   );
@@ -148,7 +148,7 @@ export function SignatureSection({ document, configured, owner, sent, refreshed 
           <li>Fill in the two signers below and send. The platform finds the template by that name, places the signature fields and creates the signing links.</li>
         </ol>
         <SignatureForm
-          action={sendForSignatureAction}
+          endpoint={ENDPOINTS.send}
           initial={{ values: { ownerName: owner.name, ownerEmail: owner.email, counterpartyName: document.counterpartyName, counterpartyEmail: "", order: "random" }, errors: {} }}
           documentId={document.id}
         />
@@ -175,7 +175,7 @@ export function SignatureSection({ document, configured, owner, sent, refreshed 
             </a>
           </div>
         ) : null}
-        {document.status === "sent" ? configured ? <RefreshForm action={refreshSignatureAction} initial={{}} documentId={document.id} /> : <NotConfigured /> : null}
+        {document.status === "sent" ? configured ? <RefreshForm endpoint={ENDPOINTS.refresh} initial={{}} documentId={document.id} /> : <NotConfigured /> : null}
       </div>
     </Portlet>
   );

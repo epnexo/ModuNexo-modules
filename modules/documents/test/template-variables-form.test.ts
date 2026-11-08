@@ -10,7 +10,7 @@ const noop = async <S,>(state: S) => state;
 const row = (marker: string, extra: Partial<VariableRow> = {}): VariableRow => ({ marker, label: "", help: "", kind: "", default: "", locale: "es", ...extra });
 const state = (extra: Partial<TemplateFormState> = {}): TemplateFormState => ({ values: EMPTY_TEMPLATE_VALUES, errors: {}, ...extra });
 const render = (s: TemplateFormState, mode: "create" | "edit" = "edit", options: string[] = []) =>
-  renderToStaticMarkup(createElement(TemplateForm, { action: noop, initial: s, mode, id: mode === "edit" ? 7 : undefined, counterpartyOptions: options }));
+  renderToStaticMarkup(createElement(TemplateForm, { endpoint: "/documents/test", initial: s, mode, id: mode === "edit" ? 7 : undefined, counterpartyOptions: options }));
 const ROWS = [row("B_NOMBRE", { label: "Nombre de la contraparte", help: "Razón social" }), row("FECHA", { kind: "date", locale: "en", label: "Fecha" }), row("FINALIDAD", { default: "evaluar" }), row("PIE")];
 
 function danglingReferences(markup: string): string[] {

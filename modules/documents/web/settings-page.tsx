@@ -1,4 +1,4 @@
-import { saveProfileAction } from "./actions.ts";
+import { ENDPOINTS } from "./endpoints.ts";
 import { ProfileForm } from "./forms.tsx";
 import { logFailure } from "./log.ts";
 import { PageBar } from "./nav.tsx";
@@ -27,7 +27,7 @@ export async function renderSettingsPage(load: () => Promise<Record<string, stri
     <div>
       <PageBar title="Owner profile" description={DESCRIPTION} current="profile" />
       <div className="page-body">
-        <ProfileForm action={saveProfileAction} initial={{ values, errors: {} }} />
+        <ProfileForm endpoint={ENDPOINTS.saveProfile} initial={{ values, errors: {} }} />
       </div>
     </div>
   );

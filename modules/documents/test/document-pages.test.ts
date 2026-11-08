@@ -196,7 +196,7 @@ describe("new document page: values that use other fields", () => {
 describe("DocumentForm", () => {
   const fields = documentFields(["B_NOMBRE", "B_DATOS"], "B_NOMBRE");
   const render = (state: { values?: Record<string, string>; errors?: Record<string, string>; message?: string }) =>
-    renderToStaticMarkup(createElement(DocumentForm, { action: async (s) => s, initial: { values: {}, errors: {}, ...state }, templateId: 7, fields }));
+    renderToStaticMarkup(createElement(DocumentForm, { endpoint: "/documents/test", initial: { values: {}, errors: {}, ...state }, templateId: 7, fields }));
 
   it("keeps the entered values, escaped", () => {
     const markup = render({ values: { B_NOMBRE: `A "q" <b>`, B_DATOS: "</textarea><script>1</script>" } });
@@ -218,7 +218,7 @@ describe("DocumentForm", () => {
 
   it("starts from the initial values of the fields and lets what the owner entered win over them, an emptied field included", () => {
     const withDefaults = documentFields(["B_NOMBRE", "B_DATOS"], "B_NOMBRE", { B_NOMBRE: { default: "Default name" }, B_DATOS: { default: "Default data" } });
-    const show = (values: Record<string, string>) => renderToStaticMarkup(createElement(DocumentForm, { action: async (s) => s, initial: { values, errors: {} }, templateId: 7, fields: withDefaults }));
+    const show = (values: Record<string, string>) => renderToStaticMarkup(createElement(DocumentForm, { endpoint: "/documents/test", initial: { values, errors: {} }, templateId: 7, fields: withDefaults }));
     const fresh = show({});
     assert.match(fresh, /name="B_NOMBRE"[^>]*value="Default name"/);
     assert.match(fresh, />Default data<\/textarea>/);
@@ -229,7 +229,7 @@ describe("DocumentForm", () => {
 
   it("keeps an expression as typed after a refusal and describes the fields it uses from what was typed", () => {
     const named = documentFields(["B_NOMBRE", "B_CORTO"], "B_NOMBRE", { B_NOMBRE: { label: "Nombre" }, B_CORTO: { label: "Corto", default: "{{B_NOMBRE}}" } });
-    const show = (values: Record<string, string>) => renderToStaticMarkup(createElement(DocumentForm, { action: async (s) => s, initial: { values, errors: { B_CORTO: "x" } }, templateId: 7, fields: named, profileKeys: ["A_CORTO"] }));
+    const show = (values: Record<string, string>) => renderToStaticMarkup(createElement(DocumentForm, { endpoint: "/documents/test", initial: { values, errors: { B_CORTO: "x" } }, templateId: 7, fields: named, profileKeys: ["A_CORTO"] }));
     const typed = show({ B_NOMBRE: "Beta", B_CORTO: "{{A_CORTO}} y {{B_NOMBRE}}" });
     assert.match(typed, /name="B_CORTO"[^>]*value="\{\{A_CORTO\}\} y \{\{B_NOMBRE\}\}"/);
     assert.match(typed, /Uses Short name \(profile\), Nombre\./);

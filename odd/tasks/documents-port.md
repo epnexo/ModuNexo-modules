@@ -20,7 +20,7 @@ Branch: feat/documents (worktree of modunexo-modules). Delivery: ask-on-risk. Te
 - [ ] T4 (S5) settings instead of environment variables. Route: inline.
 - [x] T5 (S6) test helpers on the new core testing API; run the integration tests against a scratch database. Route: inline.
 - [ ] T6 (S7) type-check clean, pack, install on a scratch platform, open the page with real data. Route: inline.
-- [ ] T8 (S9) replace the server actions in `web/actions.ts` with POST routes carrying `permission`. Risk: item 2 (permissions). Route: inline, own commit.
+- [x] T8 (S9) replace the server actions in `web/actions.ts` with POST routes carrying `permission`. Risk: item 2 (permissions). Route: inline, own commit.
 - [ ] T7 (S2) decide what replaces the `import-nda` CLI that opens its own pg pool. Route: inline.
 
 ## Log
@@ -29,3 +29,4 @@ Branch: feat/documents (worktree of modunexo-modules). Delivery: ask-on-risk. Te
 - L5: Behavior changes on purpose: the commit is made by the platform, so the commit-failure tests inject the fault around `transaction`; `describeDbError` is the module's own and keeps the `unreachable` and `The database query failed` wording; the missing-schema hint no longer says `npm run db:migrate`.
 - L1 (2026-11-08, user): "sí, empecemos a portar documents"
 - L2: Findings. The old API is used in ~20 files; stores already take a small `Queryable`, so they stay. Tests are mostly integration and skip without a database (237 skipped in the repo): T5 needs a scratch Postgres.
+- L6 (2026-11-08): T8 observed. The seven server actions are now eight POST routes with `permission` (`documents.write`, and `documents.send` for send and clear-send). Each route checks `Origin` against `Host`, caps the body at 1 MB, and answers a safe 500. Forms post with `fetch` so errors still show without a reload; redirects are followed only for paths on this site. 13 new tests; breaking the origin check on purpose made 2 of them fail. Full run: 1122 pass, 1 fail (the pre-existing assistant one).

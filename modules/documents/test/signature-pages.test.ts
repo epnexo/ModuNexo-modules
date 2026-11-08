@@ -159,7 +159,7 @@ describe("document page: an unfinished send", () => {
 });
 
 describe("ClearSendForm", () => {
-  const render = (state: { message?: string }) => renderToStaticMarkup(createElement(ClearSendForm, { action: async (s) => s, initial: state, documentId: 9 }));
+  const render = (state: { message?: string }) => renderToStaticMarkup(createElement(ClearSendForm, { endpoint: "/documents/test", initial: state, documentId: 9 }));
 
   it("has a hidden document id and one button, and shows an error as an alert", () => {
     const markup = render({});
@@ -259,7 +259,7 @@ describe("document page: a signed or closed document", () => {
 
 describe("SignatureForm", () => {
   const render = (state: { values?: Record<string, string>; errors?: Record<string, string>; message?: string }) =>
-    renderToStaticMarkup(createElement(SignatureForm, { action: async (s) => s, initial: { values: {}, errors: {}, ...state }, documentId: 9 }));
+    renderToStaticMarkup(createElement(SignatureForm, { endpoint: "/documents/test", initial: { values: {}, errors: {}, ...state }, documentId: 9 }));
 
   it("keeps the entered values, escaped, and selects the chosen order", () => {
     const markup = render({ values: { ownerName: `A "q" <b>`, counterpartyEmail: "</textarea><script>1</script>", order: "preserved" } });
@@ -283,7 +283,7 @@ describe("SignatureForm", () => {
 });
 
 describe("RefreshForm", () => {
-  const render = (state: { message?: string; done?: string; note?: string }) => renderToStaticMarkup(createElement(RefreshForm, { action: async (s) => s, initial: state, documentId: 9 }));
+  const render = (state: { message?: string; done?: string; note?: string }) => renderToStaticMarkup(createElement(RefreshForm, { endpoint: "/documents/test", initial: state, documentId: 9 }));
 
   it("shows an error as an alert, a confirmation as ok, and the note about an unknown status as a warning", () => {
     assert.match(render({ message: "DocuSeal refused the API token." }), /role="alert"[\s\S]*refused the API token/);

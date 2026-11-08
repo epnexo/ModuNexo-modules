@@ -5,7 +5,7 @@ import type { Profile } from "../src/profile.ts";
 import { parseTemplateId, templateFormValues } from "../src/template-rules.ts";
 import { variableRows } from "../src/variable-rules.ts";
 import type { Template } from "../src/template-store.ts";
-import { archiveTemplateAction, createTemplateAction, updateTemplateAction } from "./actions.ts";
+import { ENDPOINTS } from "./endpoints.ts";
 import { MarkerPanel, Notice, Portlet } from "./components.tsx";
 import { EMPTY_TEMPLATE_VALUES } from "./form-state.ts";
 import { ArchiveForm, TemplateForm } from "./forms.tsx";
@@ -38,7 +38,7 @@ export async function renderTemplateEditPage({
         <PageBar title="New template" description="Write the document as HTML and mark each value to fill with {{NAME}}." current="templates" />
         <div className="page-body">
           <Portlet title="Template">
-            <TemplateForm action={createTemplateAction} initial={{ values: EMPTY_TEMPLATE_VALUES, errors: {} }} mode="create" counterpartyOptions={[]} />
+            <TemplateForm endpoint={ENDPOINTS.createTemplate} initial={{ values: EMPTY_TEMPLATE_VALUES, errors: {} }} mode="create" counterpartyOptions={[]} />
           </Portlet>
         </div>
       </div>
@@ -85,7 +85,7 @@ export async function renderTemplateEditPage({
       <div className="page-body">
         <Portlet title="Template">
           <TemplateForm
-            action={updateTemplateAction}
+            endpoint={ENDPOINTS.updateTemplate}
             initial={{ values: templateFormValues(template), errors: {}, variables: variableRows(groups.perDocument, template.variables), ...(saved ? { saved: true } : {}) }}
             mode="edit"
             id={template.id}
@@ -104,7 +104,7 @@ export async function renderTemplateEditPage({
           </div>
         </Portlet>
         <Portlet title="Archive">
-          <ArchiveForm action={archiveTemplateAction} initial={{}} id={template.id} />
+          <ArchiveForm endpoint={ENDPOINTS.archiveTemplate} initial={{}} id={template.id} />
         </Portlet>
       </div>
     </div>

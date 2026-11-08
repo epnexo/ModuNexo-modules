@@ -3,7 +3,7 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useActionState, useEffect, useRef } from "react";
+import { type ReactNode, useActionState, useEffect, useMemo, useRef } from "react";
 import { PAGE_SIZES, PROFILE_FIELDS, PROFILE_SECTIONS, type ProfileField } from "../src/profile.ts";
 import { type DocumentFieldSpec, fieldUses, isMultiline } from "../src/document-rules.ts";
 import type { TemplateField } from "../src/template-rules.ts";
@@ -12,7 +12,10 @@ import { Notice, Portlet } from "./components.tsx";
 import type { ArchiveFormState, ClearSendFormState, DocumentFormState, ProfileFormState, RefreshFormState, TemplateFormState } from "./form-state.ts";
 import { TEMPLATE_KINDS } from "./queries.ts";
 
-type Action<S> = (previous: S, formData: FormData) => Promise<S>;
+import { postAction } from "./post-action.ts";
+
+/** The route a form posts to. The page passes the path; the permission of the route is checked by the platform. */
+const useRoute = <S extends object>(endpoint: string) => useMemo(() => postAction<S>(endpoint), [endpoint]);
 
 const KIND_LABELS: Record<(typeof TEMPLATE_KINDS)[number], string> = { nda: "NDA", contract: "Contract", proposal: "Proposal", other: "Other" };
 
@@ -229,19 +232,19 @@ function VariablesSection({ rows, errors }: { rows: VariableRow[]; errors: Recor
  * counterparty-name marker depends on the saved body, so a new template offers none until it is saved.
  */
 export function TemplateForm({
-  action,
+  endpoint,
   initial,
   mode,
   id,
   counterpartyOptions,
 }: {
-  action: Action<TemplateFormState>;
+  endpoint: string;
   initial: TemplateFormState;
   mode: "create" | "edit";
   id?: number | undefined;
   counterpartyOptions: string[];
 }) {
-  const [state, formAction, pending] = useActionState(action, initial);
+  const [state, formAction, pending] = useActionState(useRoute<TemplateFormState>(endpoint), initial);
   const form = useFocusFirstInvalid(Object.keys(state.errors).length > 0, state);
   const error = (field: TemplateField) => state.errors[field];
   const chosen = state.values.counterpartyMarker;
@@ -343,8 +346,8 @@ function ProfileControl({ field, aria, value }: { field: ProfileField; aria: Ari
   }
 }
 
-export function ProfileForm({ action, initial }: { action: Action<ProfileFormState>; initial: ProfileFormState }) {
-  const [state, formAction, pending] = useActionState(action, initial);
+export function ProfileForm({ endpoint, initial }: { endpoint: string; initial: ProfileFormState }) {
+  const [state, formAction, pending] = useActionState(useRoute<ProfileFormState>(endpoint), initial);
   const form = useFocusFirstInvalid(Object.keys(state.errors).length > 0, state);
 
   return (
@@ -371,8 +374,8 @@ export function ProfileForm({ action, initial }: { action: Action<ProfileFormSta
   );
 }
 
-export function ArchiveForm({ action, initial, id }: { action: Action<ArchiveFormState>; initial: ArchiveFormState; id: number }) {
-  const [state, formAction, pending] = useActionState(action, initial);
+export function ArchiveForm({ endpoint, initial, id }: { endpoint: string; initial: ArchiveFormState; id: number }) {
+  const [state, formAction, pending] = useActionState(useRoute<ArchiveFormState>(endpoint), initial);
   return (
     <form
       action={formAction}
@@ -401,20 +404,20 @@ export function ArchiveForm({ action, initial, id }: { action: Action<ArchiveFor
  * text: it goes into the document as written). A field starts with what the owner entered, else its initial value.
  */
 export function DocumentForm({
-  action,
+  endpoint,
   initial,
   templateId,
   fields,
   profileKeys = [],
 }: {
-  action: Action<DocumentFormState>;
+  endpoint: string;
   initial: DocumentFormState;
   templateId: number;
   fields: DocumentFieldSpec[];
   /** The keys the owner profile has a value for, so a profile marker in a value can be named. */
   profileKeys?: string[];
 }) {
-  const [state, formAction, pending] = useActionState(action, initial);
+  const [state, formAction, pending] = useActionState(useRoute<DocumentFormState>(endpoint), initial);
   const form = useFocusFirstInvalid(Object.keys(state.errors).length > 0, state);
 
   return (
@@ -461,8 +464,8 @@ export function DocumentForm({
 }
 
 /** The two signers of a document and how they sign. Pre-filled by the page; the server checks every value again. */
-export function SignatureForm({ action, initial, documentId }: { action: Action<DocumentFormState>; initial: DocumentFormState; documentId: number }) {
-  const [state, formAction, pending] = useActionState(action, initial);
+export function SignatureForm({ endpoint, initial, documentId }: { endpoint: string; initial: DocumentFormState; documentId: number }) {
+  const [state, formAction, pending] = useActionState(useRoute<DocumentFormState>(endpoint), initial);
   const form = useFocusFirstInvalid(Object.keys(state.errors).length > 0, state);
   const value = (name: string) => state.values[name] ?? "";
 
@@ -505,8 +508,8 @@ export function SignatureForm({ action, initial, documentId }: { action: Action<
 }
 
 /** Reads the submission from DocuSeal and updates the status. On demand only. */
-export function RefreshForm({ action, initial, documentId }: { action: Action<RefreshFormState>; initial: RefreshFormState; documentId: number }) {
-  const [state, formAction, pending] = useActionState(action, initial);
+export function RefreshForm({ endpoint, initial, documentId }: { endpoint: string; initial: RefreshFormState; documentId: number }) {
+  const [state, formAction, pending] = useActionState(useRoute<RefreshFormState>(endpoint), initial);
   return (
     <form action={formAction} className="form" aria-label="Refresh status">
       {state.message ? <Notice tone="error" title={state.message} /> : state.done ? <Notice tone="ok" title={state.done} /> : null}
@@ -522,8 +525,8 @@ export function RefreshForm({ action, initial, documentId }: { action: Action<Re
 }
 
 /** Clears the mark of an unfinished send. A separate action on purpose: it never sends, and the owner takes it after checking DocuSeal. */
-export function ClearSendForm({ action, initial, documentId }: { action: Action<ClearSendFormState>; initial: ClearSendFormState; documentId: number }) {
-  const [state, formAction, pending] = useActionState(action, initial);
+export function ClearSendForm({ endpoint, initial, documentId }: { endpoint: string; initial: ClearSendFormState; documentId: number }) {
+  const [state, formAction, pending] = useActionState(useRoute<ClearSendFormState>(endpoint), initial);
   return (
     <form
       action={formAction}

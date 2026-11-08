@@ -25,5 +25,13 @@ export default defineModule({
     { path: "/documents/[id]", entry: "./web/page-document.tsx", kind: "page", dynamic: "force-dynamic", permission: "documents.read" },
     { path: "/documents/[id]/pdf", entry: "./web/pdf-route.ts", kind: "route", methods: ["GET"], permission: "documents.read" },
     { path: "/documents/[id]/signed-pdf", entry: "./web/signed-pdf-route.ts", kind: "route", methods: ["GET"], permission: "documents.read" },
+    { path: "/documents/templates/create", entry: "./web/template-create.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
+    { path: "/documents/templates/update", entry: "./web/template-update.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
+    { path: "/documents/templates/archive", entry: "./web/template-archive.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
+    { path: "/documents/settings/save", entry: "./web/profile-save.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
+    { path: "/documents/create", entry: "./web/document-create.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
+    { path: "/documents/refresh", entry: "./web/refresh.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
+    { path: "/documents/send", entry: "./web/send.ts", kind: "route", methods: ["POST"], permission: "documents.send" },
+    { path: "/documents/send/clear", entry: "./web/send-clear.ts", kind: "route", methods: ["POST"], permission: "documents.send" },
   ],
 });

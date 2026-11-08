@@ -4,7 +4,7 @@ import { fieldsForTemplate } from "../src/create-document.ts";
 import type { Profile } from "../src/profile.ts";
 import { parseTemplateId } from "../src/template-rules.ts";
 import type { Template } from "../src/template-store.ts";
-import { createDocumentAction } from "./actions.ts";
+import { ENDPOINTS } from "./endpoints.ts";
 import { Notice, Portlet } from "./components.tsx";
 import { DocumentForm } from "./forms.tsx";
 import { logFailure } from "./log.ts";
@@ -121,7 +121,7 @@ export async function renderNewDocumentPage({
       <PageBar title="New document" description={`${template.name}. Numbered ${template.refPrefix}-YYYY-NNN when created.`} current="documents" />
       <div className="page-body">
         <Portlet title={template.name}>
-          <DocumentForm action={createDocumentAction} initial={{ values: {}, errors: {} }} templateId={template.id} fields={fields} profileKeys={Object.keys(data.profile)} />
+          <DocumentForm endpoint={ENDPOINTS.createDocument} initial={{ values: {}, errors: {} }} templateId={template.id} fields={fields} profileKeys={Object.keys(data.profile)} />
         </Portlet>
       </div>
     </div>
