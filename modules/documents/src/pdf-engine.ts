@@ -1,5 +1,6 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { logFailure } from "../web/log.ts";
 import { findRepoRoot } from "./file-store.ts";
@@ -10,7 +11,7 @@ import { findRepoRoot } from "./file-store.ts";
  * its stdout is one JSON document with the page count and the signature boxes. Failures come back as typed results.
  */
 
-export type RenderFailure = "not-configured" | "interpreter-missing" | "weasyprint-missing" | "render-error" | "timeout" | "spawn-failed";
+export type RenderFailure = "not-configured" | "interpreter-missing" | "weasyprint-missing" | "render-error" | "timeout" | "spawn-failed" | "engine-unreachable" | "engine-unauthorized";
 
 /** A box marked `data-campo` in the HTML. `page` is 0-based; x, y, w, h are fractions of the page. */
 export interface SignatureField {
@@ -199,9 +200,84 @@ export function createPdfEngine(config: PdfEngineConfig): PdfEngine {
   };
 }
 
-/** The engine configured by the Python, assets folder and time limit settings (read by `loadConfig`). */
+/** The engine the settings describe: the HTTP service when its address is set, otherwise the local interpreter. */
 export function pdfEngineFromEnv(env: Record<string, string | undefined>): PdfEngine {
+  const url = env.DOCUMENTS_ENGINE_URL?.trim();
+  if (url) return createHttpPdfEngine({ url, token: env.DOCUMENTS_ENGINE_TOKEN, timeoutMs: renderSettingsFromEnv(env).timeoutMs });
   return createPdfEngine({ ...renderSettingsFromEnv(env), env });
+}
+
+export interface HttpPdfEngineConfig {
+  /** Address of the engine service (`engine/server.py`), without the path. */
+  url: string;
+  token: string | undefined;
+  timeoutMs?: number | undefined;
+  fetch?: typeof fetch | undefined;
+}
+
+/** The largest answer accepted: a PDF up to the files limit, in base64, plus the boxes. */
+const MAX_ANSWER_BYTES = 32 * 1024 * 1024;
+const FAILURES: Record<string, RenderFailure> = { "weasyprint-missing": "weasyprint-missing", timeout: "timeout" };
+
+/**
+ * The same engine behind an HTTP service, for a platform that cannot carry WeasyPrint. The HTML goes in the body with the
+ * token as a bearer; the answer carries the PDF in base64, which is written where `pdfPath` says, so everything above the
+ * adapter is unchanged. The token and the HTML never reach the log.
+ */
+export function createHttpPdfEngine(config: HttpPdfEngineConfig): PdfEngine {
+  const limit = config.timeoutMs;
+  const timeoutMs = Math.min(typeof limit === "number" && Number.isFinite(limit) && limit > 0 ? limit : DEFAULT_TIMEOUT_MS, MAX_TIMER_MS);
+  const call = config.fetch ?? fetch;
+  const endpoint = `${config.url.trim().replace(/\/+$/, "")}/render`;
+  return {
+    async render({ html, pdfPath }) {
+      if (!config.token) return { ok: false, reason: "engine-unauthorized" };
+      let response: Response;
+      try {
+        response = await call(endpoint, {
+          method: "POST",
+          headers: { authorization: `Bearer ${config.token}`, "content-type": "text/html; charset=utf-8" },
+          body: html,
+          redirect: "error",
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+      } catch (error) {
+        const timedOut = (error as { name?: unknown } | null)?.name === "TimeoutError";
+        logFailure("could not reach the PDF engine", { code: timedOut ? "timeout" : "network" });
+        return { ok: false, reason: timedOut ? "timeout" : "engine-unreachable" };
+      }
+      let data: unknown;
+      try {
+        const declared = Number(response.headers.get("content-length"));
+        if (Number.isFinite(declared) && declared > MAX_ANSWER_BYTES) throw new Error("size");
+        const text = await response.text();
+        if (text.length > MAX_ANSWER_BYTES) throw new Error("size");
+        data = JSON.parse(text);
+      } catch {
+        logFailure("the PDF engine answered with something unreadable", { code: `http ${response.status}` });
+        return { ok: false, reason: "render-error" };
+      }
+      const body = (typeof data === "object" && data !== null ? data : {}) as Record<string, unknown>;
+      if (response.status === 401) return { ok: false, reason: "engine-unauthorized" };
+      if (!response.ok) {
+        const named = typeof body.error === "string" ? FAILURES[body.error] : undefined;
+        logFailure("the PDF engine failed", { code: `http ${response.status}` });
+        return { ok: false, reason: named ?? "render-error" };
+      }
+      const parsed = parseOutput(JSON.stringify({ pages: body.pages, fields: body.fields }));
+      if (!parsed || typeof body.pdf !== "string" || body.pdf === "") {
+        logFailure("the PDF engine answered with something unexpected", { code: "unexpected output" });
+        return { ok: false, reason: "render-error" };
+      }
+      try {
+        await writeFile(pdfPath, Buffer.from(body.pdf, "base64"));
+      } catch (error) {
+        logFailure("could not write the PDF", error);
+        return { ok: false, reason: "render-error" };
+      }
+      return { ok: true, ...parsed };
+    },
+  };
 }
 
 /** The three settings, as the engine takes them: a blank assets folder and a time limit that is not a positive whole number count as unset. */
@@ -215,12 +291,14 @@ export function renderSettingsFromEnv(env: Record<string, string | undefined>): 
 }
 
 const MESSAGES: Record<RenderFailure, string> = {
-  "not-configured": "The PDF engine is not configured. Set the Python setting in the Documents settings to an interpreter that has WeasyPrint.",
+  "not-configured": "The PDF engine is not configured. Set the engine address, or the Python setting, in the Documents settings.",
   "interpreter-missing": "The PDF engine could not be started: the interpreter set in the Documents settings was not found or cannot run.",
   "weasyprint-missing": "WeasyPrint is not installed for the interpreter set in the Documents settings.",
   "render-error": "The PDF could not be generated. Details are in the server log.",
   timeout: "The PDF took too long to generate and was stopped.",
   "spawn-failed": "The PDF engine could not be started right now. Wait a moment and try again; details are in the server log.",
+  "engine-unreachable": "The PDF engine service could not be reached. Check the engine address in the Documents settings.",
+  "engine-unauthorized": "The PDF engine service refused the token. Check the engine token in the Documents settings.",
 };
 
 /** A message that is safe to show: it names the setting to fix, never a path or anything from the document. */
