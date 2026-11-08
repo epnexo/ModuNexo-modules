@@ -27,10 +27,10 @@ describe("DocuSeal error text", () => {
 
   it("gives every failure a plain message, and names the variables when signing is not configured", () => {
     for (const error of ALL) assert.ok(describeDocusealError(error).length > 20, error.kind);
-    assert.match(describeDocusealError({ kind: "not-configured" }), /DOCUSEAL_URL/);
-    assert.match(describeDocusealError({ kind: "not-configured" }), /DOCUSEAL_API_TOKEN/);
-    assert.match(describeDocusealError({ kind: "unauthorized", status: 403 }), /DOCUSEAL_API_TOKEN/);
-    assert.match(describeDocusealError({ kind: "unreachable", reason: "network" }), /DOCUSEAL_URL/);
+    assert.match(describeDocusealError({ kind: "not-configured" }), /DocuSeal address/);
+    assert.match(describeDocusealError({ kind: "not-configured" }), /API token/);
+    assert.match(describeDocusealError({ kind: "unauthorized", status: 403 }), /DocuSeal API token/);
+    assert.match(describeDocusealError({ kind: "unreachable", reason: "network" }), /DocuSeal address/);
     assert.match(describeDocusealError({ kind: "rejected", status: 422 }), /422/);
     assert.match(describeDocusealError({ kind: "server-error", status: 503 }), /503/);
   });

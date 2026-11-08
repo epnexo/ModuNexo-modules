@@ -48,12 +48,12 @@ function sendMessage(result: Exclude<SendResult, { ok: true } | { kind: "invalid
 }
 
 /** The dependencies are built inside the guard, like the new-document form: a server started from an unexpected place must still answer on the form. */
-export async function submitSendWith(makeDeps: () => SendDeps, raw: FormInput, send: typeof sendForSignature = sendForSignature): Promise<SendOutcome> {
+export async function submitSendWith(makeDeps: () => SendDeps | Promise<SendDeps>, raw: FormInput, send: typeof sendForSignature = sendForSignature): Promise<SendOutcome> {
   const documentId = parseDocumentId(raw.documentId);
   if (documentId === null) return { state: { values: entered(raw), errors: {}, message: GONE } };
 
   try {
-    const result = await send(makeDeps(), documentId, raw);
+    const result = await send(await makeDeps(), documentId, raw);
     if (result.ok) return { redirectTo: `/documents/${documentId}?sent=1` };
     if (result.kind === "already-sent") return { redirectTo: `/documents/${documentId}?sent=already` };
     if (result.kind === "invalid") return { state: { values: result.values, errors: result.errors } };
@@ -64,12 +64,12 @@ export async function submitSendWith(makeDeps: () => SendDeps, raw: FormInput, s
   }
 }
 
-export async function submitRefreshWith(makeDeps: () => RefreshDeps, raw: FormInput, refresh: typeof refreshSignature = refreshSignature): Promise<RefreshFormState> {
+export async function submitRefreshWith(makeDeps: () => RefreshDeps | Promise<RefreshDeps>, raw: FormInput, refresh: typeof refreshSignature = refreshSignature): Promise<RefreshFormState> {
   const documentId = parseDocumentId(raw.documentId);
   if (documentId === null) return { message: GONE };
 
   try {
-    const result = await refresh(makeDeps(), documentId);
+    const result = await refresh(await makeDeps(), documentId);
     if (result.ok) {
       if (result.outcome === "unknown") return { note: `DocuSeal reported the status "${result.reported}", which this app does not know. The document was not changed.` };
       if (result.outcome === "updated") return { done: refreshedMessage(result.status), ...(result.status === "sent" ? {} : { moved: result.status }) };

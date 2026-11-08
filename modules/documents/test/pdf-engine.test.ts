@@ -210,10 +210,10 @@ describe("pdf engine adapter", () => {
   it("has a message for every failure that names the variable to set when it is the configuration", () => {
     const reasons: RenderFailure[] = ["not-configured", "interpreter-missing", "weasyprint-missing", "render-error", "timeout", "spawn-failed"];
     for (const reason of reasons) assert.ok(describeRenderFailure(reason).length > 20, reason);
-    assert.match(describeRenderFailure("not-configured"), /DOCUMENTS_PYTHON/);
-    assert.match(describeRenderFailure("interpreter-missing"), /DOCUMENTS_PYTHON/);
+    assert.match(describeRenderFailure("not-configured"), /Python setting/);
+    assert.match(describeRenderFailure("interpreter-missing"), /Documents settings/);
     assert.match(describeRenderFailure("weasyprint-missing"), /WeasyPrint/);
     assert.match(describeRenderFailure("spawn-failed"), /try again/i);
-    assert.doesNotMatch(describeRenderFailure("spawn-failed"), /DOCUMENTS_PYTHON/, "a temporary failure does not send the owner to the settings");
+    assert.doesNotMatch(describeRenderFailure("spawn-failed"), /Documents settings/, "a temporary failure does not send the owner to the settings");
   });
 });

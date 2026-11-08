@@ -195,7 +195,7 @@ describe("template preview: failures", () => {
       assert.equal(response.status, status);
       assert.match(response.headers.get("content-type")!, /^text\/plain/);
       const text = await response.text();
-      if (status === 503) assert.match(text, /DOCUMENTS_PYTHON/);
+      if (status === 503) assert.match(text, /Python setting/);
       assert.doesNotMatch(text, /BODYSECRET|PROFILESECRET|documents-preview/);
       assert.match(printed(logged), new RegExp(reason));
       assert.doesNotMatch(printed(logged), /BODYSECRET|PROFILESECRET|Acme/);
@@ -210,7 +210,7 @@ describe("template preview: failures", () => {
     const id = await seed();
     const response = await preview(createPdfEngine({ python: undefined }), id);
     assert.equal(response.status, 503);
-    assert.match(await response.text(), /DOCUMENTS_PYTHON/);
+    assert.match(await response.text(), /Python setting/);
     assert.equal(await left(), 0);
   });
 

@@ -387,4 +387,4 @@ export function docusealFromEnv(env: Record<string, string | undefined>, options
 }
 
 /** True when both variables are present and usable; the pages use it to say signing is not set up. */
-export const docusealConfigured = (env: Record<string, string | undefined> = process.env): boolean => docusealFromEnv(env).ok;
+export const docusealConfigured = (env: Record<string, string | undefined>): boolean => docusealFromEnv(env).ok;

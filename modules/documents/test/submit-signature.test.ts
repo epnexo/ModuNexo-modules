@@ -64,11 +64,11 @@ describe("submitSendWith", () => {
       [{ ok: false, kind: "not-found" }, /no longer exists/],
       [{ ok: false, kind: "wrong-status", status: "completed" }, /Only a generated document/],
       [{ ok: false, kind: "not-ready", reason: "The layout has 3 signature boxes; signing needs exactly four." }, /3 signature boxes/],
-      [{ ok: false, kind: "not-configured" }, /DOCUSEAL_URL and DOCUSEAL_API_TOKEN/],
+      [{ ok: false, kind: "not-configured" }, /DocuSeal address and API token/],
       [{ ok: false, kind: "not-uploaded", fileName: "NDA-2026-001-beta.pdf" }, /NDA-2026-001-beta\.pdf is not in DocuSeal yet.*without renaming/],
       [{ ok: false, kind: "docuseal", step: "fields", error: { kind: "rejected", status: 422 } }, /placing the signature fields.*422/],
-      [{ ok: false, kind: "docuseal", step: "submission", error: { kind: "unauthorized", status: 401 } }, /creating the signature request.*DOCUSEAL_API_TOKEN/],
-      [{ ok: false, kind: "docuseal", step: "find", error: { kind: "unreachable", reason: "network" } }, /looking for the template.*DOCUSEAL_URL/],
+      [{ ok: false, kind: "docuseal", step: "submission", error: { kind: "unauthorized", status: 401 } }, /creating the signature request.*DocuSeal API token/],
+      [{ ok: false, kind: "docuseal", step: "find", error: { kind: "unreachable", reason: "network" } }, /looking for the template.*DocuSeal address/],
       [{ ok: false, kind: "unrecorded", submissionId: 77 }, /submission 77.*could not save.*Do not send it again/],
       [{ ok: false, kind: "unfinished" }, /running, or an earlier one did not finish/],
       [{ ok: false, kind: "outcome-unknown", error: { kind: "outcome-unknown", reason: "timeout" } }, /did not confirm.*may have created.*Do not send again yet/],
@@ -179,7 +179,7 @@ describe("submitRefreshWith", () => {
 
   it("explains each failure", async () => {
     const cases: [RefreshResult, RegExp][] = [
-      [{ ok: false, kind: "not-configured" }, /DOCUSEAL_URL/],
+      [{ ok: false, kind: "not-configured" }, /DocuSeal address/],
       [{ ok: false, kind: "not-found" }, /no longer exists/],
       [{ ok: false, kind: "not-sent", status: "completed" }, /not waiting for signatures/],
       [{ ok: false, kind: "docuseal", error: { kind: "server-error", status: 503 } }, /503/],

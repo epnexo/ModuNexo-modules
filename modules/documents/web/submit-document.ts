@@ -50,10 +50,10 @@ export async function submitNewDocument(deps: Deps, raw: FormInput): Promise<Doc
  * folder come from the environment and the working directory, so a server started from an unexpected place must still
  * answer on the form instead of failing the action.
  */
-export async function submitNewDocumentWith(makeDeps: () => Deps, raw: FormInput): Promise<DocumentOutcome> {
+export async function submitNewDocumentWith(makeDeps: () => Deps | Promise<Deps>, raw: FormInput): Promise<DocumentOutcome> {
   let deps: Deps;
   try {
-    deps = makeDeps();
+    deps = await makeDeps();
   } catch (error) {
     logFailure("could not set up the document service", error);
     const described = describeDbError(error);

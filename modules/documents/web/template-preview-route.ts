@@ -1,4 +1,5 @@
 import { getDb } from "@modunexo/sdk";
+import { loadConfig } from "../src/config.ts";
 import { type PdfEngine, type RenderFailure, describeRenderFailure, pdfEngineFromEnv } from "../src/pdf-engine.ts";
 import { parseTemplateId } from "../src/template-rules.ts";
 import { type TemplatePreviewDeps, renderTemplatePreview } from "../src/template-preview.ts";
@@ -68,7 +69,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   let engine: PdfEngine;
   let db;
   try {
-    engine = pdfEngineFromEnv();
+    engine = pdfEngineFromEnv(await loadConfig());
     db = getDb("documents");
   } catch (error) {
     logFailure("could not set up the template preview", error);

@@ -30,7 +30,7 @@ function signerTime(at: string | undefined): string {
 function NotConfigured() {
   return (
     <Notice title="Signing is not configured">
-      Set <code>DOCUSEAL_URL</code> and <code>DOCUSEAL_API_TOKEN</code> in the repository <code>.env</code> file and restart the app.
+      Set the DocuSeal address and API token in the Documents settings.
     </Notice>
   );
 }

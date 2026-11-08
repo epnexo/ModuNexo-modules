@@ -95,7 +95,7 @@ describe("downloadSignedPdf", () => {
     const lines = logs(t);
     const response = await downloadSignedPdf({ db: stub(completed()).db, docuseal: null }, "7");
     assert.equal(response.status, 503);
-    assert.match(await response.text(), /DOCUSEAL_URL/);
+    assert.match(await response.text(), /DocuSeal address/);
     assert.match(printed(lines), /docuseal-not-configured/);
   });
 

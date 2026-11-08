@@ -1,5 +1,6 @@
 import { getDb } from "@modunexo/sdk";
 import type { Metadata } from "next";
+import { loadConfig } from "../src/config.ts";
 import { docusealConfigured } from "../src/docuseal-client.ts";
 import { getDocument } from "../src/document-store.ts";
 import { getProfile } from "../src/profile-store.ts";
@@ -16,7 +17,7 @@ export default async function DocumentPage({ params, searchParams }: { params: P
     created: created === "1",
     sent: typeof sent === "string" ? sent : undefined,
     refreshed: typeof refreshed === "string" ? refreshed : undefined,
-    configured: docusealConfigured(),
+    configured: docusealConfigured(await loadConfig()),
     loadOwner: async () => ownerSignerDefaults(await getProfile(getDb("documents"))),
     load: (documentId) => getDocument(getDb("documents"), documentId),
   });

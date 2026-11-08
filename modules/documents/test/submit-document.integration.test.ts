@@ -76,7 +76,7 @@ describe("submitNewDocument", () => {
     assert.ok("state" in outcome);
     if (!("state" in outcome)) return;
     assert.match(outcome.state.message!, /PDF engine is not configured/);
-    assert.match(outcome.state.message!, /DOCUMENTS_PYTHON/);
+    assert.match(outcome.state.message!, /Python setting/);
     assert.equal(outcome.state.values.B_NOMBRE, "Beta", "the typed values are kept");
     assert.equal(outcome.state.values.templateId, undefined);
     assert.equal(await count(), 0);

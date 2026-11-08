@@ -96,8 +96,8 @@ describe("document page: a generated document", () => {
   it("says signing is not configured and names the variables, instead of the form, and does not load the profile", async () => {
     const { markup, calls } = await page({ configured: false });
     assert.match(markup, /Signing is not configured/);
-    assert.match(markup, /DOCUSEAL_URL/);
-    assert.match(markup, /DOCUSEAL_API_TOKEN/);
+    assert.match(markup, /DocuSeal address/);
+    assert.match(markup, /API token/);
     assert.doesNotMatch(markup, /aria-label="Send for signature"/);
     assert.equal(calls.owner, 0);
     assert.match(markup, /Download PDF/, "the rest of the page still works");

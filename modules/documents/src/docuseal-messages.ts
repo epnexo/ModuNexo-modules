@@ -21,13 +21,13 @@ export function docusealCode(error: DocusealError): string {
 export function describeDocusealError(error: DocusealError): string {
   switch (error.kind) {
     case "not-configured":
-      return "Signing is not configured. Set DOCUSEAL_URL and DOCUSEAL_API_TOKEN in the .env file and restart the app.";
+      return "Signing is not configured. Set the DocuSeal address and API token in the Documents settings.";
     case "unreachable":
-      return error.reason === "timeout" ? "DocuSeal did not answer in time. Try again in a moment." : "DocuSeal could not be reached. Check DOCUSEAL_URL and that the server is running.";
+      return error.reason === "timeout" ? "DocuSeal did not answer in time. Try again in a moment." : "DocuSeal could not be reached. Check the DocuSeal address in the Documents settings and that the server is running.";
     case "outcome-unknown":
       return "DocuSeal may have created the signature request, but this app could not confirm it. Check in DocuSeal before sending again.";
     case "unauthorized":
-      return "DocuSeal refused the API token. Check DOCUSEAL_API_TOKEN.";
+      return "DocuSeal refused the API token. Check the DocuSeal API token in the Documents settings.";
     case "not-found":
       return "DocuSeal could not find what was asked for. It may have been deleted there.";
     case "rejected":

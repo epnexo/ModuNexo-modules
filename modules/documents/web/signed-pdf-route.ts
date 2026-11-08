@@ -1,4 +1,5 @@
 import { getDb } from "@modunexo/sdk";
+import { loadConfig } from "../src/config.ts";
 import { docusealFromEnv } from "../src/docuseal-client.ts";
 import { describeDocusealError, docusealCode } from "../src/docuseal-messages.ts";
 import { parseDocumentId } from "../src/document-rules.ts";
@@ -61,11 +62,11 @@ export async function downloadSignedPdf(deps: SignedPdfDeps, idParam: string): P
 }
 
 /** Like `downloadSignedPdf`, but the dependencies are built inside the guard: a pool or an environment that cannot be set up still answers in plain text. */
-export async function downloadSignedPdfWith(makeDeps: () => SignedPdfDeps, idParam: string): Promise<Response> {
+export async function downloadSignedPdfWith(makeDeps: () => SignedPdfDeps | Promise<SignedPdfDeps>, idParam: string): Promise<Response> {
   if (parseDocumentId(idParam) === null) return plain(404, "Not found");
   let deps: SignedPdfDeps;
   try {
-    deps = makeDeps();
+    deps = await makeDeps();
   } catch (error) {
     logFailure("could not set up the signed PDF download", error);
     return plain(500, "The signed PDF could not be fetched right now. Check the server log.");
@@ -75,8 +76,8 @@ export async function downloadSignedPdfWith(makeDeps: () => SignedPdfDeps, idPar
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }): Promise<Response> {
   const { id } = await context.params;
-  return downloadSignedPdfWith(() => {
-    const client = docusealFromEnv(process.env);
+  return downloadSignedPdfWith(async () => {
+    const client = docusealFromEnv(await loadConfig());
     return { db: getDb("documents"), docuseal: client.ok ? client.value : null };
   }, id);
 }

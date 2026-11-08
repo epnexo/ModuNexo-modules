@@ -63,7 +63,7 @@ export async function renderDocumentPage({
   sent?: string | undefined;
   /** The `refreshed` query value after a refresh that moved the document out of `sent`: the status it reached. Anything else shows nothing. */
   refreshed?: string | undefined;
-  /** Whether `DOCUSEAL_URL` and `DOCUSEAL_API_TOKEN` are set. */
+  /** Whether the DocuSeal address and token settings are set. */
   configured: boolean;
   /** The owner's name and email for the signer form; read only when the form is shown. */
   loadOwner: () => Promise<{ name: string; email: string }>;

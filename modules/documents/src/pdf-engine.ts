@@ -199,8 +199,8 @@ export function createPdfEngine(config: PdfEngineConfig): PdfEngine {
   };
 }
 
-/** The engine configured by `DOCUMENTS_PYTHON`, `DOCUMENTS_ASSETS_DIR` and, optionally, `DOCUMENTS_RENDER_TIMEOUT_MS`. */
-export function pdfEngineFromEnv(env: Record<string, string | undefined> = process.env): PdfEngine {
+/** The engine configured by the Python, assets folder and time limit settings (read by `loadConfig`). */
+export function pdfEngineFromEnv(env: Record<string, string | undefined>): PdfEngine {
   return createPdfEngine({ ...renderSettingsFromEnv(env), env });
 }
 
@@ -215,9 +215,9 @@ export function renderSettingsFromEnv(env: Record<string, string | undefined>): 
 }
 
 const MESSAGES: Record<RenderFailure, string> = {
-  "not-configured": "The PDF engine is not configured. Set DOCUMENTS_PYTHON in .env to a Python interpreter that has WeasyPrint, then restart the app.",
-  "interpreter-missing": "The PDF engine could not be started: the interpreter named by DOCUMENTS_PYTHON was not found or cannot run.",
-  "weasyprint-missing": "WeasyPrint is not installed for the interpreter named by DOCUMENTS_PYTHON.",
+  "not-configured": "The PDF engine is not configured. Set the Python setting in the Documents settings to an interpreter that has WeasyPrint.",
+  "interpreter-missing": "The PDF engine could not be started: the interpreter set in the Documents settings was not found or cannot run.",
+  "weasyprint-missing": "WeasyPrint is not installed for the interpreter set in the Documents settings.",
   "render-error": "The PDF could not be generated. Details are in the server log.",
   timeout: "The PDF took too long to generate and was stopped.",
   "spawn-failed": "The PDF engine could not be started right now. Wait a moment and try again; details are in the server log.",
