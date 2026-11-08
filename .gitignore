@@ -8,5 +8,5 @@ modules/documents/.env.*
 modules/documents/config.json
 modules/documents/**/*.pdf
 
-# documents: the PDF engine's local Python environment (uv venv .venv -r requirements.txt)
-modules/documents/render/.venv/
+# documents: the PDF engine's local Python environment. Kept outside the module folder because `modules pack` refuses symbolic links.
+.venv/
