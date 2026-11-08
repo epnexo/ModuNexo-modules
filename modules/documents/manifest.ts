@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "documents",
-  version: "0.4.1", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.5.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Documents",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -12,7 +12,9 @@ export default defineModule({
   settings: [
     { key: "docuseal.url", label: "DocuSeal address", type: "string", description: "The address of your DocuSeal server, for example http://127.0.0.1:3001. Leave empty to keep signing switched off." },
     { key: "docuseal.token", label: "DocuSeal API token", type: "secret", description: "The API token of your DocuSeal account." },
-    { key: "engine.python", label: "Python for the PDF engine", type: "string", description: "Path of a Python interpreter that has WeasyPrint installed, for example /usr/bin/python3. Leave empty and PDFs cannot be generated." },
+    { key: "engine.url", label: "PDF engine address", type: "string", description: "The address of the PDF engine service, for example http://documents-engine:8080. When set, it is used instead of the Python setting." },
+    { key: "engine.token", label: "PDF engine token", type: "secret", description: "The token the PDF engine service was started with (ENGINE_TOKEN)." },
+    { key: "engine.python", label: "Python for the PDF engine", type: "string", description: "Path of a Python interpreter that has WeasyPrint installed, for example /usr/bin/python3. Used only when no engine address is set." },
     { key: "engine.assets_dir", label: "Assets folder", type: "string", description: "Folder with the fonts and images that templates may use. Optional." },
     { key: "engine.timeout_ms", label: "PDF time limit (ms)", type: "number", description: "How long one PDF may take to render. Optional." },
   ],
