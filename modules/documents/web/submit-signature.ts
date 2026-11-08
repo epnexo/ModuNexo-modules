@@ -14,6 +14,7 @@ export type SendOutcome = { state: DocumentFormState } | { redirectTo: string };
 const GONE = "This document no longer exists.";
 const STEP_PHRASE: Record<SendStep, string> = {
   find: "looking for the template",
+  upload: "uploading the PDF to DocuSeal",
   read: "reading the template",
   fields: "placing the signature fields",
   submission: "creating the signature request",
@@ -35,7 +36,7 @@ function sendMessage(result: Exclude<SendResult, { ok: true } | { kind: "invalid
     case "not-ready":
       return `This document is not ready for signature. ${result.reason}`;
     case "not-uploaded":
-      return `The PDF ${result.fileName} is not in DocuSeal yet. Upload it in DocuSeal without renaming it, then send again.`;
+      return `The PDF ${result.fileName} could not be read from the file store, so it could not be uploaded to DocuSeal. Generate the document again.`;
     case "docuseal":
       return `DocuSeal failed while ${STEP_PHRASE[result.step]}. ${describeDocusealError(result.error)}`;
     case "unfinished":

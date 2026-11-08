@@ -73,6 +73,7 @@ function fakeDocuseal(overrides: Partial<DocusealClient> = {}) {
   const log: Log = [];
   const client: DocusealClient = {
     findTemplateByName: (name) => (log.push(["find", name]), ok({ id: 42 })),
+    uploadTemplate: (name, pdf) => (log.push(["upload", name, pdf]), ok({ id: 43 })),
     getTemplate: (id) => (log.push(["read", id]), ok({ attachmentUuid: "att-1", submitterUuids: ["sub-a", "sub-b"] })),
     updateTemplate: (id, update) => (log.push(["fields", id, update]), ok(null)),
     createSubmission: (request) =>
@@ -177,6 +178,44 @@ describe("sendForSignature", () => {
     assert.deepEqual(result, { ok: false, kind: "not-uploaded", fileName: "NDA-2026-001-beta.pdf" });
     assert.deepEqual(names(log), ["find"]);
     assert.deepEqual([(await row(id)).status, (await row(id)).docuseal_submission_id], ["generated", null]);
+  });
+
+  describe("a template that is not in DocuSeal yet", () => {
+    const PDF = new TextEncoder().encode("%PDF-stored");
+
+    test("uploads the stored PDF under the template name, then sends with the new template", async () => {
+      const id = await insert();
+      const { log, client } = fakeDocuseal({ findTemplateByName: (name) => (log.push(["find", name]), ok(null)) });
+      const asked: string[] = [];
+      const readPdf = async (fileId: string) => (asked.push(fileId), PDF);
+      assert.deepEqual(await sendForSignature({ db: pool!, docuseal: client, readPdf, newUuid: uuids() }, id, RAW), { ok: true, submissionId: 77 });
+      assert.deepEqual(asked, ["file-1"]);
+      assert.deepEqual(names(log), ["find", "upload", "read", "fields", "submission"]);
+      assert.deepEqual(log[1], ["upload", "NDA-2026-001-beta", PDF]);
+      assert.deepEqual(log[2], ["read", 43], "the new template is the one that is read and sent");
+      assert.equal(Number((await row(id)).docuseal_template_id), 43);
+    });
+
+    test("reports a failed upload with its step, and lets the owner try again", async (t) => {
+      const lines = captureConsole(t);
+      const id = await insert();
+      const error: DocusealError = { kind: "server-error", status: 503 };
+      const { client } = fakeDocuseal({ findTemplateByName: () => ok(null), uploadTemplate: () => failed(error) });
+      const result = await sendForSignature({ db: pool!, docuseal: client, readPdf: async () => PDF }, id, RAW);
+      assert.deepEqual(result, { ok: false, kind: "docuseal", step: "upload", error });
+      const stored = await row(id);
+      assert.deepEqual([stored.status, stored.docuseal_submission_id, stored.send_started_at], ["generated", null, null], "the mark is given back");
+      assert.match(printed(lines), /docuseal-server-error-503/);
+    });
+
+    test("says the PDF could not be read when the file store no longer has it, and uploads nothing", async () => {
+      const id = await insert();
+      const { log, client } = fakeDocuseal({ findTemplateByName: (name) => (log.push(["find", name]), ok(null)) });
+      const result = await sendForSignature({ db: pool!, docuseal: client, readPdf: async () => null }, id, RAW);
+      assert.deepEqual(result, { ok: false, kind: "not-uploaded", fileName: "NDA-2026-001-beta.pdf" });
+      assert.deepEqual(names(log), ["find"]);
+      assert.equal((await row(id)).send_started_at, null);
+    });
   });
 
   for (const step of ["find", "read", "fields", "submission"] as const) {

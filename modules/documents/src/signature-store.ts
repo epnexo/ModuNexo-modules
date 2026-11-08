@@ -19,6 +19,8 @@ export interface SigningRow {
   status: string;
   counterpartyName: string;
   pdfPath: string | null;
+  /** The id of the PDF in the platform file store; null for a row from before the store. */
+  pdfFileId: string | null;
   signatureFields: unknown;
   /** The profile values the document used, as a snapshot. */
   profile: Record<string, string>;
@@ -35,7 +37,7 @@ const asStrings = (value: unknown): Record<string, string> =>
 /** Read the row and keep it locked until the transaction ends, so two sends of one document never run side by side. */
 export async function lockDocumentForSigning(tx: Queryable, id: number): Promise<SigningRow | null> {
   const { rows } = await tx.query(
-    `select id, ref, status, counterparty_name, pdf_path, signature_fields, data, docuseal_submission_id, send_started_at
+    `select id, ref, status, counterparty_name, pdf_path, pdf_file_id, signature_fields, data, docuseal_submission_id, send_started_at
      from documents.documents where id = $1 for update`,
     [id],
   );
@@ -48,6 +50,7 @@ export async function lockDocumentForSigning(tx: Queryable, id: number): Promise
     status: row.status as string,
     counterpartyName: row.counterparty_name as string,
     pdfPath: typeof row.pdf_path === "string" ? row.pdf_path : null,
+    pdfFileId: typeof row.pdf_file_id === "string" && row.pdf_file_id !== "" ? row.pdf_file_id : null,
     signatureFields: row.signature_fields,
     profile: asStrings(data.profile),
     docusealSubmissionId: row.docuseal_submission_id === null || row.docuseal_submission_id === undefined ? null : Number(row.docuseal_submission_id),

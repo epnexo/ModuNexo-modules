@@ -12,8 +12,8 @@ import type { Queryable } from "../web/queries.ts";
 import { type Transactional, inTransaction } from "./transaction.ts";
 
 /**
- * Send a generated document for signature, the way the /nda skill does in manual mode: the owner has uploaded the PDF
- * to DocuSeal under its own name; this finds that template, places the four boxes from the stored coordinates, creates
+ * Send a generated document for signature, the way the /nda skill does: this finds the template named after the PDF in
+ * DocuSeal (uploading the stored PDF when there is none), places the four boxes from the stored coordinates, creates
  * the submission without email and stores the links.
  *
  * One document must never end with two DocuSeal submissions, and a submission DocuSeal accepted must never be lost
@@ -33,7 +33,7 @@ import { type Transactional, inTransaction } from "./transaction.ts";
  * not recorded. Nothing is archived or deleted in DocuSeal.
  */
 
-export type SendStep = "find" | "read" | "fields" | "submission";
+export type SendStep = "find" | "upload" | "read" | "fields" | "submission";
 
 export type SendResult =
   | { ok: true; submissionId: number }
@@ -53,12 +53,12 @@ export type SendResult =
   | { ok: false; kind: "unrecorded"; submissionId: number };
 
 /**
- * The longest a send can still be running after its mark was written. One send makes four sequential DocuSeal calls
- * (find the template, read it, place the fields, create the submission), each under the client's time limit, which is
+ * The longest a send can still be running after its mark was written. One send makes five sequential DocuSeal calls
+ * (find the template, upload it when it is missing, read it, place the fields, create the submission), each under the client's time limit, which is
  * never above `MAX_TIMEOUT_MS` whatever is configured; the rest is margin for the database steps around them and for
  * clock differences. The owner's clear is refused until a mark is older than this.
  */
-export const SEND_CALLS = 4;
+export const SEND_CALLS = 5;
 export const SEND_MAX_DURATION_MS = SEND_CALLS * MAX_TIMEOUT_MS + 60_000;
 
 export interface SendDeps {
@@ -66,6 +66,8 @@ export interface SendDeps {
   /** Null when signing is not configured. */
   docuseal: DocusealClient | null;
   newUuid?: () => string;
+  /** The bytes of a stored PDF, or null when the file is gone. Without it a missing template is reported as `not-uploaded`, as before. */
+  readPdf?: (fileId: string) => Promise<Uint8Array | null>;
 }
 
 interface Accepted {
@@ -124,11 +126,20 @@ export async function sendForSignature(deps: SendDeps, documentId: number, raw: 
     const found = await docuseal.findTemplateByName(templateNameForPdf(pdfPath));
     const findFailure = await stepFailed("find", found);
     if (findFailure) return findFailure;
-    if (!found.ok || found.value === null) {
-      await release();
-      return { ok: false, kind: "not-uploaded", fileName: basename(pdfPath) };
+    if (!found.ok) return findFailure!;
+    if (found.value !== null) {
+      templateId = found.value.id;
+    } else {
+      const bytes = deps.readPdf && row.pdfFileId !== null ? await deps.readPdf(row.pdfFileId) : null;
+      if (bytes === null) {
+        await release();
+        return { ok: false, kind: "not-uploaded", fileName: basename(pdfPath) };
+      }
+      const uploaded = await docuseal.uploadTemplate(templateNameForPdf(pdfPath), bytes);
+      const uploadFailure = await stepFailed("upload", uploaded);
+      if (uploadFailure || !uploaded.ok) return uploadFailure!;
+      templateId = uploaded.value.id;
     }
-    templateId = found.value.id;
 
     const template = await docuseal.getTemplate(templateId);
     const readFailure = await stepFailed("read", template);

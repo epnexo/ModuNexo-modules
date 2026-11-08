@@ -175,6 +175,33 @@ describe("findTemplateByName", () => {
   });
 });
 
+describe("uploadTemplate", () => {
+  const PDF = new TextEncoder().encode("%PDF-1.7 test");
+
+  it("posts the PDF as base64 under the name, with the token, and returns the new template id", async () => {
+    const { calls, impl } = fake(json({ id: 43, schema: [], submitters: [] }));
+    assert.deepEqual(success(await client(impl).uploadTemplate("NDA-2026-001-beta", PDF)), { id: 43 });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0]!.method, "POST");
+    assert.equal(calls[0]!.url, `${BASE}/api/templates/pdf`);
+    assert.equal(calls[0]!.headers["x-auth-token"], TOKEN);
+    assert.deepEqual(JSON.parse(calls[0]!.body!), { name: "NDA-2026-001-beta", documents: [{ name: "NDA-2026-001-beta.pdf", file: Buffer.from(PDF).toString("base64") }] });
+  });
+
+  it("refuses an empty PDF without calling DocuSeal", async () => {
+    const { calls, impl } = fake();
+    assert.deepEqual(failure(await client(impl).uploadTemplate("x", new Uint8Array(0))), { kind: "unexpected", what: "size" });
+    assert.equal(calls.length, 0);
+  });
+
+  it("reports an answer without a usable id as unexpected, and a refusal as itself", async () => {
+    for (const answer of [{}, { id: "43" }, { id: 0 }, []]) {
+      assert.deepEqual(failure(await client(fake(json(answer)).impl).uploadTemplate("x", PDF)), { kind: "unexpected", what: "template" }, JSON.stringify(answer));
+    }
+    assert.deepEqual(failure(await client(fake(json({}, 401)).impl).uploadTemplate("x", PDF)), { kind: "unauthorized", status: 401 });
+  });
+});
+
 describe("getTemplate", () => {
   it("reads the attachment uuid of the first document and the uuids of the submitters", async () => {
     const { calls, impl } = fake(json({ id: 42, schema: [{ attachment_uuid: "att-1", name: "x" }, { attachment_uuid: "att-2" }], submitters: [{ uuid: "sub-a", name: "A" }, { uuid: "sub-b" }] }));

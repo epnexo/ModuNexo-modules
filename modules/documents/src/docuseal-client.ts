@@ -59,6 +59,8 @@ export interface SubmissionSigner {
 export interface DocusealClient {
   /** The newest template whose name is exactly `name`, or null. */
   findTemplateByName(name: string): Promise<DocusealResult<{ id: number } | null>>;
+  /** Creates a template from a PDF, named `name`. Used when `findTemplateByName` finds nothing; a retry after a failure finds it by name, so no outcome is ever "unknown" to the caller. */
+  uploadTemplate(name: string, pdf: Uint8Array): Promise<DocusealResult<{ id: number }>>;
   getTemplate(id: number): Promise<DocusealResult<{ attachmentUuid: string; submitterUuids: string[] }>>;
   updateTemplate(id: number, update: TemplateUpdate): Promise<DocusealResult<null>>;
   /** Creates a submission that sends no email. */
@@ -142,7 +144,7 @@ type Sent = { ok: true; response: Response; signal: AbortSignal } | { ok: false;
 /** The client used when the URL cannot be used: every call says signing is not configured and reaches nothing. */
 function unconfiguredClient(): DocusealClient {
   const no = () => Promise.resolve(fail({ kind: "not-configured" }));
-  return { findTemplateByName: no, getTemplate: no, updateTemplate: no, createSubmission: no, getSubmission: no, listDocuments: no, downloadDocument: no };
+  return { findTemplateByName: no, uploadTemplate: no, getTemplate: no, updateTemplate: no, createSubmission: no, getSubmission: no, listDocuments: no, downloadDocument: no };
 }
 
 /** Never throws: a URL that cannot be used gives a client whose calls answer `not-configured`. */
@@ -281,6 +283,14 @@ export function createDocusealClient(config: DocusealConfig): DocusealClient {
         if (isRecord(entry) && entry.name === name && isId(entry.id) && (best === null || entry.id > best)) best = entry.id;
       }
       return { ok: true, value: best === null ? null : { id: best } };
+    },
+
+    async uploadTemplate(name, pdf) {
+      if (pdf.byteLength === 0 || pdf.byteLength > MAX_PDF_BYTES) return unexpected("size");
+      const answer = await api("POST", "/templates/pdf", { name, documents: [{ name: `${name}.pdf`, file: Buffer.from(pdf).toString("base64") }] });
+      if (!answer.ok) return answer;
+      const id = isRecord(answer.value) ? answer.value.id : null;
+      return isId(id) ? { ok: true, value: { id } } : unexpected("template");
     },
 
     getTemplate: (id) =>
