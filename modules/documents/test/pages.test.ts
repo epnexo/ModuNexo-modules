@@ -6,7 +6,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { renderRegistryPage } from "../web/registry-page.tsx";
 import type { DocumentRow } from "../web/queries.ts";
 
-const html = (element: ReactElement) => renderToStaticMarkup(createElement("div", null, element));
+/** The page's markup without its stylesheet: the CSS names attributes and classes that are not part of the content. */
+const html = (element: ReactElement) => renderToStaticMarkup(createElement("div", null, element)).replace(/<style>[\s\S]*?<\/style>/g, "");
 
 const row: DocumentRow = {
   id: 5,
