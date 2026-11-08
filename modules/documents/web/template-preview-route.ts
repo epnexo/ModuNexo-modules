@@ -27,8 +27,6 @@ const STATUS: Record<RenderFailure, number> = {
   timeout: 504,
   "render-error": 502,
   "spawn-failed": 502,
-  "engine-unreachable": 502,
-  "engine-unauthorized": 503,
 };
 
 export async function previewTemplatePdf(deps: PreviewDeps, idParam: string): Promise<Response> {

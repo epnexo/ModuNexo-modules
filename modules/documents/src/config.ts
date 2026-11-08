@@ -6,8 +6,6 @@ export type Env = Record<string, string | undefined>;
 const SETTING_TO_NAME = {
   "docuseal.url": "DOCUSEAL_URL",
   "docuseal.token": "DOCUSEAL_API_TOKEN",
-  "engine.url": "DOCUMENTS_ENGINE_URL",
-  "engine.token": "DOCUMENTS_ENGINE_TOKEN",
   "engine.python": "DOCUMENTS_PYTHON",
   "engine.assets_dir": "DOCUMENTS_ASSETS_DIR",
   "engine.timeout_ms": "DOCUMENTS_RENDER_TIMEOUT_MS",
