@@ -5,10 +5,10 @@ import type { AddressInfo } from "node:net";
 import { after, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
-import deliver from "../../inbox/jobs/deliver.ts";
-import { DELIVER_ATTEMPTS } from "../../inbox/lib/limits.ts";
-import inbox from "../../inbox/manifest.ts";
-import { POST as reply } from "../../inbox/web/reply.ts";
+import deliver from "../../modules/inbox/jobs/deliver.ts";
+import { DELIVER_ATTEMPTS } from "../../modules/inbox/lib/limits.ts";
+import inbox from "../../modules/inbox/manifest.ts";
+import { POST as reply } from "../../modules/inbox/web/reply.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
@@ -16,7 +16,7 @@ import { migrate } from "@modunexo/core/runner";
 import { SettingsService } from "@modunexo/core/settings-service";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
-const MODULE_DIR = fileURLToPath(new URL("../../inbox/", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/inbox/", import.meta.url));
 const KEY = "k".repeat(40);
 const OUT_SECRET = "outbound-shared-secret";
 

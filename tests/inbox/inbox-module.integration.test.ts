@@ -3,15 +3,15 @@ import { after, before, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { validateManifest } from "@modunexo/sdk";
-import inbox from "../../inbox/manifest.ts";
-import { POST as receive } from "../../inbox/web/messages.ts";
+import inbox from "../../modules/inbox/manifest.ts";
+import { POST as receive } from "../../modules/inbox/web/messages.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
 import { migrate } from "@modunexo/core/runner";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
-const MODULE_DIR = fileURLToPath(new URL("../../inbox/", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/inbox/", import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;

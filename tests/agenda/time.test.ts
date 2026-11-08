@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { addDays, isTimeZone, localToUtc, weekdayOf, zonedParts } from "../../agenda/lib/time.ts";
+import { addDays, isTimeZone, localToUtc, weekdayOf, zonedParts } from "../../modules/agenda/lib/time.ts";
 
 const iso = (ms: number | null) => (ms === null ? null : new Date(ms).toISOString());
 

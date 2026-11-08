@@ -6,10 +6,10 @@ set -euo pipefail
 id="${1:?usage: npm run pack -- <module-id>}"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 platform="${MODUNEXO_PLATFORM:-$here/../ModuNexo}"
-[ -f "$here/$id/package.json" ] || { echo "no module folder '$id' here" >&2; exit 1; }
-version="$(node -p "require('$here/$id/package.json').version")"
+[ -f "$here/modules/$id/package.json" ] || { echo "no module folder '$id' here" >&2; exit 1; }
+version="$(node -p "require('$here/modules/$id/package.json').version")"
 mkdir -p "$here/dist"
 cd "$platform"
 unset DATABASE_URL
-npm run -s modunexo -- modules pack "$here/$id" --out "$here/dist/$id-$version.tgz"
+npm run -s modunexo -- modules pack "$here/modules/$id" --out "$here/dist/$id-$version.tgz"
 "$here/scripts/archive-old.sh" "$id" "$version"

@@ -3,18 +3,18 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { validateManifest } from "@modunexo/sdk";
-import assistant from "../../assistant/manifest.ts";
-import { configInput, loadConfig, saveConfig } from "../../assistant/lib/config.ts";
-import { listPaused, pauseConversation, pausedReason, resumeConversation, resumedBaseline } from "../../assistant/lib/state.ts";
-import inbox from "../../inbox/manifest.ts";
+import assistant from "../../modules/assistant/manifest.ts";
+import { configInput, loadConfig, saveConfig } from "../../modules/assistant/lib/config.ts";
+import { listPaused, pauseConversation, pausedReason, resumeConversation, resumedBaseline } from "../../modules/assistant/lib/state.ts";
+import inbox from "../../modules/inbox/manifest.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
 import { migrate } from "@modunexo/core/runner";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
-const INBOX_DIR = fileURLToPath(new URL("../../inbox/", import.meta.url));
-const MODULE_DIR = fileURLToPath(new URL("../../assistant/", import.meta.url));
+const INBOX_DIR = fileURLToPath(new URL("../../modules/inbox/", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/assistant/", import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;

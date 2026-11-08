@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { computeSlots, type Busy } from "../../agenda/lib/slots.ts";
-import type { Settings, Window } from "../../agenda/lib/settings.ts";
+import { computeSlots, type Busy } from "../../modules/agenda/lib/slots.ts";
+import type { Settings, Window } from "../../modules/agenda/lib/settings.ts";
 
 const settings = (over: Partial<Settings> = {}): Settings => ({ timezone: "UTC", slotMinutes: 60, bufferMinutes: 0, horizonDays: 14, ...over });
 const monday = (startMinute: number, endMinute: number): Window => ({ weekday: 1, startMinute, endMinute });

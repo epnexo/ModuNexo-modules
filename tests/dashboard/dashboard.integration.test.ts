@@ -8,10 +8,10 @@ import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
 import { migrate } from "@modunexo/core/runner";
 import { createScratchDatabase } from "@modunexo/core/testing";
-import agenda from "../../agenda/manifest.ts";
-import assistant from "../../assistant/manifest.ts";
-import contacts from "../../contacts/manifest.ts";
-import inbox from "../../inbox/manifest.ts";
+import agenda from "../../modules/agenda/manifest.ts";
+import assistant from "../../modules/assistant/manifest.ts";
+import contacts from "../../modules/contacts/manifest.ts";
+import inbox from "../../modules/inbox/manifest.ts";
 
 const MODULES = [contacts, agenda, inbox, assistant];
 const dir = (id: string) => fileURLToPath(new URL(`../../${id}/`, import.meta.url));

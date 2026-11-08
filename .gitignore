@@ -1,2 +1,9 @@
 node_modules
 dist
+
+# documents: generated output and local config (contains real personal data)
+modules/documents/out/
+modules/documents/.env
+modules/documents/.env.*
+modules/documents/config.json
+modules/documents/**/*.pdf

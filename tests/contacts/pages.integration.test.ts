@@ -4,16 +4,16 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { renderToStaticMarkup } from "react-dom/server";
 import { validateManifest } from "@modunexo/sdk";
-import ContactsPage from "../../contacts/web/contacts-page.tsx";
-import PipelinePage from "../../contacts/web/pipeline-page.tsx";
-import contacts from "../../contacts/manifest.ts";
+import ContactsPage from "../../modules/contacts/web/contacts-page.tsx";
+import PipelinePage from "../../modules/contacts/web/pipeline-page.tsx";
+import contacts from "../../modules/contacts/manifest.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
 import { migrate } from "@modunexo/core/runner";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
-const MODULE_DIR = fileURLToPath(new URL("../../contacts/", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/contacts/", import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;

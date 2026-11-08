@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { HANDOFF_MARKER, MAX_REPLY_CHARS, buildMessages, readReply } from "../../assistant/lib/prompt.ts";
+import { HANDOFF_MARKER, MAX_REPLY_CHARS, buildMessages, readReply } from "../../modules/assistant/lib/prompt.ts";
 
 describe("buildMessages", () => {
   it("opens with the administrator's instructions and the fixed rules, then the conversation oldest first", () => {

@@ -2,19 +2,19 @@ import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
-import { POST as deleteContactRoute } from "../../contacts/web/contact-delete.ts";
-import { POST as saveContactRoute } from "../../contacts/web/contact-save.ts";
-import { POST as createLeadRoute } from "../../contacts/web/lead-create.ts";
-import { POST as moveLeadRoute } from "../../contacts/web/lead-move.ts";
-import { POST as saveStageRoute } from "../../contacts/web/stage-save.ts";
-import contacts from "../../contacts/manifest.ts";
+import { POST as deleteContactRoute } from "../../modules/contacts/web/contact-delete.ts";
+import { POST as saveContactRoute } from "../../modules/contacts/web/contact-save.ts";
+import { POST as createLeadRoute } from "../../modules/contacts/web/lead-create.ts";
+import { POST as moveLeadRoute } from "../../modules/contacts/web/lead-move.ts";
+import { POST as saveStageRoute } from "../../modules/contacts/web/stage-save.ts";
+import contacts from "../../modules/contacts/manifest.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
 import { migrate } from "@modunexo/core/runner";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
-const MODULE_DIR = fileURLToPath(new URL("../../contacts/", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/contacts/", import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;

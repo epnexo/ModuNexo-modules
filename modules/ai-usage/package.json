@@ -1,0 +1,18 @@
+{
+  "name": "@epnexo/ai-usage",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./manifest": "./manifest.ts",
+    "./web/page": "./web/page.tsx"
+  },
+  "dependencies": {
+    "@epnexo/core": "*",
+    "pg": "^8.13.0"
+  },
+  "peerDependencies": {
+    "next": ">=16",
+    "react": ">=19"
+  }
+}

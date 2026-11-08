@@ -2,17 +2,17 @@ import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
-import { bookSlot, bookingInput, cancelBooking, getBooking, rescheduleBooking, weekBookings } from "../../agenda/lib/bookings.ts";
-import { saveSettings } from "../../agenda/lib/settings.ts";
-import { freeSlots } from "../../agenda/lib/slots.ts";
-import agenda from "../../agenda/manifest.ts";
+import { bookSlot, bookingInput, cancelBooking, getBooking, rescheduleBooking, weekBookings } from "../../modules/agenda/lib/bookings.ts";
+import { saveSettings } from "../../modules/agenda/lib/settings.ts";
+import { freeSlots } from "../../modules/agenda/lib/slots.ts";
+import agenda from "../../modules/agenda/manifest.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
 import { migrate } from "@modunexo/core/runner";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
-const MODULE_DIR = fileURLToPath(new URL("../../agenda/", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/agenda/", import.meta.url));
 const NOW = new Date("2026-10-25T00:00:00Z"); // a Sunday; 2026-10-26 is the Monday the default hours open
 const MON_9 = "2026-10-26T09:00:00.000Z";
 const MON_930 = "2026-10-26T09:30:00.000Z";

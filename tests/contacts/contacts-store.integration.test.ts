@@ -3,15 +3,15 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { validateManifest } from "@modunexo/sdk";
-import { createContact, contactInput, deleteContact, getContact, listContacts, updateContact } from "../../contacts/lib/contacts.ts";
-import contacts from "../../contacts/manifest.ts";
+import { createContact, contactInput, deleteContact, getContact, listContacts, updateContact } from "../../modules/contacts/lib/contacts.ts";
+import contacts from "../../modules/contacts/manifest.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
 import { migrate } from "@modunexo/core/runner";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
-const MODULE_DIR = fileURLToPath(new URL("../../contacts/", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/contacts/", import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;

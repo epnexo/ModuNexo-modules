@@ -2,15 +2,15 @@ import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
-import { listConversations, loadThread, markRead } from "../../inbox/lib/read.ts";
-import inbox from "../../inbox/manifest.ts";
+import { listConversations, loadThread, markRead } from "../../modules/inbox/lib/read.ts";
+import inbox from "../../modules/inbox/manifest.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
 import { migrate } from "@modunexo/core/runner";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
-const MODULE_DIR = fileURLToPath(new URL("../../inbox/", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/inbox/", import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;

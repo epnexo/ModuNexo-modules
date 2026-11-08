@@ -1,0 +1,4 @@
+{"timestamp":"2026-10-01T11:00:00.000Z","type":"session_meta","payload":{"id":"cdx-0002","session_id":"cdx-0002","timestamp":"2026-10-01T11:00:00.000Z","cwd":"/work/forked","forked_from_id":"cdx-0001"}}
+{"timestamp":"2026-10-01T11:00:00.100Z","type":"session_meta","payload":{"id":"cdx-0001","session_id":"cdx-0001","timestamp":"2026-10-01T10:00:00.000Z","cwd":"/work/demo-codex"}}
+{"timestamp":"2026-10-01T11:00:01.000Z","type":"turn_context","payload":{"model":"gpt-test-a"}}
+{"timestamp":"2026-10-01T11:00:05.000Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":1100,"cached_input_tokens":560,"cache_write_input_tokens":0,"output_tokens":220,"reasoning_output_tokens":0,"total_tokens":1320},"last_token_usage":{"input_tokens":50,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":10,"reasoning_output_tokens":0,"total_tokens":60}}}}

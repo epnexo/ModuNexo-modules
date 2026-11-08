@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { parseDay, weekOf } from "../../agenda/lib/week.ts";
+import { parseDay, weekOf } from "../../modules/agenda/lib/week.ts";
 
 const NOW = new Date("2026-10-25T15:00:00Z"); // a Sunday afternoon in UTC
 

@@ -3,11 +3,11 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { validateManifest } from "@modunexo/sdk";
-import inbox from "../../inbox/manifest.ts";
-import { POST as readRoute } from "../../inbox/web/svc-read.ts";
-import { POST as sendRoute } from "../../inbox/web/svc-send.ts";
-import { GET as conversationsRoute } from "../../inbox/web/svc-conversations.ts";
-import { GET as messagesRoute } from "../../inbox/web/svc-messages.ts";
+import inbox from "../../modules/inbox/manifest.ts";
+import { POST as readRoute } from "../../modules/inbox/web/svc-read.ts";
+import { POST as sendRoute } from "../../modules/inbox/web/svc-send.ts";
+import { GET as conversationsRoute } from "../../modules/inbox/web/svc-conversations.ts";
+import { GET as messagesRoute } from "../../modules/inbox/web/svc-messages.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
@@ -15,7 +15,7 @@ import { migrate } from "@modunexo/core/runner";
 import { SettingsService } from "@modunexo/core/settings-service";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
-const MODULE_DIR = fileURLToPath(new URL("../../inbox/", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/inbox/", import.meta.url));
 const KEY = "k".repeat(40);
 
 let pool: pg.Pool | undefined;

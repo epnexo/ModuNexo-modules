@@ -2,15 +2,15 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
-import { hoursInput, loadHours, loadSettings, saveSettings, settingsInput } from "../../agenda/lib/settings.ts";
-import agenda from "../../agenda/manifest.ts";
+import { hoursInput, loadHours, loadSettings, saveSettings, settingsInput } from "../../modules/agenda/lib/settings.ts";
+import agenda from "../../modules/agenda/manifest.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
 import { migrate } from "@modunexo/core/runner";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
-const MODULE_DIR = fileURLToPath(new URL("../../agenda/", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/agenda/", import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;

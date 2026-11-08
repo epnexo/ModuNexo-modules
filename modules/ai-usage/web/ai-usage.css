@@ -1,0 +1,415 @@
+/*
+ * Styles owned by the ai-usage module. Every class is prefixed `au-` so nothing leaks into other pages.
+ * Colors, sizes and weights come from the theme tokens in apps/web/src/app/theme.css, including the chart palette.
+ *
+ * Tool colors are categorical slots 1 to 4 of the reference palette, validated for color-vision deficiency
+ * in both modes. Slots 3 and 4 are below 3:1 on the light portlet body, so every mark is also named in text.
+ * Single-series marks (cumulative line, token and model bars) share one color, --series-total, that no tool wears.
+ * Text in charts wears ink tokens, never a series color.
+ */
+.au-t0 { --tool: var(--series-0); }
+.au-t1 { --tool: var(--series-1); }
+.au-t2 { --tool: var(--series-2); }
+.au-t3 { --tool: var(--series-3); }
+.au-t4 { --tool: var(--series-4); }
+.au-t5 { --tool: var(--series-5); }
+.au-t6 { --tool: var(--series-6); }
+.au-t7 { --tool: var(--series-7); }
+.au-t8 { --tool: var(--series-8); }
+
+/*
+ * Portlet grid. One column on narrow screens. On wide screens the KPI row, the daily chart, the tables and the sessions
+ * span the full width; the cumulative chart takes the left column across two rows, with the token split and the model
+ * share stacked beside it.
+ */
+.au-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--grid-gap);
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  .au-layout {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+
+  .au-layout > * {
+    grid-column: 1 / -1;
+  }
+
+  .au-layout > .au-cumulative {
+    grid-column: 1;
+    grid-row: span 2;
+    align-self: stretch;
+  }
+
+  .au-layout > .au-split-portlet,
+  .au-layout > .au-model-portlet {
+    grid-column: 2;
+  }
+}
+
+/* Filters: grouped links in the page bar, selection shown by fill, weight and a check, not by color alone. */
+.au-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 16px;
+}
+
+.au-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px;
+  border: var(--border-width) solid var(--portlet-border);
+  border-radius: var(--radius);
+  background: var(--portlet-body);
+}
+
+.au-seg a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: calc(var(--control-height) - 6px);
+  padding: 2px 10px;
+  border-radius: var(--radius);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.au-seg a:hover {
+  background: var(--wash);
+}
+
+.au-seg a[aria-current="true"] {
+  background: var(--portlet-head);
+  color: var(--portlet-head-ink);
+  font-weight: var(--weight-bold);
+}
+
+.au-seg a[aria-current="true"]::before {
+  content: "";
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-1px) rotate(-45deg);
+}
+
+.au-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tool, var(--series-0));
+  flex: none;
+}
+
+.au-na {
+  color: var(--ink-muted);
+  font-weight: var(--weight-body);
+}
+
+/* Legend: a swatch that mirrors the mark, the tool name in ink, and its total. */
+.au-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.au-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+}
+
+.au-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius);
+  background: var(--tool, var(--series-0));
+  flex: none;
+}
+
+.au-total { --tool: var(--series-total); }
+
+/* Plots: inline SVG drawn at the real pixel size of its box, so axis text never scales. */
+.au-plot {
+  position: relative;
+  width: 100%;
+}
+
+.au-plot-bars {
+  height: var(--chart-height-bars);
+}
+
+.au-plot-line {
+  height: var(--chart-height-line);
+}
+
+.au-cumulative,
+.au-cumulative .portlet-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.au-cumulative .portlet-body {
+  flex: 1;
+}
+
+.au-cumulative .au-plot-line {
+  flex: 1;
+  height: auto;
+  min-height: var(--chart-height-line);
+}
+
+.au-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  border-radius: var(--radius);
+}
+
+.au-tick {
+  font-size: var(--text-chart);
+  font-variant-numeric: tabular-nums;
+  fill: var(--ink-muted);
+}
+
+.au-grid {
+  stroke: var(--grid);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.au-axis {
+  stroke: var(--axis);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.au-bar {
+  fill: var(--tool, var(--series-0));
+}
+
+.au-hit {
+  fill: transparent;
+}
+
+.au-wash {
+  fill: var(--wash);
+}
+
+.au-area {
+  fill: var(--series-total);
+  fill-opacity: var(--chart-area-opacity);
+}
+
+.au-line {
+  fill: none;
+  stroke: var(--series-total);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.au-dot-end {
+  fill: var(--series-total);
+  stroke: var(--portlet-body);
+  stroke-width: 2;
+}
+
+.au-cross {
+  stroke: var(--axis);
+  stroke-width: 1;
+}
+
+/* Tooltip: values lead in strong ink, names follow; rows are keyed with a short stroke of the series color. */
+.au-tip {
+  position: absolute;
+  top: 10px;
+  z-index: 2;
+  min-width: 150px;
+  padding: 8px 10px;
+  background: var(--portlet-body);
+  border: var(--border-width) solid var(--portlet-border);
+  border-radius: var(--radius);
+  color: var(--ink-muted);
+  font-size: var(--text-small);
+  pointer-events: none;
+}
+
+.au-tip-title {
+  margin-bottom: 4px;
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.au-tip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.au-tip-row strong {
+  color: var(--ink-title);
+  font-weight: var(--weight-bold);
+}
+
+.au-tip-row .au-key {
+  width: 12px;
+  height: 3px;
+}
+
+.au-tip-foot {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: var(--border-width) solid var(--row-line);
+}
+
+.au-tip-row > strong:first-child {
+  margin-left: 20px;
+}
+
+/* Horizontal bars (token split, share by model): label, bar, value and share. Stacked on narrow boxes. */
+.au-hbars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  container-type: inline-size;
+}
+
+.au-hbar {
+  display: grid;
+  grid-template-columns: minmax(6rem, 10rem) minmax(0, 1fr) 7.5rem;
+  grid-template-areas: "label track value";
+  align-items: center;
+  gap: 12px;
+}
+
+.au-hbar-label {
+  grid-area: label;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.au-hbar-track {
+  grid-area: track;
+  height: var(--chart-hbar-height);
+  border-left: var(--border-width) solid var(--axis);
+}
+
+.au-hbar-fill {
+  display: block;
+  height: 100%;
+  background: var(--series-total);
+  border-radius: 0 var(--chart-bar-radius) var(--chart-bar-radius) 0;
+}
+
+.au-hbar-other .au-hbar-fill {
+  background: var(--series-0);
+}
+
+.au-hbar-value {
+  grid-area: value;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.au-hbar-value strong {
+  color: var(--ink-title);
+  font-weight: var(--weight-bold);
+}
+
+@container (max-width: 460px) {
+  .au-hbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label value"
+      "track track";
+    gap: 4px 12px;
+  }
+}
+
+.au details {
+  margin-top: var(--portlet-pad);
+}
+
+.au summary {
+  cursor: pointer;
+  color: var(--link);
+}
+
+.au-scroll {
+  max-height: 360px;
+  overflow: auto;
+  margin-top: 8px;
+}
+
+/* Tables */
+.au-cell-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.au-share {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.au-share-track {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--radius);
+  background: var(--wash);
+  overflow: hidden;
+}
+
+.au-share-fill {
+  display: block;
+  height: 100%;
+  background: var(--tool, var(--series-0));
+}
+
+.au-share .num {
+  min-width: 3.5ch;
+  text-align: right;
+  font-size: var(--text-small);
+  color: var(--ink);
+}
+
+.au-tools-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.au-note {
+  margin: var(--portlet-pad) 0 0;
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+}
+
+.au-empty p {
+  margin: 0;
+  color: var(--ink);
+}

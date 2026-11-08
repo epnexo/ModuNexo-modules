@@ -4,18 +4,18 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { renderToStaticMarkup } from "react-dom/server";
 import { validateManifest } from "@modunexo/sdk";
-import AgendaPage from "../../agenda/web/agenda-page.tsx";
-import SettingsPage from "../../agenda/web/settings-page.tsx";
-import { setNowForTests } from "../../agenda/lib/clock.ts";
-import { saveSettings } from "../../agenda/lib/settings.ts";
-import agenda from "../../agenda/manifest.ts";
+import AgendaPage from "../../modules/agenda/web/agenda-page.tsx";
+import SettingsPage from "../../modules/agenda/web/settings-page.tsx";
+import { setNowForTests } from "../../modules/agenda/lib/clock.ts";
+import { saveSettings } from "../../modules/agenda/lib/settings.ts";
+import agenda from "../../modules/agenda/manifest.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
 import { migrate } from "@modunexo/core/runner";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
-const MODULE_DIR = fileURLToPath(new URL("../../agenda/", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/agenda/", import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;
