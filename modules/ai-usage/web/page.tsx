@@ -5,7 +5,7 @@ import { PAGE_PATH, PERIOD_LABELS } from "./filters.ts";
 import { estimateCost } from "./metrics.ts";
 import { loadOverview, type OverviewData } from "./data.ts";
 import { ByToolTable, CumulativeTokens, DailyCharts, EmptyState, Headline, Notice, RecentSessions, UsageHours, toolStyles, type CostView } from "./components.tsx";
-import { PeriodBar, Projects, ToolCards, ToolTabs, TopSkills, TopTools, Unavailable } from "./panels.tsx";
+import { LastReceived, PeriodBar, Projects, ToolCards, ToolTabs, TopSkills, TopTools, Unavailable } from "./panels.tsx";
 import { mergeSkills, toolPageHref, toolTabs } from "./tools.ts";
 import "./ai-usage.css";
 
@@ -58,6 +58,7 @@ export default async function AiUsagePage({ searchParams }: { searchParams: Sear
       </Header>
       <div className="page-body">
         <ToolTabs tabs={toolTabs(tools, null, filters.period)} styles={styles} />
+        <LastReceived received={data.received} tools={tools} now={data.now} />
         {problems.map((problem) => (
           <Notice key={problem} title="Filter ignored">
             {problem}

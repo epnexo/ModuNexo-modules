@@ -6,7 +6,7 @@ import { ByModelTable, CumulativeTokens, DailyCharts, EmptyState, Headline, Mode
 import { formatCount } from "./format.ts";
 import { estimateCost } from "./metrics.ts";
 import { groupModels } from "./group.ts";
-import { PeriodBar, Projects, ToolHero, ToolTabs, TopSkills, TopTools, Unavailable } from "./panels.tsx";
+import { LastReceived, PeriodBar, Projects, ToolHero, ToolTabs, TopSkills, TopTools, Unavailable } from "./panels.tsx";
 import { mergeSkills, toolTabs } from "./tools.ts";
 import "./ai-usage.css";
 
@@ -59,6 +59,7 @@ export default async function ToolUsagePage({ params, searchParams }: { params: 
               {formatCount(mine.prompts)} prompts and {formatCount(mine.toolCalls)} tool calls in {PERIOD_LABELS[filters.period].toLowerCase()}.
             </p>
           )}
+          <LastReceived received={data.received} tools={data.tools} now={data.now} only={slug} />
         </ToolHero>
         {problems.map((problem) => (
           <Notice key={problem} title="Filter ignored">

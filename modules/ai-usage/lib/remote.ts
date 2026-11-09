@@ -156,6 +156,10 @@ export async function storeBatch(batch: RemoteBatch): Promise<RemoteReport> {
     const sessionIds = await upsertSessions(tx, toolId, batch.sessions, MAX_ITEMS, report);
     await upsertEvents(tx, toolId, sessionIds, mergeDuplicateEvents(batch.usage), MAX_ITEMS, report);
     await storeActivity(tx, toolId, ACTIVITY_SOURCE, batch.activity, sessionIds, MAX_ITEMS);
+    await tx.query(
+      "insert into ai_usage.ingest_receipts (tool_id, received_at) values ($1, now()) on conflict (tool_id) do update set received_at = excluded.received_at",
+      [toolId],
+    );
   });
   return report;
 }

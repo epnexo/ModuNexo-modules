@@ -4,6 +4,7 @@ import { parseFilters, periodStart, type Filters } from "./filters.ts";
 import {
   type DailyRow,
   type HourRow,
+  type ReceivedRow,
   type ModelRow,
   type ModelTokenRow,
   type ProjectRow,
@@ -18,6 +19,7 @@ import {
   getByTool,
   getDaily,
   getHourly,
+  getLastReceived,
   getModelTokens,
   getProjects,
   getRecentSessions,
@@ -49,6 +51,9 @@ interface Common {
   sessions: SessionRow[];
   modelTokens: ModelTokenRow[];
   hours: HourRow[];
+  /** When each tool's data last arrived; a tool that never sent anything has no entry. */
+  received: ReceivedRow[];
+  now: Date;
   /** The prices an administrator entered in Settings; empty until they do. */
   prices: PriceTable;
   sendCommand: string | null;
@@ -93,7 +98,7 @@ async function common(raw: RawParams, now: Date, tool: string | null) {
   const parsed = parseFilters(raw, tools.map((t) => t.slug));
   const since = periodStart(parsed.period, now);
   const filter = { since, tool: tool ?? parsed.tool };
-  const [summary, daily, byTool, activity, skills, toolUse, projects, sessions, modelTokens, hours] = await Promise.all([
+  const [summary, daily, byTool, activity, skills, toolUse, projects, sessions, modelTokens, hours, received] = await Promise.all([
     getSummary(db, filter),
     getDaily(db, filter),
     getByTool(db, filter),
@@ -104,6 +109,7 @@ async function common(raw: RawParams, now: Date, tool: string | null) {
     getRecentSessions(db, filter),
     getModelTokens(db, filter),
     getHourly(db, filter),
+    getLastReceived(db),
   ]);
   return {
     db,
@@ -124,6 +130,8 @@ async function common(raw: RawParams, now: Date, tool: string | null) {
       sessions,
       modelTokens,
       hours,
+      received,
+      now,
       prices: await modelPrices(),
       sendCommand: await connectCommand(),
     } satisfies Common,

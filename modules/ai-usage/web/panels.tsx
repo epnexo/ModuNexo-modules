@@ -3,8 +3,8 @@ import { Fragment, type ReactNode } from "react";
 import { Mascot } from "./mascots.tsx";
 import { HBars, Portlet, ToolName, styleOf, value, type HBarRow, type ToolStyle } from "./components.tsx";
 import { PERIODS, PERIOD_LABELS, withFilters, type Filters, type Period } from "./filters.ts";
-import { NOT_AVAILABLE, formatCompact, formatCount, formatPercent, formatUtcMinute } from "./format.ts";
-import type { ProjectRow, ToolActivityRow, ToolInfo, ToolRow, ToolUseRow } from "./queries.ts";
+import { NOT_AVAILABLE, formatCompact, formatAgo, formatCount, formatPercent, formatUtcMinute } from "./format.ts";
+import type { ProjectRow, ReceivedRow, ToolActivityRow, ToolInfo, ToolRow, ToolUseRow } from "./queries.ts";
 import { failureRate, profileOf, toolPageHref, type MergedSkill, type TabItem } from "./tools.ts";
 
 /** Period links for a page at `path`. The tool is not a filter here: each CLI has its own page. */
@@ -223,5 +223,29 @@ export function Unavailable() {
         The database could not be reached. Check that the platform database is up and try again.
       </div>
     </div>
+  );
+}
+
+/**
+ * When data last reached the platform. The overview lists each tool that ever sent something; a tool page passes
+ * `only` for its own line. Hovering shows the exact UTC minute.
+ */
+export function LastReceived({ received, tools, now, only }: { received: ReceivedRow[]; tools: ToolInfo[]; now: Date; only?: string }) {
+  const rows = received.filter((row) => only === undefined || row.tool === only);
+  if (rows.length === 0) return <p className="muted au-received">No data received yet.</p>;
+  const nameOf = (slug: string) => tools.find((tool) => tool.slug === slug)?.name ?? slug;
+  return (
+    <p className="muted au-received">
+      Last data received:{" "}
+      {rows.map((row, index) => (
+        <Fragment key={row.tool}>
+          {index === 0 ? null : " · "}
+          {only === undefined ? `${nameOf(row.tool)} ` : null}
+          <time dateTime={row.receivedAt.toISOString()} title={`${formatUtcMinute(row.receivedAt)} UTC`}>
+            {formatAgo(row.receivedAt, now)}
+          </time>
+        </Fragment>
+      ))}
+    </p>
   );
 }

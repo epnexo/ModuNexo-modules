@@ -104,6 +104,24 @@ export async function getTools(db: Queryable): Promise<ToolInfo[]> {
   return rows.map((row) => ({ slug: String(row.slug), name: String(row.name) }));
 }
 
+export interface ReceivedRow {
+  tool: string;
+  receivedAt: Date;
+}
+
+/** When each tool's data last reached the platform: the later of the last batch received and the last local run. */
+export async function getLastReceived(db: Queryable): Promise<ReceivedRow[]> {
+  const { rows } = await db.query(
+    `select t.slug as tool, greatest(r.received_at, s.updated_at) as received_at
+       from ai_usage.tools t
+       left join ai_usage.ingest_receipts r on r.tool_id = t.id
+       left join (select tool_id, max(updated_at) as updated_at from ai_usage.ingest_state group by tool_id) s on s.tool_id = t.id
+      where r.received_at is not null or s.updated_at is not null
+      order by t.id`,
+  );
+  return rows.map((row) => ({ tool: String(row.tool), receivedAt: new Date(String(row.received_at)) }));
+}
+
 export async function getSummary(db: Queryable, filter: QueryFilter): Promise<Summary> {
   const { rows } = await db.query(
     `select ${COUNTER_SUMS},

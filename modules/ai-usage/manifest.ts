@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "ai-usage",
-  version: "0.6.2", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.6.3", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "AI usage",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
