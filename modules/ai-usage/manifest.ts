@@ -17,7 +17,7 @@ export default defineModule({
       label: "Platform address",
       type: "string",
       description:
-        "The address of this platform as the computers see it, for example https://modunexo.home.arpa. It only fills in the send command shown on the AI usage page. To connect a computer, open API access on this module in Settings: it lists the endpoint and creates one token per computer, with the scope ai_usage.write. Check what would be sent with --dry-run before sending. Only counters, model names, dates and project names are sent, never prompts, answers or file paths.",
+        "The address of this platform as the computers see it, for example https://modunexo.example.com. It only fills in the send command shown on the AI usage page. To connect a computer, open API access on this module in Settings: it lists the endpoint and creates one token per computer, with the scope ai_usage.write. Check what would be sent with --dry-run before sending. Only counters, model names, dates and project names are sent, never prompts, answers or file paths.",
     },
     {
       key: "model_prices",

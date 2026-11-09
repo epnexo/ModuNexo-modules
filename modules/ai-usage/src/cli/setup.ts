@@ -35,7 +35,7 @@ export async function runSetup(options: { path: string; prompter: Prompter; curr
   const { path, prompter, current, log } = options;
   const url = await until(
     "web address",
-    () => prompter.ask(`Platform address, for example https://modunexo.home.arpa${current.url ? ` [${current.url}]` : ""}: `),
+    () => prompter.ask(`Platform address, for example https://modunexo.example.com${current.url ? ` [${current.url}]` : ""}: `),
     current.url,
     (answer) => cleanAddress(answer) ?? undefined,
     log,

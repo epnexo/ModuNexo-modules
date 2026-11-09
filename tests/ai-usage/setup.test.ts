@@ -67,9 +67,9 @@ describe("saved config", () => {
 describe("runSetup", () => {
   it("asks for the address, the token and the certificate, and saves them", async () => {
     const file = join(work, "setup-1.json");
-    const prompter = scripted(["https://modunexo.home.arpa/svc/ai-usage/ingest", caFile], [TOKEN]);
+    const prompter = scripted(["https://modunexo.example.com/svc/ai-usage/ingest", caFile], [TOKEN]);
     const saved = await runSetup({ path: file, prompter, current: {}, log: () => {} });
-    assert.deepEqual(saved, { url: "https://modunexo.home.arpa", token: TOKEN, caFile });
+    assert.deepEqual(saved, { url: "https://modunexo.example.com", token: TOKEN, caFile });
     assert.deepEqual(loadConfig(file), saved);
   });
 
