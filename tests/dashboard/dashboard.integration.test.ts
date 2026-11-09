@@ -14,7 +14,7 @@ import contacts from "../../modules/contacts/manifest.ts";
 import inbox from "../../modules/inbox/manifest.ts";
 
 const MODULES = [contacts, agenda, inbox, assistant];
-const dir = (id: string) => fileURLToPath(new URL(`../../${id}/`, import.meta.url));
+const dir = (id: string) => fileURLToPath(new URL(`../../modules/${id}/`, import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;
