@@ -1004,3 +1004,8 @@
   margin: 0;
   font-size: 0.85rem;
 }
+
+.au .au-grain {
+  align-self: flex-start;
+  margin-bottom: 0.75rem;
+}

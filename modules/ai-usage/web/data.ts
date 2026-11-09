@@ -1,5 +1,6 @@
 import { getDb, getSetting } from "@modunexo/sdk";
 import { cleanAddress, sendCommand } from "../lib/connect.ts";
+import { parseGrain, type Grain } from "./buckets.ts";
 import { parseFilters, periodStart, type Filters } from "./filters.ts";
 import {
   type DailyRow,
@@ -54,6 +55,7 @@ interface Common {
   /** When each tool's data last arrived; a tool that never sent anything has no entry. */
   received: ReceivedRow[];
   now: Date;
+  grain: Grain;
   /** The prices an administrator entered in Settings; empty until they do. */
   prices: PriceTable;
   sendCommand: string | null;
@@ -116,7 +118,7 @@ async function common(raw: RawParams, now: Date, tool: string | null) {
     parsed,
     base: {
       tools,
-      filters: { period: parsed.period, tool: tool ?? null } satisfies Filters,
+      filters: { period: parsed.period, tool: tool ?? null, grain: parseGrain(raw.grain) } satisfies Filters,
       problems: parsed.problems,
       since,
       today: now.toISOString().slice(0, 10),
@@ -132,6 +134,7 @@ async function common(raw: RawParams, now: Date, tool: string | null) {
       hours,
       received,
       now,
+      grain: parseGrain(raw.grain),
       prices: await modelPrices(),
       sendCommand: await connectCommand(),
     } satisfies Common,
@@ -141,7 +144,7 @@ async function common(raw: RawParams, now: Date, tool: string | null) {
 export async function loadOverview(raw: RawParams, now: Date): Promise<OverviewData> {
   const { base, parsed } = await common(raw, now, null);
   // An old link such as /ai-usage?tool=codex now belongs on that tool's page.
-  return { ...base, filters: { period: parsed.period, tool: null }, redirectTool: parsed.tool };
+  return { ...base, filters: { ...base.filters, tool: null }, redirectTool: parsed.tool };
 }
 
 /** The data for one tool's page, or null when the module does not know the tool. */

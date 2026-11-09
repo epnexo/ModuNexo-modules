@@ -3,6 +3,7 @@
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { areaPath, axisTicks, cumulative, dayReadout, keyAction, linePath, linePoints, nearestIndex, nextActive, plotBox, stackLayout, thinLabels, type DayAction } from "./chart.ts";
+import { bucketAxisLabel, bucketTitle, type Grain } from "./buckets.ts";
 import { formatCompact, formatUtcDay, formatUtcDayShort } from "./format.ts";
 
 /**
@@ -112,13 +113,13 @@ function YAxis({ ticks, max, plotWidth, plotHeight }: { ticks: number[]; max: nu
   );
 }
 
-function XAxis({ days, plotWidth, plotHeight }: { days: string[]; plotWidth: number; plotHeight: number }) {
+function XAxis({ days, plotWidth, plotHeight, grain = "day" }: { days: string[]; plotWidth: number; plotHeight: number; grain?: Grain }) {
   const slot = plotWidth / Math.max(days.length, 1);
   return (
     <>
       {thinLabels(days.length, slot, X_LABEL_WIDTH, X_LABEL_GAP).map((index) => (
         <text key={days[index]} className="au-tick" x={index * slot + slot / 2} y={plotHeight + 18} textAnchor="middle">
-          {formatUtcDayShort(days[index]!)}
+          {bucketAxisLabel(days[index]!, grain, formatUtcDayShort)}
         </text>
       ))}
     </>
@@ -145,7 +146,8 @@ function useActiveDay(count: number) {
   return { active, focus, move, leave, key };
 }
 
-export function StackedBars({ days, tools }: { days: { day: string; parts: (number | null)[] }[]; tools: ChartTool[] }) {
+export function StackedBars({ days, tools, grain = "day" }: { days: { day: string; parts: (number | null)[] }[]; tools: ChartTool[]; grain?: Grain }) {
+  const unit = grain;
   const [ref, m] = useMetrics();
   const uid = useId().replace(/:/g, "");
   const plot = plotBox(m.width, m.height, MARGIN);
@@ -165,7 +167,7 @@ export function StackedBars({ days, tools }: { days: { day: string; parts: (numb
         tabIndex={0}
         role="group"
         aria-roledescription="chart"
-        aria-label={`Tokens per day stacked by tool, ${days.length} days, busiest day ${days[peak] === undefined ? "none" : formatUtcDay(days[peak].day)} with ${formatCompact(totals[peak] ?? 0)}. Use the left and right arrow keys to read each day. Every value is in the table below.`}
+        aria-label={`Tokens per ${unit} stacked by tool, ${days.length} ${unit}s, busiest ${unit} ${days[peak] === undefined ? "none" : bucketTitle(days[peak].day, grain)} with ${formatCompact(totals[peak] ?? 0)}. Use the left and right arrow keys to read each ${unit}. Every value is in the table below.`}
         onKeyDown={key}
         onBlur={leave}
         onFocus={() => focus(peak)}
@@ -188,22 +190,22 @@ export function StackedBars({ days, tools }: { days: { day: string; parts: (numb
               </g>
             );
           })}
-          <XAxis days={days.map((d) => d.day)} plotWidth={plot.width} plotHeight={plot.height} />
+          <XAxis days={days.map((d) => d.day)} plotWidth={plot.width} plotHeight={plot.height} grain={grain} />
           <rect className="au-hit" x={0} y={0} width={plot.width} height={plot.height} onPointerMove={move} onPointerLeave={leave} />
         </g>
       </svg>
       {active === null || activeDay === null || activeDay === undefined ? null : (
-        <StackTip day={activeDay} tools={tools} x={MARGIN.left + active * slot + slot / 2} flip={active > days.length / 2} />
+        <StackTip day={activeDay} tools={tools} grain={grain} x={MARGIN.left + active * slot + slot / 2} flip={active > days.length / 2} />
       )}
     </div>
   );
 }
 
-function StackTip({ day, tools, x, flip }: { day: { day: string; parts: (number | null)[] }; tools: ChartTool[]; x: number; flip: boolean }) {
+function StackTip({ day, tools, x, flip, grain }: { day: { day: string; parts: (number | null)[] }; tools: ChartTool[]; x: number; flip: boolean; grain: Grain }) {
   const readout = dayReadout(
     day.day,
     tools.map((tool, i) => ({ name: tool.name, value: day.parts[i] ?? null })),
-    { day: (d) => `${formatUtcDay(d)} (UTC)`, value: (v) => formatCompact(v) },
+    { day: (d) => `${bucketTitle(d, grain)} (UTC)`, value: (v) => formatCompact(v) },
   );
   const empty = readout.rows.every((row) => row.value === null);
   return (
@@ -212,7 +214,7 @@ function StackTip({ day, tools, x, flip }: { day: { day: string; parts: (number 
       flip={flip}
       title={readout.title}
       rows={empty ? [] : readout.rows.map((row, i) => ({ ...row, key: <span className={`au-key ${tools[i]?.className ?? "au-t0"}`} aria-hidden="true" /> })).reverse()}
-      foot={{ key: null, name: empty ? "no usage recorded" : "day total", text: empty ? "-" : formatCompact(readout.total) }}
+      foot={{ key: null, name: empty ? "no usage recorded" : `${grain} total`, text: empty ? "-" : formatCompact(readout.total) }}
     />
   );
 }
