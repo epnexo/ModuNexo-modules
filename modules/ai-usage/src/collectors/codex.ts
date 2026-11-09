@@ -1,5 +1,5 @@
-import type { Collector, ParseResult, ResumePoint, SessionRecord, SourceFile, UsageRecord } from "../collector.ts";
-import { asRecord, asString, counter, findFiles, parseDate, parseObject, projectLabel, readCompleteLines } from "./shared.ts";
+import type { ActivityItem, Collector, ParseResult, ResumePoint, SessionRecord, SourceFile, UsageRecord } from "../collector.ts";
+import { asRecord, asString, cleanName, counter, findFiles, parseDate, parseObject, projectLabel, readCompleteLines, skillFromArguments } from "./shared.ts";
 
 export interface CodexOptions {
   /** Directory with the rollout logs, normally `~/.codex/sessions`. */
@@ -23,8 +23,12 @@ const EMPTY_STATE: CodexState = { sessionId: null, projectLabel: null, startedAt
  *
  * Fields read: `session_meta` (`id`, `cwd` basename, only the first one in a file), `turn_context.model`,
  * `event_msg` of type `token_count` (`info.total_token_usage.total_tokens` and `info.last_token_usage.*`),
- * `user_message` and `task_complete.duration_ms` (counts and durations only), and `response_item` types
- * `function_call` / `custom_tool_call` (counted, never read).
+ * `user_message` and `task_complete` (`turn_id`, `duration_ms`), and `response_item` types
+ * `function_call` / `custom_tool_call` (`call_id`, `name`; the arguments are searched for a `skills/<name>/SKILL.md`
+ * path to name the skill, and nothing else of them is kept). Codex has no skill event and no per-call error flag,
+ * so a skill is an inference and `failed` stays null.
+ *
+ * Activity: prompts, tool calls and turns are reported as items, so ingestion counts each once per tool.
  *
  * Deduplication: Codex re-emits the same `token_count` several times with an unchanged cumulative total, and
  * a forked rollout carries the parent's cumulative total as its starting point. Only a `token_count` whose
@@ -45,6 +49,12 @@ async function parseCodexFile(file: SourceFile, from: ResumePoint): Promise<Pars
   const state: CodexState = { ...EMPTY_STATE, ...(asRecord(from.state) as Partial<CodexState> | undefined) };
   const usage: UsageRecord[] = [];
   const counters = { messageCount: 0, toolCallCount: 0, durationMs: 0 };
+  const activity = new Map<string, ActivityItem>();
+  const addActivity = (kind: ActivityItem["kind"], externalId: string, durationMs = 0, extra: Partial<ActivityItem> = {}) => {
+    const key = `${kind}:${externalId}`;
+    if (!activity.has(key)) activity.set(key, { kind, externalId, sessionExternalId: state.sessionId, durationMs, ...extra });
+  };
+  const stamp = (entry: Record<string, unknown>) => `${state.sessionId ?? ""}:${asString(entry.timestamp) ?? ""}`;
   let startedAt = state.startedAt ? new Date(state.startedAt) : undefined;
   let endedAt: Date | undefined;
 
@@ -73,10 +83,22 @@ async function parseCodexFile(file: SourceFile, from: ResumePoint): Promise<Pars
     if (entry.type === "turn_context") {
       state.model = asString(payload.model) ?? state.model;
     } else if (entry.type === "response_item") {
-      if (payload.type === "function_call" || payload.type === "custom_tool_call") counters.toolCallCount++;
+      if (payload.type === "function_call" || payload.type === "custom_tool_call") {
+        counters.toolCallCount++;
+        addActivity("tool_call", asString(payload.call_id) ?? stamp(entry), 0, {
+          name: cleanName(payload.name),
+          skill: skillFromArguments(payload.arguments ?? payload.input),
+          failed: null,
+        });
+      }
     } else if (entry.type === "event_msg") {
-      if (payload.type === "user_message") counters.messageCount++;
-      else if (payload.type === "task_complete") counters.durationMs += counter(payload.duration_ms) ?? 0;
+      if (payload.type === "user_message") {
+        counters.messageCount++;
+        addActivity("prompt", stamp(entry));
+      } else if (payload.type === "task_complete") {
+        counters.durationMs += counter(payload.duration_ms) ?? 0;
+        addActivity("turn", asString(payload.turn_id) ?? stamp(entry), counter(payload.duration_ms) ?? 0);
+      }
       else if (payload.type === "token_count" && state.sessionId !== null && timestamp) {
         const info = asRecord(payload.info);
         const cumulative = counter(asRecord(info?.total_token_usage)?.total_tokens);
@@ -110,5 +132,5 @@ async function parseCodexFile(file: SourceFile, from: ResumePoint): Promise<Pars
     state.sessionId !== null && startedAt
       ? [{ externalId: state.sessionId, startedAt, endedAt: endedAt ?? startedAt, projectLabel: state.projectLabel }]
       : [];
-  return { sessions, usage, counters, sessionExternalId: state.sessionId, offset, state };
+  return { sessions, usage, counters, activity: [...activity.values()], sessionExternalId: state.sessionId, offset, state };
 }

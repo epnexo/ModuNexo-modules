@@ -64,6 +64,12 @@ const collectors = () => [
   createCodexCollector({ root: join(work, "codex") }),
 ];
 
+/** The Codex collector as a tool that only reports counters, which is how ingestion treats any tool without activity items. */
+const counterOnly = (): Collector[] => {
+  const codex = createCodexCollector({ root: join(work, "codex") });
+  return [{ ...codex, parse: async (file, from) => ({ ...(await codex.parse(file, from)), activity: undefined }) }];
+};
+
 const piAndOpenCode = () => [createPiCollector({ root: join(work, "pi/sessions") }), createOpenCodeCollector({ root: join(work, "opencode") })];
 
 const test = (name: string, run: (t: TestContext) => Promise<void>) =>
@@ -151,17 +157,29 @@ describe("ingest (integration)", () => {
     assert.deepEqual(state.rows[0], { message_count: 1, tool_call_count: 2, duration_ms: "4000" });
   });
 
-  test("replaces the counters of a file that was rewritten instead of appended", async () => {
-    await ingest(pool!, collectors());
+  test("replaces the counters of a file that was rewritten instead of appended, for a tool that reports no activity items", async () => {
+    await ingest(pool!, counterOnly());
     const codexFile = join(work, "codex/2026/10/01/rollout-2026-10-01T10-00-00-cdx-0001.jsonl");
     const lines = readFileSync(codexFile, "utf8").split("\n").filter(Boolean);
     writeFileSync(codexFile, `${lines.slice(0, 7).join("\n")}\n`);
-    const reports = byTool(await ingest(pool!, collectors()));
+    const reports = byTool(await ingest(pool!, counterOnly()));
     assert.equal(reports.codex!.eventsInserted, 0);
     const row = await pool!.query(
       "select message_count, tool_call_count, duration_ms from ai_usage.ingest_state s join ai_usage.sessions x on x.id = s.session_id where x.external_id = 'cdx-0001'",
     );
     assert.deepEqual(row.rows[0], { message_count: 1, tool_call_count: 1, duration_ms: "0" });
+  });
+
+  test("a tool that reports activity items keeps what an earlier read stored when its file is rewritten", async () => {
+    await ingest(pool!, collectors());
+    const codexFile = join(work, "codex/2026/10/01/rollout-2026-10-01T10-00-00-cdx-0001.jsonl");
+    const lines = readFileSync(codexFile, "utf8").split("\n").filter(Boolean);
+    writeFileSync(codexFile, `${lines.slice(0, 7).join("\n")}\n`);
+    await ingest(pool!, collectors());
+    const row = await pool!.query(
+      "select message_count, tool_call_count, duration_ms from ai_usage.session_summary where external_id = 'cdx-0001'",
+    );
+    assert.deepEqual(row.rows[0], { message_count: "1", tool_call_count: "1", duration_ms: "5000" });
   });
 
   test("only runs the collectors it is given", async () => {

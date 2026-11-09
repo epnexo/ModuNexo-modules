@@ -78,6 +78,27 @@ describe("POST /svc/ai-usage/ingest", () => {
     assert.equal(await count("activity_items"), 3);
   });
 
+  it("fills in the name, skill and failure flag of an item stored before it had them, and never overwrites one it has", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    await post(batch());
+    const named = batch();
+    named.activity[1] = { kind: "tool_call", externalId: "t1", sessionExternalId: "s1", name: "Skill", skill: "demo-skill", failed: false } as (typeof named.activity)[number];
+    const again = await post(named);
+    assert.equal(again.status, 200);
+    const row = () => pool!.query("select name, skill, failed from ai_usage.activity_items where external_id = 't1'").then((r) => r.rows[0]);
+    assert.deepEqual(await row(), { name: "Skill", skill: "demo-skill", failed: false });
+    named.activity[1] = { kind: "tool_call", externalId: "t1", sessionExternalId: "s1", name: "Bash", skill: "other", failed: true } as (typeof named.activity)[number];
+    await post(named);
+    assert.deepEqual(await row(), { name: "Skill", skill: "demo-skill", failed: false });
+    assert.equal(await count("activity_items"), 3);
+  });
+
+  it("refuses the database a name that holds a path separator", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    await post(batch());
+    await assert.rejects(pool!.query("update ai_usage.activity_items set name = '/home/user/x' where external_id = 't1'"), /check/);
+  });
+
   it("keeps the larger counter when a message that was still streaming is sent again", async (t) => {
     if (skipReason) return t.skip(skipReason);
     await post(batch(10));

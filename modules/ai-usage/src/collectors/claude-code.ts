@@ -1,5 +1,5 @@
 import type { ActivityItem, Collector, ParseResult, ResumePoint, SessionRecord, SourceFile, UsageRecord } from "../collector.ts";
-import { asRecord, asString, counter, findFiles, parseDate, parseObject, projectLabel, readCompleteLines } from "./shared.ts";
+import { asRecord, asString, cleanName, counter, findFiles, parseDate, parseObject, projectLabel, readCompleteLines } from "./shared.ts";
 
 export interface ClaudeCodeOptions {
   /** Directory with the session logs, normally `~/.claude/projects`. */
@@ -45,10 +45,12 @@ async function parseClaudeFile(file: SourceFile, from: ResumePoint): Promise<Par
   const spans = new Map<string, Span>();
   const events = new Map<string, UsageRecord>();
   const activity = new Map<string, ActivityItem>();
-  const addActivity = (kind: ActivityItem["kind"], externalId: string, sessionExternalId: string | null, durationMs = 0) => {
+  const addActivity = (kind: ActivityItem["kind"], externalId: string, sessionExternalId: string | null, durationMs = 0, extra: Partial<ActivityItem> = {}) => {
     const key = `${kind}:${externalId}`;
-    if (!activity.has(key)) activity.set(key, { kind, externalId, sessionExternalId, durationMs });
+    if (!activity.has(key)) activity.set(key, { kind, externalId, sessionExternalId, durationMs, ...extra });
   };
+  /** Calls whose result was read here but whose tool_use was read in an earlier run: stored to fill in `failed`, not counted again. */
+  const resultOnly = new Set<string>();
   const counters = { messageCount: 0, toolCallCount: 0, durationMs: 0 };
   let sessionExternalId: string | null = null;
 
@@ -73,6 +75,20 @@ async function parseClaudeFile(file: SourceFile, from: ResumePoint): Promise<Par
     const message = asRecord(entry.message);
     const content = Array.isArray(message?.content) ? message.content : [];
 
+    if (entry.type === "user") {
+      for (const block of content) {
+        const result = asRecord(block);
+        const callId = asString(result?.tool_use_id);
+        if (result?.type !== "tool_result" || callId === undefined || typeof result.is_error !== "boolean") continue;
+        const known = activity.get(`tool_call:${callId}`);
+        if (known) known.failed = result.is_error;
+        else {
+          addActivity("tool_call", callId, sessionId ?? null, 0, { name: null, skill: null, failed: result.is_error });
+          resultOnly.add(`tool_call:${callId}`);
+        }
+      }
+    }
+
     if (entry.type === "user" && message && entry.isSidechain !== true && entry.isMeta !== true) {
       const isToolResult = entry.toolUseResult !== undefined || entry.sourceToolAssistantUUID !== undefined || content.some((block) => asRecord(block)?.type === "tool_result");
       if (!isToolResult) addActivity("prompt", asString(entry.uuid) ?? `${sessionId}:${asString(entry.timestamp)}`, sessionId ?? null);
@@ -83,7 +99,12 @@ async function parseClaudeFile(file: SourceFile, from: ResumePoint): Promise<Par
         const item = asRecord(block);
         if (item?.type !== "tool_use") return;
         // Without a tool_use id, the message id and block position still identify the call.
-        addActivity("tool_call", asString(item.id) ?? `${asString(message.id) ?? asString(entry.uuid)}#${index}`, sessionId ?? null);
+        const input = asRecord(item.input);
+        addActivity("tool_call", asString(item.id) ?? `${asString(message.id) ?? asString(entry.uuid)}#${index}`, sessionId ?? null, 0, {
+          name: cleanName(item.name),
+          skill: item.name === "Skill" ? cleanName(input?.skill) : null,
+          failed: null,
+        });
       });
       const usage = asRecord(message.usage);
       const messageId = asString(message.id);
@@ -116,6 +137,7 @@ async function parseClaudeFile(file: SourceFile, from: ResumePoint): Promise<Par
 
   const items = [...activity.values()];
   for (const item of items) {
+    if (resultOnly.has(`${item.kind}:${item.externalId}`)) continue;
     if (item.kind === "prompt") counters.messageCount++;
     else if (item.kind === "tool_call") counters.toolCallCount++;
     else counters.durationMs += item.durationMs;

@@ -1,5 +1,5 @@
 import { getDb } from "@modunexo/sdk";
-import type { ActivityItem, ActivityKind, SessionRecord, UsageRecord } from "../src/collector.ts";
+import { NAME_PATTERN, type ActivityItem, type ActivityKind, type SessionRecord, type UsageRecord } from "../src/collector.ts";
 import { mergeDuplicateEvents, storeActivity, upsertEvents, upsertSessions, type InsertCounts } from "../src/ingest.ts";
 
 export const MAX_BODY_CHARS = 2_000_000;
@@ -39,6 +39,19 @@ function time(raw: unknown, where: string): Checked<Date> {
 function counter(raw: unknown, where: string, nullable: boolean): Checked<number | null> {
   if (raw === null || raw === undefined) return nullable ? { ok: true, value: null } : bad(`${where} is required.`);
   if (typeof raw !== "number" || !Number.isInteger(raw) || raw < 0 || raw > MAX_COUNTER) return bad(`${where} must be a whole number of at least 0.`);
+  return { ok: true, value: raw };
+}
+
+/** A tool or skill name: optional, and it cannot be a path or a sentence. */
+function shortName(raw: unknown, where: string): Checked<string | null> {
+  if (raw === null || raw === undefined) return { ok: true, value: null };
+  if (typeof raw !== "string" || !NAME_PATTERN.test(raw)) return bad(`${where} must be a name of 1 to 100 letters, digits and . _ : @ -.`);
+  return { ok: true, value: raw };
+}
+
+function flag(raw: unknown, where: string): Checked<boolean | null> {
+  if (raw === null || raw === undefined) return { ok: true, value: null };
+  if (typeof raw !== "boolean") return bad(`${where} must be true or false.`);
   return { ok: true, value: raw };
 }
 
@@ -113,12 +126,18 @@ export function batchInput(body: Record<string, unknown>): Checked<RemoteBatch> 
     const externalId = text(item.externalId, `${where}.externalId`, 200);
     const sessionExternalId = text(item.sessionExternalId, `${where}.sessionExternalId`, 200, true);
     const durationMs = counter(item.durationMs ?? 0, `${where}.durationMs`, false);
-    for (const checked of [externalId, sessionExternalId, durationMs]) if (!checked.ok) return checked;
+    const toolName = shortName(item.name, `${where}.name`);
+    const skill = shortName(item.skill, `${where}.skill`);
+    const failed = flag(item.failed, `${where}.failed`);
+    for (const checked of [externalId, sessionExternalId, durationMs, toolName, skill, failed]) if (!checked.ok) return checked;
     activity.push({
       kind: item.kind as ActivityKind,
       externalId: externalId.ok ? externalId.value! : "",
       sessionExternalId: sessionExternalId.ok ? sessionExternalId.value : null,
       durationMs: durationMs.ok ? (durationMs.value ?? 0) : 0,
+      name: toolName.ok ? toolName.value : null,
+      skill: skill.ok ? skill.value : null,
+      failed: failed.ok ? failed.value : null,
     });
   }
   return { ok: true, value: { tool: { slug: slug.value!, name: name.value! }, sessions, usage, activity } };

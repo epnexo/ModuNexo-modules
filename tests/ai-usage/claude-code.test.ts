@@ -76,7 +76,7 @@ describe("Claude Code collector", () => {
     const { activity } = await parse(main);
     assert.deepEqual(activity, [
       { kind: "prompt", externalId: "u1", sessionExternalId: "sess-0001", durationMs: 0 },
-      { kind: "tool_call", externalId: "toolu_1", sessionExternalId: "sess-0001", durationMs: 0 },
+      { kind: "tool_call", externalId: "toolu_1", sessionExternalId: "sess-0001", durationMs: 0, name: "Bash", skill: null, failed: null },
       { kind: "turn", externalId: "sess-0001:2026-10-01T10:00:06.000Z", sessionExternalId: "sess-0001", durationMs: 4000 },
     ]);
     assert.deepEqual((await parse(sub)).activity, []);

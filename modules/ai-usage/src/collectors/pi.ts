@@ -1,6 +1,6 @@
 import { relative, sep } from "node:path";
 import type { ActivityItem, Collector, ParseResult, ResumePoint, SessionRecord, SourceFile, UsageRecord } from "../collector.ts";
-import { asRecord, asString, counter, findFiles, parseDate, parseObject, projectLabel, readCompleteLines } from "./shared.ts";
+import { asRecord, asString, cleanName, counter, findFiles, parseDate, parseObject, projectLabel, readCompleteLines, skillFromArguments } from "./shared.ts";
 
 export interface PiOptions {
   /** Directory with the session logs, normally `~/.pi/agent/sessions`. */
@@ -70,10 +70,10 @@ async function parsePiFile(root: string, file: SourceFile, from: ResumePoint): P
   let reported: string | null = null;
   const reportedId = () => (state.fileSessionId === null ? null : (reported ??= reportedSessionId(root, file, state.fileSessionId)));
 
-  const addActivity = (kind: ActivityItem["kind"], externalId: string) => {
+  const addActivity = (kind: ActivityItem["kind"], externalId: string, extra: Partial<ActivityItem> = {}) => {
     const key = `${kind}:${externalId}`;
     if (activity.has(key)) return;
-    activity.set(key, { kind, externalId, sessionExternalId: reportedId(), durationMs: 0 });
+    activity.set(key, { kind, externalId, sessionExternalId: reportedId(), durationMs: 0, ...extra });
     if (kind === "prompt") counters.messageCount++;
     else counters.toolCallCount++;
   };
@@ -108,12 +108,25 @@ async function parsePiFile(root: string, file: SourceFile, from: ResumePoint): P
 
     if (message.role === "user") {
       if (!isSubagent) addActivity("prompt", `${state.fileSessionId}:${entryId}`);
+    } else if (message.role === "toolResult") {
+      const callId = asString(message.toolCallId);
+      if (callId !== undefined && typeof message.isError === "boolean") {
+        const key = `tool_call:${state.fileSessionId}:${callId}`;
+        const known = activity.get(key);
+        // A result whose call was read earlier is stored only to fill in `failed`; it is not counted again.
+        if (known) known.failed = message.isError;
+        else activity.set(key, { kind: "tool_call", externalId: `${state.fileSessionId}:${callId}`, sessionExternalId: reportedId(), durationMs: 0, name: null, skill: null, failed: message.isError });
+      }
     } else if (message.role === "assistant") {
       if (Array.isArray(message.content)) {
         for (const [index, block] of message.content.entries()) {
           const item = asRecord(block);
           if (item?.type !== "toolCall") continue;
-          addActivity("tool_call", `${state.fileSessionId}:${asString(item.id) ?? `${entryId}#${index}`}`);
+          addActivity("tool_call", `${state.fileSessionId}:${asString(item.id) ?? `${entryId}#${index}`}`, {
+            name: cleanName(item.name),
+            skill: skillFromArguments(item.arguments),
+            failed: null,
+          });
         }
       }
       const record = toUsage(state, entryId, timestamp, message, reportedId());

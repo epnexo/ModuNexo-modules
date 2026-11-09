@@ -216,9 +216,14 @@ export async function storeActivity(
 ): Promise<SourceCounters> {
   for (const batch of chunks(items, batchSize)) {
     await client.query(
-      `insert into ai_usage.activity_items (tool_id, source_key, kind, external_id, session_id, duration_ms)
-       select $1, $2, * from unnest($3::text[], $4::text[], $5::bigint[], $6::bigint[])
-       on conflict (tool_id, kind, external_id) do nothing`,
+      // A row that exists keeps its owner and its counts. It only gains a name, skill or failure flag it did not have,
+      // so items stored before those fields existed are filled in when the log is read again.
+      `insert into ai_usage.activity_items (tool_id, source_key, kind, external_id, session_id, duration_ms, name, skill, failed)
+       select $1, $2, * from unnest($3::text[], $4::text[], $5::bigint[], $6::bigint[], $7::text[], $8::text[], $9::boolean[])
+       on conflict (tool_id, kind, external_id) do update set
+         name = coalesce(ai_usage.activity_items.name, excluded.name),
+         skill = coalesce(ai_usage.activity_items.skill, excluded.skill),
+         failed = coalesce(ai_usage.activity_items.failed, excluded.failed)`,
       [
         toolId,
         key,
@@ -226,6 +231,9 @@ export async function storeActivity(
         batch.map((i) => i.externalId),
         batch.map((i) => (i.sessionExternalId === null ? null : (sessionIds.get(i.sessionExternalId) ?? null))),
         batch.map((i) => i.durationMs),
+        batch.map((i) => i.name ?? null),
+        batch.map((i) => i.skill ?? null),
+        batch.map((i) => i.failed ?? null),
       ],
     );
   }
