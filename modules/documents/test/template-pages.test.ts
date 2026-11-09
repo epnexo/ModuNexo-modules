@@ -207,13 +207,13 @@ describe("importing a template", () => {
   });
 
   it("shows why an NDA import failed where the form is, for a known code only", async () => {
-    assert.match(html(await renderTemplateEditPage({ idParam: undefined, saved: false, importError: "invalid-files", load })), /NDA not imported/);
-    assert.doesNotMatch(html(await renderTemplateEditPage({ idParam: undefined, saved: false, importError: "<b>x</b>", load })), /NDA not imported|<b>x/);
+    assert.match(html(await renderTemplateEditPage({ idParam: undefined, saved: false, importError: "invalid-files", load })), /Template not imported/);
+    assert.doesNotMatch(html(await renderTemplateEditPage({ idParam: undefined, saved: false, importError: "<b>x</b>", load })), /Template not imported|<b>x/);
   });
 
   it("no longer carries the import form on the list, which only reports the result", async () => {
     const markup = html(await renderTemplatesPage(async () => ({ templates: [], profile: {} }), { imported: "created", profile: "2" }));
     assert.doesNotMatch(markup, /import-nda/);
-    assert.match(markup, /NDA template was created\. 2 profile fields were added/);
+    assert.match(markup, /The template was created\. 2 profile fields were added/);
   });
 });

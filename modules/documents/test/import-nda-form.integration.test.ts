@@ -94,9 +94,9 @@ describe("the Import NDA form", () => {
 describe("the notice after an import", () => {
   const text = (result: Parameters<typeof importNotice>[0]) => renderToStaticMarkup(importNotice(result) ?? createElement("span")).replace(/<[^>]+>/g, " ");
   it("says what happened for each code and shows nothing for an unknown one", () => {
-    assert.match(text({ imported: "created", profile: "3" }), /NDA template was created\. 3 profile fields were added/);
+    assert.match(text({ imported: "created", profile: "3" }), /The template was created\. 3 profile fields were added/);
     assert.match(text({ imported: "unchanged", profile: "0" }), /already exists and was left as it is\.\s*$/);
-    assert.match(text({ error: "invalid-files" }), /could not be read as the skill(&#x27;|')s NDA/);
+    assert.match(text({ error: "invalid-files" }), /could not be read as a template bundle/);
     assert.equal(text({ imported: "<script>", error: "constructor" }).trim(), "");
   });
 });
