@@ -2,7 +2,7 @@ import { stat } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import type { ActivityItem, Collector, ParseResult, ResumePoint, SessionRecord, SourceFile, UsageRecord } from "../collector.ts";
-import { asRecord, asString, counter, projectLabel } from "./shared.ts";
+import { asRecord, asString, cleanName, counter, projectLabel } from "./shared.ts";
 
 export interface OpenCodeOptions {
   /** Directory with `opencode.db`, normally `~/.local/share/opencode`. */
@@ -90,6 +90,10 @@ interface PartRow {
   id: string;
   session_id: string;
   time_updated: number;
+  tool: string | null;
+  status: string | null;
+  /** Only filled for a `skill` tool call: the skill's name. */
+  skill: string | null;
 }
 
 async function parseDatabase(file: SourceFile, from: ResumePoint): Promise<ParseResult> {
@@ -116,7 +120,13 @@ async function parseDatabase(file: SourceFile, from: ResumePoint): Promise<Parse
       )
       .all(state.messages) as unknown as MessageRow[];
     const toolParts = db
-      .prepare("select id, session_id, time_updated from part where time_updated >= ? and json_extract(data, '$.type') = 'tool' order by time_updated, id")
+      .prepare(
+        `select id, session_id, time_updated,
+                json_extract(data, '$.tool') as tool,
+                json_extract(data, '$.state.status') as status,
+                case when json_extract(data, '$.tool') = 'skill' then json_extract(data, '$.state.input.name') end as skill
+         from part where time_updated >= ? and json_extract(data, '$.type') = 'tool' order by time_updated, id`,
+      )
       .all(state.parts) as unknown as PartRow[];
     const newestPart = db.prepare("select coalesce(max(time_updated), 0) as newest from part where time_updated >= ?").get(state.parts) as { newest: number };
 
@@ -124,10 +134,10 @@ async function parseDatabase(file: SourceFile, from: ResumePoint): Promise<Parse
     const activity = new Map<string, ActivityItem>();
     const counters = { messageCount: 0, toolCallCount: 0, durationMs: 0 };
     const touched = new Set<string>();
-    const addActivity = (kind: ActivityItem["kind"], externalId: string, sessionExternalId: string) => {
+    const addActivity = (kind: ActivityItem["kind"], externalId: string, sessionExternalId: string, extra: Partial<ActivityItem> = {}) => {
       const key = `${kind}:${externalId}`;
       if (activity.has(key)) return;
-      activity.set(key, { kind, externalId, sessionExternalId, durationMs: 0 });
+      activity.set(key, { kind, externalId, sessionExternalId, durationMs: 0, ...extra });
       if (kind === "prompt") counters.messageCount++;
       else counters.toolCallCount++;
     };
@@ -148,7 +158,11 @@ async function parseDatabase(file: SourceFile, from: ResumePoint): Promise<Parse
       const root = rootOf(row.session_id);
       if (!root) continue;
       touched.add(root.id);
-      addActivity("tool_call", row.id, root.id);
+      addActivity("tool_call", row.id, root.id, {
+        name: cleanName(row.tool),
+        skill: cleanName(row.skill),
+        failed: row.status === "error" ? true : row.status === "completed" ? false : null,
+      });
     }
     state.parts = Math.max(state.parts, newestPart.newest);
 

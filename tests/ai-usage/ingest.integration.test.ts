@@ -5,35 +5,47 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, beforeEach, describe, it, type TestContext } from "node:test";
 import { fileURLToPath } from "node:url";
-import { Registry, coreManifest, discoverModules, migrate } from "@epnexo/core";
-import { openTestPool, resolveTestDatabaseUrl } from "@epnexo/core/testing";
+import { createPool } from "@modunexo/core/pool";
+import { Registry } from "@modunexo/core/registry";
+import { migrate } from "@modunexo/core/runner";
+import { createScratchDatabase } from "@modunexo/core/testing";
+import aiUsage from "../../modules/ai-usage/manifest.ts";
 import type pg from "pg";
-import type { Collector, UsageRecord } from "../src/collector.ts";
+import type { Collector, UsageRecord } from "../../modules/ai-usage/src/collector.ts";
 import { createOpenCodeDb } from "./helpers/opencode-db.ts";
-import { createClaudeCodeCollector } from "../src/collectors/claude-code.ts";
-import { createCodexCollector } from "../src/collectors/codex.ts";
-import { createOpenCodeCollector } from "../src/collectors/opencode.ts";
-import { createPiCollector } from "../src/collectors/pi.ts";
-import { ingest } from "../src/ingest.ts";
+import { createClaudeCodeCollector } from "../../modules/ai-usage/src/collectors/claude-code.ts";
+import { createCodexCollector } from "../../modules/ai-usage/src/collectors/codex.ts";
+import { createOpenCodeCollector } from "../../modules/ai-usage/src/collectors/opencode.ts";
+import { createPiCollector } from "../../modules/ai-usage/src/collectors/pi.ts";
+import { ingest } from "../../modules/ai-usage/src/ingest.ts";
 
 const fixtures = fileURLToPath(new URL("./fixtures", import.meta.url));
-const modulesDir = fileURLToPath(new URL("../..", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/ai-usage/", import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;
+let scratchUrl: string | undefined;
+let dropScratch: (() => Promise<void>) | undefined;
 let work: string;
 
 before(async () => {
-  ({ pool, skipReason } = await openTestPool());
-  if (!pool) return;
+  const scratch = await createScratchDatabase();
+  if (!scratch.url) {
+    skipReason = scratch.skipReason;
+    return;
+  }
+  scratchUrl = scratch.url;
+  dropScratch = scratch.drop;
+  pool = createPool(scratch.url);
   const registry = new Registry();
-  registry.register(coreManifest);
-  for (const manifest of await discoverModules(modulesDir)) registry.register(manifest);
-  await migrate(pool, registry);
+  registry.registerCore();
+  registry.register(aiUsage);
+  await migrate(pool, registry, { moduleDirs: { "ai-usage": MODULE_DIR } });
 });
 
 after(async () => {
   await pool?.end();
+  await dropScratch?.();
 });
 
 beforeEach(async () => {
@@ -51,6 +63,12 @@ const collectors = () => [
   createClaudeCodeCollector({ root: join(work, "claude/projects") }),
   createCodexCollector({ root: join(work, "codex") }),
 ];
+
+/** The Codex collector as a tool that only reports counters, which is how ingestion treats any tool without activity items. */
+const counterOnly = (): Collector[] => {
+  const codex = createCodexCollector({ root: join(work, "codex") });
+  return [{ ...codex, parse: async (file, from) => ({ ...(await codex.parse(file, from)), activity: undefined }) }];
+};
 
 const piAndOpenCode = () => [createPiCollector({ root: join(work, "pi/sessions") }), createOpenCodeCollector({ root: join(work, "opencode") })];
 
@@ -139,17 +157,29 @@ describe("ingest (integration)", () => {
     assert.deepEqual(state.rows[0], { message_count: 1, tool_call_count: 2, duration_ms: "4000" });
   });
 
-  test("replaces the counters of a file that was rewritten instead of appended", async () => {
-    await ingest(pool!, collectors());
+  test("replaces the counters of a file that was rewritten instead of appended, for a tool that reports no activity items", async () => {
+    await ingest(pool!, counterOnly());
     const codexFile = join(work, "codex/2026/10/01/rollout-2026-10-01T10-00-00-cdx-0001.jsonl");
     const lines = readFileSync(codexFile, "utf8").split("\n").filter(Boolean);
     writeFileSync(codexFile, `${lines.slice(0, 7).join("\n")}\n`);
-    const reports = byTool(await ingest(pool!, collectors()));
+    const reports = byTool(await ingest(pool!, counterOnly()));
     assert.equal(reports.codex!.eventsInserted, 0);
     const row = await pool!.query(
       "select message_count, tool_call_count, duration_ms from ai_usage.ingest_state s join ai_usage.sessions x on x.id = s.session_id where x.external_id = 'cdx-0001'",
     );
     assert.deepEqual(row.rows[0], { message_count: 1, tool_call_count: 1, duration_ms: "0" });
+  });
+
+  test("a tool that reports activity items keeps what an earlier read stored when its file is rewritten", async () => {
+    await ingest(pool!, collectors());
+    const codexFile = join(work, "codex/2026/10/01/rollout-2026-10-01T10-00-00-cdx-0001.jsonl");
+    const lines = readFileSync(codexFile, "utf8").split("\n").filter(Boolean);
+    writeFileSync(codexFile, `${lines.slice(0, 7).join("\n")}\n`);
+    await ingest(pool!, collectors());
+    const row = await pool!.query(
+      "select message_count, tool_call_count, duration_ms from ai_usage.session_summary where external_id = 'cdx-0001'",
+    );
+    assert.deepEqual(row.rows[0], { message_count: "1", tool_call_count: "1", duration_ms: "5000" });
   });
 
   test("only runs the collectors it is given", async () => {
@@ -240,14 +270,14 @@ describe("ingest (integration)", () => {
   });
 
   test("the ingest command exits non-zero and names failed files by tool and key only", async (t) => {
-    const url = resolveTestDatabaseUrl();
+    const url = scratchUrl;
     if (!url || process.getuid?.() === 0) return t.skip("needs a test database and a non-root user to make a file unreadable");
     const dir = join(work, "cli-codex");
     cpSync(join(fixtures, "codex"), dir, { recursive: true });
     const locked = join(dir, "2026/10/01/rollout-2026-10-01T10-00-00-cdx-0001.jsonl");
     chmodSync(locked, 0o000);
     try {
-      const run = spawnSync(process.execPath, ["--import", "tsx", join(modulesDir, "ai-usage/src/cli/ingest.ts"), "--tool", "codex", "--codex-dir", dir], {
+      const run = spawnSync(process.execPath, ["--import", "tsx", join(MODULE_DIR, "src/cli/ingest.ts"), "--tool", "codex", "--codex-dir", dir], {
         env: { ...process.env, DATABASE_URL: url },
         encoding: "utf8",
       });

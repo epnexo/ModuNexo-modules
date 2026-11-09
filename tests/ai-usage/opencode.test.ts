@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
-import { createOpenCodeCollector } from "../src/collectors/opencode.ts";
+import { createOpenCodeCollector } from "../../modules/ai-usage/src/collectors/opencode.ts";
 import { createOpenCodeDb, OPENCODE_T0 } from "./helpers/opencode-db.ts";
 
 let dir: string;
@@ -89,8 +89,8 @@ describe("OpenCode collector", () => {
     const { activity, counters } = await parse();
     assert.deepEqual(activity, [
       { kind: "prompt", externalId: "msg_u1", sessionExternalId: "ses_root", durationMs: 0 },
-      { kind: "tool_call", externalId: "prt_t1", sessionExternalId: "ses_root", durationMs: 0 },
-      { kind: "tool_call", externalId: "prt_t2", sessionExternalId: "ses_root", durationMs: 0 },
+      { kind: "tool_call", externalId: "prt_t1", sessionExternalId: "ses_root", durationMs: 0, name: "bash", skill: null, failed: false },
+      { kind: "tool_call", externalId: "prt_t2", sessionExternalId: "ses_root", durationMs: 0, name: "bash", skill: null, failed: false },
     ]);
     assert.deepEqual(counters, { messageCount: 1, toolCallCount: 2, durationMs: 0 });
   });

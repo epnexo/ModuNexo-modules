@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { type ChartTool, CumulativeLine, StackedBars } from "./chart-client.tsx";
+import { bucketDaily, bucketSeries, bucketTitle, GRAINS, GRAIN_LABELS, type Grain } from "./buckets.ts";
 import { barFractions, cumulative, fillDays, stackShares, topWithOther } from "./chart.ts";
 import { PERIODS, PERIOD_LABELS, type Filters, toolColorSlot, withFilters } from "./filters.ts";
 import { NOT_AVAILABLE, formatCompact, formatCount, formatPercent, formatUtcMinute } from "./format.ts";
 import type { GroupedModels } from "./group.ts";
-import type { DailyRow, SessionRow, Summary, ToolInfo, ToolRow } from "./queries.ts";
+import { cacheHitRate, formatUsd, heatLevel, type CostEstimate } from "./metrics.ts";
+import type { DailyRow, HourRow, SessionRow, Summary, ToolInfo, ToolRow } from "./queries.ts";
 
 /** Tools with their display name and fixed color class. */
 export interface ToolStyle {
@@ -20,12 +22,12 @@ export function toolStyles(tools: ToolInfo[]): Map<string, ToolStyle> {
 }
 
 /** A tool that is not in the tools table any more still renders, in the neutral color. */
-function styleOf(styles: Map<string, ToolStyle>, slug: string): ToolStyle {
+export function styleOf(styles: Map<string, ToolStyle>, slug: string): ToolStyle {
   return styles.get(slug) ?? { slug, name: slug, className: "au-t0" };
 }
 
 /** The shell's portlet pattern: a header band holding the heading, a body holding the note and the content. */
-function Portlet({ label, title, note, className, children }: { label: string; title: string; note?: ReactNode; className?: string; children: ReactNode }) {
+export function Portlet({ label, title, note, className, children }: { label: string; title: string; note?: ReactNode; className?: string; children: ReactNode }) {
   return (
     <section className={`portlet ${className ?? ""}`} aria-label={label}>
       <header className="portlet-head">
@@ -47,7 +49,7 @@ function Na() {
   );
 }
 
-const value = (n: number | null, format: (n: number) => string = formatCompact): ReactNode => (n === null ? <Na /> : format(n));
+export const value = (n: number | null, format: (n: number) => string = formatCompact): ReactNode => (n === null ? <Na /> : format(n));
 
 export function ToolName({ style }: { style: ToolStyle }) {
   return (
@@ -93,28 +95,50 @@ export function Notice({ title, children, tone = "warn" }: { title: string; chil
   );
 }
 
-export function EmptyState({ periodLabel, toolName }: { periodLabel: string; toolName: string | null }) {
+export function EmptyState({ periodLabel, toolName, sendCommand }: { periodLabel: string; toolName: string | null; sendCommand: string | null }) {
   return (
     <Portlet label="No usage recorded" title="No usage recorded" className="au-empty">
       <p>
         {toolName === null ? "No tool reported" : `${toolName} reported`} token usage for {periodLabel.toLowerCase()}. Try a longer period
-        {toolName === null ? "" : " or another tool"}, or run <code>npm run ai-usage:ingest</code> to load newer sessions.
+        {toolName === null ? "" : " or another tool"}. To load usage from a computer, an administrator can find how to connect it under AI usage in Settings.
       </p>
+      {sendCommand === null ? null : <pre className="au-code">{sendCommand}</pre>}
     </Portlet>
   );
 }
 
-export function Headline({ summary }: { summary: Summary }) {
+/** The cost estimate and whether the administrator entered any price at all. */
+export interface CostView {
+  estimate: CostEstimate;
+  hasPrices: boolean;
+}
+
+function costCard(cost: CostView): { label: string; value: string; sub: string; title?: string } {
+  if (!cost.hasPrices) return { label: "Est. cost", value: "Not set", sub: "Enter model prices in Settings", title: "No model price has been entered, so no cost can be estimated" };
+  const { cost: dollars, pricedTokens, unpricedTokens } = cost.estimate;
+  const covered = pricedTokens + unpricedTokens > 0 ? pricedTokens / (pricedTokens + unpricedTokens) : 0;
+  return {
+    label: "Est. cost",
+    value: formatUsd(dollars),
+    sub: `${formatPercent(covered)} of tokens priced`,
+    title: `What the priced tokens would cost at API prices. ${formatCompact(unpricedTokens)} tokens have no price and are left out.`,
+  };
+}
+
+export function Headline({ summary, cost }: { summary: Summary; cost?: CostView }) {
+  const hit = cacheHitRate(summary);
   const cards: { label: string; value: string; sub: string; title?: string }[] = [
     { label: "Total tokens", value: formatCompact(summary.totalTokens), sub: formatCount(summary.totalTokens), title: `${formatCount(summary.totalTokens)} tokens` },
     { label: "Sessions", value: formatCount(summary.sessions), sub: "with recorded usage" },
     { label: "Active days", value: formatCount(summary.activeDays), sub: "UTC days with usage" },
     { label: "Output tokens", value: formatCompact(summary.outputTokens), sub: `Fresh input ${formatCompact(summary.inputTokens)}` },
+    { label: "Cache hit", value: hit === null ? NOT_AVAILABLE : formatPercent(hit), sub: "of input served from cache", title: "Cache reads over fresh input, cache reads and cache writes" },
+    ...(cost === undefined ? [] : [costCard(cost)]),
   ];
   return (
     <dl className="kpis" aria-label="Headline numbers">
       {cards.map((card, i) => (
-        <div key={card.label} className={`kpi kpi-${i + 1}`}>
+        <div key={card.label} className={`kpi kpi-${(i % 4) + 1}`}>
           <dt>{card.label}</dt>
           <dd className="kpi-value" title={card.title}>
             {card.value}
@@ -126,7 +150,7 @@ export function Headline({ summary }: { summary: Summary }) {
   );
 }
 
-interface HBarRow {
+export interface HBarRow {
   key: string;
   label: string;
   amount: number | null;
@@ -136,10 +160,12 @@ interface HBarRow {
   other?: boolean;
   /** The label is not a real name (a model the tool did not report). */
   quiet?: boolean;
+  /** A short mark printed after the label, for example `est.` for a count that is inferred. */
+  tag?: { text: string; title: string };
 }
 
 /** Horizontal bars as plain HTML so labels keep their real size on a phone. Length is relative to the largest bar; the value and share are printed. */
-function HBars({ rows, label }: { rows: HBarRow[]; label: string }) {
+export function HBars({ rows, label }: { rows: HBarRow[]; label: string }) {
   const fractions = barFractions(rows.map((row) => row.amount));
   return (
     <ul className="au-hbars" aria-label={label}>
@@ -149,6 +175,11 @@ function HBars({ rows, label }: { rows: HBarRow[]; label: string }) {
           <li key={row.key} className={`au-hbar ${row.other === true ? "au-hbar-other" : ""}`}>
             <span className={`au-hbar-label ${row.quiet === true ? "muted" : ""}`} title={row.label}>
               {row.label}
+              {row.tag === undefined ? null : (
+                <abbr className="au-tag" title={row.tag.title}>
+                  {row.tag.text}
+                </abbr>
+              )}
             </span>
             <span className="au-hbar-track" aria-hidden="true">
               {fraction === null ? null : <span className="au-hbar-fill" style={{ width: `${fraction * 100}%` }} />}
@@ -206,11 +237,11 @@ export function ModelShare({ grouped }: { grouped: GroupedModels }) {
   );
 }
 
-/** Per-tool token series over every UTC day of the period, null where the tool recorded nothing. */
-function perToolDays(daily: DailyRow[], tools: ToolInfo[], from: string, to: string) {
-  const byTool = new Map<string, { day: string; value: number }[]>();
-  for (const row of daily) byTool.set(row.tool, [...(byTool.get(row.tool) ?? []), { day: row.day, value: row.totalTokens }]);
-  return tools.map((tool) => fillDays(byTool.get(tool.slug) ?? [], from, to));
+/** Per-tool token series over every bucket (day, week or month) of the period, null where the tool recorded nothing. */
+function perToolBuckets(daily: DailyRow[], tools: ToolInfo[], from: string, to: string, grain: Grain) {
+  const sums = new Map(bucketDaily(daily, grain).map((row) => [`${row.day}|${row.tool}`, row.totalTokens]));
+  const series = bucketSeries(from, to, grain);
+  return tools.map((tool) => series.map((day) => ({ day, value: sums.get(`${day}|${tool.slug}`) ?? null })));
 }
 
 export function DailyCharts({
@@ -219,6 +250,8 @@ export function DailyCharts({
   styles,
   from,
   to,
+  grain,
+  grainHref,
 }: {
   daily: DailyRow[];
   tools: ToolInfo[];
@@ -226,17 +259,35 @@ export function DailyCharts({
   /** First and last UTC day shown, inclusive. */
   from: string;
   to: string;
+  /** What one bar covers. */
+  grain: Grain;
+  /** The page address that shows the chart at another interval, keeping the other filters. */
+  grainHref: (grain: Grain) => string;
 }) {
-  const perTool = perToolDays(daily, tools, from, to);
+  const perTool = perToolBuckets(daily, tools, from, to, grain);
   const days = (perTool[0] ?? []).map((entry, i) => ({ day: entry.day, parts: perTool.map((series) => series[i]!.value) }));
   const chartTools: ChartTool[] = tools.map((tool) => ({ slug: tool.slug, name: tool.name, className: styleOf(styles, tool.slug).className }));
   const totals = perTool.map((series) => series.reduce((sum, d) => sum + (d.value ?? 0), 0));
 
-  const activeDays = [...new Set(daily.map((row) => row.day))].sort().reverse();
-  const cell = new Map(daily.map((row) => [`${row.day}|${row.tool}`, row.totalTokens]));
+  const bucketed = bucketDaily(daily, grain);
+  const activeDays = [...new Set(bucketed.map((row) => row.day))].sort().reverse();
+  const cell = new Map(bucketed.map((row) => [`${row.day}|${row.tool}`, row.totalTokens]));
+  const unit = grain;
 
   return (
-    <Portlet label="Tokens per day" title="Tokens per day" className="au-chart" note="Days are UTC. Gaps are days with no recorded usage. Hover a bar, or use the arrow keys, to read its day.">
+    <Portlet
+      label={`Tokens per ${unit}`}
+      title={`Tokens per ${unit}`}
+      className="au-chart"
+      note={`Days are UTC${grain === "week" ? ", weeks start on Monday" : ""}. Gaps are ${unit}s with no recorded usage${grain === "day" ? "" : "; the first and last bar can cover only part of a " + unit}. Hover a bar, or use the arrow keys, to read it.`}
+    >
+      <nav className="au-seg au-grain" aria-label="Chart interval">
+        {GRAINS.map((option) => (
+          <Link key={option} href={grainHref(option)} aria-current={grain === option}>
+            {GRAIN_LABELS[option]}
+          </Link>
+        ))}
+      </nav>
       <ul className="au-legend" aria-label="Tools">
         {tools.map((tool, i) => (
           <li key={tool.slug} className={chartTools[i]!.className}>
@@ -246,7 +297,7 @@ export function DailyCharts({
           </li>
         ))}
       </ul>
-      <StackedBars days={days} tools={chartTools} />
+      <StackedBars days={days} tools={chartTools} grain={grain} />
 
       <details>
         <summary>Show as table</summary>
@@ -254,7 +305,7 @@ export function DailyCharts({
           <table>
             <thead>
               <tr>
-                <th>Day (UTC)</th>
+                <th>{grain === "day" ? "Day (UTC)" : grain === "week" ? "Week starting (UTC)" : "Month (UTC)"}</th>
                 {tools.map((tool) => (
                   <th key={tool.slug} className="right">
                     {tool.name}
@@ -265,7 +316,7 @@ export function DailyCharts({
             <tbody>
               {activeDays.map((day) => (
                 <tr key={day}>
-                  <td className="num">{day}</td>
+                  <td className="num">{grain === "month" ? bucketTitle(day, grain) : day}</td>
                   {tools.map((tool) => {
                     const amount = cell.get(`${day}|${tool.slug}`);
                     return (
@@ -326,7 +377,7 @@ export function CumulativeTokens({ daily, from, to }: { daily: DailyRow[]; from:
   );
 }
 
-function Share({ amount, total, className }: { amount: number; total: number; className?: string }) {
+export function Share({ amount, total, className }: { amount: number; total: number; className?: string }) {
   const share = total > 0 ? amount / total : 0;
   return (
     <div className={`au-share ${className ?? ""}`}>
@@ -338,7 +389,7 @@ function Share({ amount, total, className }: { amount: number; total: number; cl
   );
 }
 
-export function ByToolTable({ rows, styles }: { rows: ToolRow[]; styles: Map<string, ToolStyle> }) {
+export function ByToolTable({ rows, styles, cost }: { rows: ToolRow[]; styles: Map<string, ToolStyle>; cost?: CostView }) {
   const total = rows.reduce((sum, row) => sum + row.totalTokens, 0);
   return (
     <Portlet label="Usage by tool" title="By tool" note={`Tool-reported token counters. ${NOT_AVAILABLE} means the tool does not report that counter.`}>
@@ -349,6 +400,8 @@ export function ByToolTable({ rows, styles }: { rows: ToolRow[]; styles: Map<str
               <th>Tool</th>
               <th className="right">Tokens</th>
               <th>Share</th>
+              <th className="right">Cache hit</th>
+              {cost?.hasPrices ? <th className="right">Est. cost</th> : null}
               <th className="right">Sessions</th>
               <th className="right">Active days</th>
               <th className="right">Fresh input</th>
@@ -369,6 +422,8 @@ export function ByToolTable({ rows, styles }: { rows: ToolRow[]; styles: Map<str
                   <td>
                     <Share amount={row.totalTokens} total={total} />
                   </td>
+                  <td className="right num">{value(cacheHitRate(row), formatPercent)}</td>
+                  {cost?.hasPrices ? <td className="right num">{cost.estimate.byTool.has(row.tool) ? formatUsd(cost.estimate.byTool.get(row.tool)!) : <Na />}</td> : null}
                   <td className="right num">{formatCount(row.sessions)}</td>
                   <td className="right num">{formatCount(row.activeDays)}</td>
                   <td className="right num">{value(row.inputTokens)}</td>
@@ -481,6 +536,43 @@ export function RecentSessions({ rows, styles }: { rows: SessionRow[]; styles: M
         </div>
       )}
       <p className="au-note">Prompt and tool-call counts come from each tool&apos;s own logs; a 0 can mean the tool does not log them.</p>
+    </Portlet>
+  );
+}
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
+
+/** When the tools are used: tokens by UTC weekday and hour as a heat grid. Each cell names its slot and amount. */
+export function UsageHours({ rows }: { rows: HourRow[] }) {
+  const cell = new Map(rows.map((row) => [`${row.weekday}:${row.hour}`, row.totalTokens]));
+  const max = rows.reduce((top, row) => Math.max(top, row.totalTokens), 0);
+  const busiest = rows.reduce<HourRow | null>((top, row) => (top === null || row.totalTokens > top.totalTokens ? row : top), null);
+  return (
+    <Portlet
+      label="Usage by weekday and hour"
+      title="When it is used"
+      note={busiest === null ? "No usage in this period." : `Tokens by UTC weekday and hour. Busiest: ${WEEKDAYS[busiest.weekday]} ${String(busiest.hour).padStart(2, "0")}:00, ${formatCompact(busiest.totalTokens)} tokens.`}
+    >
+      <div className="au-heat" role="img" aria-label={busiest === null ? "No usage" : `Heat grid of tokens by weekday and hour; busiest ${WEEKDAYS[busiest.weekday]} ${busiest.hour}:00 UTC`}>
+        <span />
+        {HOURS.map((hour) => (
+          <span key={hour} className="au-heat-hour" aria-hidden="true">
+            {hour % 3 === 0 ? String(hour).padStart(2, "0") : ""}
+          </span>
+        ))}
+        {WEEKDAYS.map((day, weekday) => (
+          <div key={day} className="au-heat-row">
+            <span className="au-heat-day" aria-hidden="true">
+              {day}
+            </span>
+            {HOURS.map((hour) => {
+              const tokens = cell.get(`${weekday}:${hour}`) ?? 0;
+              return <span key={hour} className={`au-heat-cell au-heat-${heatLevel(tokens, max)}`} title={`${day} ${String(hour).padStart(2, "0")}:00 UTC: ${tokens === 0 ? "no usage" : `${formatCompact(tokens)} tokens`}`} />;
+            })}
+          </div>
+        ))}
+      </div>
     </Portlet>
   );
 }

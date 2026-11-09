@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-const dir = fileURLToPath(new URL("../web", import.meta.url));
+const dir = fileURLToPath(new URL("../../modules/ai-usage/web", import.meta.url));
 const SVG_TAGS = new Set(["svg", "g", "rect", "line", "path", "circle", "text", "clipPath", "defs", "stop", "linearGradient"]);
 
 const strip = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, "");

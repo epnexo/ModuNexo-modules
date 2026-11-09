@@ -1,39 +1,39 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { Registry, coreManifest, discoverModules, migrate } from "@epnexo/core";
-import { openTestPool, resolveTestDatabaseUrl } from "@epnexo/core/testing";
+import { createPool } from "@modunexo/core/pool";
+import { Registry } from "@modunexo/core/registry";
+import { migrate } from "@modunexo/core/runner";
+import { createScratchDatabase } from "@modunexo/core/testing";
+import aiUsage from "../../modules/ai-usage/manifest.ts";
 import type pg from "pg";
-import { getByModel, getByTool, getDaily, getRecentSessions, getSummary, getTools } from "../web/queries.ts";
+import { getByModel, getByTool, getDaily, getRecentSessions, getSummary, getTools } from "../../modules/ai-usage/web/queries.ts";
 
-const modulesDir = fileURLToPath(new URL("../..", import.meta.url));
+const MODULE_DIR = fileURLToPath(new URL("../../modules/ai-usage/", import.meta.url));
 
 let pool: pg.Pool | undefined;
 let skipReason: string | undefined;
-
-/**
- * The ingestion integration tests truncate the shared test database in parallel, so these tests use their
- * own database (`<name>_web_test`) to keep seeded rows from being wiped mid-run.
- */
-function webTestEnv(): NodeJS.ProcessEnv {
-  const base = resolveTestDatabaseUrl();
-  if (!base) return process.env;
-  const url = new URL(base);
-  url.pathname = url.pathname.replace(/_test$/, "_web_test");
-  return { ...process.env, TEST_DATABASE_URL: url.toString() };
-}
+let scratchUrl: string | undefined;
+let dropScratch: (() => Promise<void>) | undefined;
 
 before(async () => {
-  ({ pool, skipReason } = await openTestPool(webTestEnv()));
-  if (!pool) return;
+  const scratch = await createScratchDatabase();
+  if (!scratch.url) {
+    skipReason = scratch.skipReason;
+    return;
+  }
+  scratchUrl = scratch.url;
+  dropScratch = scratch.drop;
+  pool = createPool(scratch.url);
   const registry = new Registry();
-  registry.register(coreManifest);
-  for (const manifest of await discoverModules(modulesDir)) registry.register(manifest);
-  await migrate(pool, registry);
+  registry.registerCore();
+  registry.register(aiUsage);
+  await migrate(pool, registry, { moduleDirs: { "ai-usage": MODULE_DIR } });
 });
 
 after(async () => {
   await pool?.end();
+  await dropScratch?.();
 });
 
 const q = (sql: string, values: unknown[] = []) => pool!.query(sql, values);

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { createCodexCollector } from "../src/collectors/codex.ts";
+import { createCodexCollector } from "../../modules/ai-usage/src/collectors/codex.ts";
 
 const root = fileURLToPath(new URL("./fixtures/codex", import.meta.url));
 const first = join(root, "2026/10/01/rollout-2026-10-01T10-00-00-cdx-0001.jsonl");

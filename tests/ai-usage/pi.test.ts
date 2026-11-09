@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { createPiCollector } from "../src/collectors/pi.ts";
+import { createPiCollector } from "../../modules/ai-usage/src/collectors/pi.ts";
 
 const root = fileURLToPath(new URL("./fixtures/pi/sessions", import.meta.url));
 const project = join(root, "--work-demo-pi--");
@@ -66,15 +66,15 @@ describe("Pi collector", () => {
     assert.deepEqual(usage.map((u) => u.externalId), ["pi-sub-0001:e0000001"]);
     assert.equal(usage[0]!.sessionExternalId, "pi-0001");
     // The task handed to a subagent is not a prompt typed by the user.
-    assert.deepEqual(activity, [{ kind: "tool_call", externalId: "pi-sub-0001:call_1", sessionExternalId: "pi-0001", durationMs: 0 }]);
+    assert.deepEqual(activity, [{ kind: "tool_call", externalId: "pi-sub-0001:call_1", sessionExternalId: "pi-0001", durationMs: 0, name: "bash", skill: null, failed: null }]);
   });
 
   it("reports prompts and tool calls as items and a duration of zero, since the log has no turn durations", async () => {
     const { activity, counters } = await parse(main);
     assert.deepEqual(activity, [
       { kind: "prompt", externalId: "pi-0001:u0000001", sessionExternalId: "pi-0001", durationMs: 0 },
-      { kind: "tool_call", externalId: "pi-0001:call_1", sessionExternalId: "pi-0001", durationMs: 0 },
-      { kind: "tool_call", externalId: "pi-0001:call_2", sessionExternalId: "pi-0001", durationMs: 0 },
+      { kind: "tool_call", externalId: "pi-0001:call_1", sessionExternalId: "pi-0001", durationMs: 0, name: "bash", skill: null, failed: false },
+      { kind: "tool_call", externalId: "pi-0001:call_2", sessionExternalId: "pi-0001", durationMs: 0, name: "read", skill: null, failed: null },
     ]);
     assert.deepEqual(counters, { messageCount: 1, toolCallCount: 2, durationMs: 0 });
   });

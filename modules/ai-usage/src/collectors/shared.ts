@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import { open, stat } from "node:fs/promises";
 import { basename, join } from "node:path";
-import type { SourceFile } from "../collector.ts";
+import { NAME_PATTERN, type SourceFile } from "../collector.ts";
 
 /** Recursively list files whose name matches, sorted by path. A missing root yields an empty list. */
 export async function findFiles(root: string, matches: (name: string) => boolean): Promise<SourceFile[]> {
@@ -85,4 +85,21 @@ export function projectLabel(cwd: unknown): string | null {
   const path = asString(cwd);
   if (!path) return null;
   return basename(path.replace(/[\\/]+$/, "")) || null;
+}
+
+/** A tool or skill name as the log gives it, or null when it is missing or could carry something else (a path, a sentence). */
+export function cleanName(value: unknown): string | null {
+  return typeof value === "string" && NAME_PATTERN.test(value) ? value : null;
+}
+
+const SKILL_FILE = /skills[\\/]([^\\/\s"']+)[\\/]SKILL\.md/;
+
+/**
+ * The skill a tool call loaded, for tools that have no skill event: the folder name in a `skills/<name>/SKILL.md`
+ * path found in the call's arguments. Only that name is returned; a folder starting with `_` holds shared files, not a skill.
+ */
+export function skillFromArguments(args: unknown): string | null {
+  const text = typeof args === "string" ? args : args === undefined ? "" : JSON.stringify(args);
+  const name = SKILL_FILE.exec(text)?.[1];
+  return name !== undefined && !name.startsWith("_") ? cleanName(name) : null;
 }

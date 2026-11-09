@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { NOT_AVAILABLE, formatCompact, formatCount, formatPercent, formatUtcDay, formatUtcDayShort, formatUtcMinute } from "../web/format.ts";
+import { NOT_AVAILABLE, formatCompact, formatAgo, formatCount, formatPercent, formatUtcDay, formatUtcDayShort, formatUtcMinute } from "../../modules/ai-usage/web/format.ts";
 
 describe("formatCompact", () => {
   it("uses three significant digits and trims trailing zeros", () => {
@@ -65,5 +65,20 @@ describe("formatUtcDayShort", () => {
 
   it("returns the input when it is not a date", () => {
     assert.equal(formatUtcDayShort("soon"), "soon");
+  });
+});
+
+describe("formatAgo", () => {
+  const now = new Date("2026-11-09T12:00:00Z");
+  const ago = (ms: number) => formatAgo(new Date(now.getTime() - ms), now);
+  it("says how long ago in the largest whole unit", () => {
+    assert.equal(ago(20_000), "just now");
+    assert.equal(ago(5 * 60_000), "5 min ago");
+    assert.equal(ago(3 * 3_600_000 + 1_000), "3 h ago");
+    assert.equal(ago(2 * 86_400_000), "2 days ago");
+    assert.equal(ago(86_400_000 + 1), "1 day ago");
+  });
+  it("never shows a negative age when the clocks differ a little", () => {
+    assert.equal(formatAgo(new Date(now.getTime() + 5_000), now), "just now");
   });
 });

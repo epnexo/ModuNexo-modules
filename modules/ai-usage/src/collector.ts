@@ -62,7 +62,16 @@ export interface ActivityItem {
   sessionExternalId: string | null;
   /** Only meaningful for `turn`; 0 otherwise. */
   durationMs: number;
+  /** For a `tool_call`: the tool's name, for example `Bash`. Null or absent when the log does not say. */
+  name?: string | null;
+  /** For a `tool_call` that loaded a skill: the skill's name only, never a path or its arguments. */
+  skill?: string | null;
+  /** True when the log says the call failed, false when it says it worked, null or absent when it does not say. */
+  failed?: boolean | null;
 }
+
+/** What a tool or skill name may look like. It cannot hold a path separator or a space, so a path or a sentence never fits. */
+export const NAME_PATTERN = /^[A-Za-z0-9_][A-Za-z0-9_.:@-]{0,99}$/;
 
 /** Where to continue reading a file: a byte offset and opaque parser state returned by the previous parse. */
 export interface ResumePoint {

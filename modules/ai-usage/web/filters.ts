@@ -1,3 +1,5 @@
+import { DEFAULT_GRAIN, type Grain } from "./buckets.ts";
+
 export const PERIODS = ["7d", "30d", "90d", "all"] as const;
 export type Period = (typeof PERIODS)[number];
 export const DEFAULT_PERIOD: Period = "30d";
@@ -15,6 +17,8 @@ export interface Filters {
   period: Period;
   /** Tool slug, or null for all tools. */
   tool: string | null;
+  /** What one bar of the daily chart covers; left out means daily. */
+  grain?: Grain;
 }
 
 export interface ParsedFilters extends Filters {
@@ -62,14 +66,16 @@ export function periodStart(period: Period, now: Date): string | null {
 }
 
 /** A link to the page with the current filters changed by `patch`. Defaults are left out to keep URLs short. */
-export function withFilters(current: Filters, patch: { period?: Period; tool?: string | null }): string {
+export function withFilters(current: Filters, patch: { period?: Period; tool?: string | null; grain?: Grain }, path: string = PAGE_PATH): string {
   const period = patch.period ?? current.period;
   const tool = patch.tool === undefined ? current.tool : patch.tool;
+  const grain = patch.grain ?? current.grain ?? DEFAULT_GRAIN;
   const params = new URLSearchParams();
   if (period !== DEFAULT_PERIOD) params.set("period", period);
   if (tool !== null) params.set("tool", tool);
+  if (grain !== DEFAULT_GRAIN) params.set("grain", grain);
   const query = params.toString();
-  return query === "" ? PAGE_PATH : `${PAGE_PATH}?${query}`;
+  return query === "" ? path : `${path}?${query}`;
 }
 
 const KNOWN_TOOL_SLOTS: Record<string, number> = { "claude-code": 1, codex: 2, pi: 3, opencode: 4 };
