@@ -19,4 +19,9 @@ describe("ai-usage styles", () => {
     const undefinedTokens = [...used].filter((name) => !defined.has(name) && !PLATFORM_TOKENS.has(name));
     assert.deepEqual(undefinedTokens, []);
   });
+
+  it("marks the current item of a switcher whether the link says aria-current true or page", () => {
+    assert.match(css, /\.au-seg a\[aria-current="true"\],\s*\.au-seg a\[aria-current="page"\]\s*\{/);
+    assert.match(css, /\.au-seg a\[aria-current="page"\]::before/);
+  });
 });

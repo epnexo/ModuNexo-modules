@@ -1,4 +1,4 @@
-import { DEFAULT_PERIOD, PAGE_PATH, type Period } from "./filters.ts";
+import { DEFAULT_PERIOD, PAGE_PATH, withFilters, type Period } from "./filters.ts";
 import type { SkillRow, ToolInfo, ToolUseRow } from "./queries.ts";
 
 /** How a CLI's skills are found: its log has a skill event (exact), or the skill is read from a SKILL.md path (estimated). */
@@ -68,4 +68,20 @@ export function mergeSkills(rows: SkillRow[], limit: number): MergedSkill[] {
 /** Failed calls over the calls whose outcome the log reports; null when it reports none. */
 export function failureRate(row: Pick<ToolUseRow, "calls" | "failed" | "reported">): number | null {
   return row.reported === 0 ? null : row.failed / row.reported;
+}
+
+export interface TabItem {
+  label: string;
+  href: string;
+  current: boolean;
+  /** The tool the tab opens, or null for the overview. */
+  slug: string | null;
+}
+
+/** The bar shown on every page: the overview, then one tab per tool. The period travels with you when you switch. */
+export function toolTabs(tools: ToolInfo[], current: string | null, period: Period): TabItem[] {
+  return [
+    { label: "Overview", href: withFilters({ period, tool: null }, {}, PAGE_PATH), current: current === null, slug: null },
+    ...tools.map((tool) => ({ label: tool.name, href: toolPageHref(tool.slug, period), current: current === tool.slug, slug: tool.slug })),
+  ];
 }

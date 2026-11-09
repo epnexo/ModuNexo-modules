@@ -5,7 +5,7 @@ import { HBars, Portlet, ToolName, styleOf, value, type HBarRow, type ToolStyle 
 import { PERIODS, PERIOD_LABELS, withFilters, type Filters, type Period } from "./filters.ts";
 import { NOT_AVAILABLE, formatCompact, formatCount, formatPercent, formatUtcMinute } from "./format.ts";
 import type { ProjectRow, ToolActivityRow, ToolInfo, ToolRow, ToolUseRow } from "./queries.ts";
-import { failureRate, profileOf, toolPageHref, type MergedSkill } from "./tools.ts";
+import { failureRate, profileOf, toolPageHref, type MergedSkill, type TabItem } from "./tools.ts";
 
 /** Period links for a page at `path`. The tool is not a filter here: each CLI has its own page. */
 export function PeriodBar({ filters, path }: { filters: Filters; path: string }) {
@@ -14,6 +14,20 @@ export function PeriodBar({ filters, path }: { filters: Filters; path: string })
       {PERIODS.map((period) => (
         <Link key={period} href={withFilters(filters, { period }, path)} aria-current={filters.period === period}>
           {PERIOD_LABELS[period]}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+/** Switch between the overview and each tool without going back. Present on every page, with the current one marked. */
+export function ToolTabs({ tabs, styles }: { tabs: TabItem[]; styles: Map<string, ToolStyle> }) {
+  return (
+    <nav className="au-seg au-tabs" aria-label="Views">
+      {tabs.map((tab) => (
+        <Link key={tab.slug ?? "overview"} href={tab.href} aria-current={tab.current ? "page" : undefined} className={tab.slug === null ? undefined : styleOf(styles, tab.slug).className}>
+          {tab.slug === null ? null : <span className="au-dot" aria-hidden="true" />}
+          {tab.label}
         </Link>
       ))}
     </nav>
@@ -192,9 +206,6 @@ export function ToolHero({ tool, children }: { tool: ToolInfo; children?: ReactN
         <Mascot slug={tool.slug} />
       </div>
       <div className="au-hero-text">
-        <Link href="/ai-usage" className="au-back">
-          All tools
-        </Link>
         <h1>{profile.name}</h1>
         {profile.tagline === "" ? null : <p>{profile.tagline}</p>}
         {children === undefined ? null : <Fragment>{children}</Fragment>}

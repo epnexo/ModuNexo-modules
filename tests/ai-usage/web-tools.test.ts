@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { failureRate, KNOWN_TOOLS, mergeSkills, overviewTools, profileOf, toolPageHref } from "../../modules/ai-usage/web/tools.ts";
+import { failureRate, KNOWN_TOOLS, mergeSkills, overviewTools, profileOf, toolPageHref, toolTabs } from "../../modules/ai-usage/web/tools.ts";
 import { withFilters } from "../../modules/ai-usage/web/filters.ts";
 
 describe("tool profiles", () => {
@@ -75,5 +75,25 @@ describe("failure rate", () => {
 
   it("is null when the log never reports an outcome, which is not the same as no failures", () => {
     assert.equal(failureRate({ calls: 5, failed: 0, reported: 0 }), null);
+  });
+});
+
+describe("tool tabs", () => {
+  const tools = overviewTools([{ slug: "zed", name: "Zed" }]);
+
+  it("lists the overview first and then every tool, marking the page you are on", () => {
+    const onOverview = toolTabs(tools, null, "30d");
+    assert.deepEqual(onOverview.map((t) => [t.label, t.current]), [["Overview", true], ["Claude Code", false], ["Codex", false], ["OpenCode", false], ["Pi", false], ["Zed", false]]);
+    const onCodex = toolTabs(tools, "codex", "30d");
+    assert.deepEqual(onCodex.filter((t) => t.current).map((t) => t.label), ["Codex"]);
+  });
+
+  it("keeps the period when you switch, and leaves the default out of the address", () => {
+    assert.deepEqual(toolTabs(tools, "codex", "7d").slice(0, 3).map((t) => t.href), ["/ai-usage?period=7d", "/ai-usage/claude-code?period=7d", "/ai-usage/codex?period=7d"]);
+    assert.deepEqual(toolTabs(tools, null, "30d").slice(0, 2).map((t) => t.href), ["/ai-usage", "/ai-usage/claude-code"]);
+  });
+
+  it("gives the overview no tool and each tab its slug, so the page can color it", () => {
+    assert.deepEqual(toolTabs(tools, null, "30d").slice(0, 2).map((t) => t.slug), [null, "claude-code"]);
   });
 });

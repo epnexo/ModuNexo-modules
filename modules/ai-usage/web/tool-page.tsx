@@ -5,8 +5,8 @@ import { loadToolPage, type ToolPageData } from "./data.ts";
 import { ByModelTable, CumulativeTokens, DailyCharts, EmptyState, Headline, ModelShare, Notice, RecentSessions, TokenSplit, toolStyles } from "./components.tsx";
 import { formatCount } from "./format.ts";
 import { groupModels } from "./group.ts";
-import { PeriodBar, Projects, ToolHero, TopSkills, TopTools, Unavailable } from "./panels.tsx";
-import { mergeSkills } from "./tools.ts";
+import { PeriodBar, Projects, ToolHero, ToolTabs, TopSkills, TopTools, Unavailable } from "./panels.tsx";
+import { mergeSkills, toolTabs } from "./tools.ts";
 import "./ai-usage.css";
 
 type Params = Promise<{ tool: string }>;
@@ -50,6 +50,7 @@ export default async function ToolUsagePage({ params, searchParams }: { params: 
         </div>
       </header>
       <div className="page-body">
+        <ToolTabs tabs={toolTabs(data.tools, slug, filters.period)} styles={styles} />
         <ToolHero tool={tool}>
           {mine === undefined ? null : (
             <p className="muted">

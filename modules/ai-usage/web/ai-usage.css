@@ -370,13 +370,15 @@
   background: var(--wash);
 }
 
-.au-seg a[aria-current="true"] {
+.au-seg a[aria-current="true"],
+.au-seg a[aria-current="page"] {
   background: var(--portlet-head);
   color: var(--portlet-head-ink);
   font-weight: var(--weight-bold);
 }
 
-.au-seg a[aria-current="true"]::before {
+.au-seg a[aria-current="true"]::before,
+.au-seg a[aria-current="page"]::before {
   content: "";
   width: 9px;
   height: 5px;
@@ -886,14 +888,10 @@
   margin: 0;
 }
 
-.au-back {
-  width: fit-content;
-  color: var(--link);
-  font-size: var(--text-small);
-}
-
-.au-back::before {
-  content: "\2190\00a0";
+/* The view switcher sits above the content, left aligned, and wraps on a phone. */
+.au-tabs {
+  justify-self: start;
+  max-width: 100%;
 }
 
 /* Mascots: original drawings, animated with CSS only. */

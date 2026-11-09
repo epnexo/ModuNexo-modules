@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { PAGE_PATH, PERIOD_LABELS } from "./filters.ts";
 import { loadOverview, type OverviewData } from "./data.ts";
 import { ByToolTable, CumulativeTokens, DailyCharts, EmptyState, Headline, Notice, RecentSessions, toolStyles } from "./components.tsx";
-import { PeriodBar, Projects, ToolCards, TopSkills, TopTools, Unavailable } from "./panels.tsx";
-import { mergeSkills, toolPageHref } from "./tools.ts";
+import { PeriodBar, Projects, ToolCards, ToolTabs, TopSkills, TopTools, Unavailable } from "./panels.tsx";
+import { mergeSkills, toolPageHref, toolTabs } from "./tools.ts";
 import "./ai-usage.css";
 
 export const metadata: Metadata = { title: "AI usage" };
@@ -55,6 +55,7 @@ export default async function AiUsagePage({ searchParams }: { searchParams: Sear
         <PeriodBar filters={filters} path={PAGE_PATH} />
       </Header>
       <div className="page-body">
+        <ToolTabs tabs={toolTabs(tools, null, filters.period)} styles={styles} />
         {problems.map((problem) => (
           <Notice key={problem} title="Filter ignored">
             {problem}
