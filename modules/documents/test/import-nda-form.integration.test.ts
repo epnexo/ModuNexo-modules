@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { getProfile } from "../src/profile-store.ts";
 import { getTemplateBySlug } from "../src/template-store.ts";
 import { createElement } from "react";
-import { importNotice } from "../web/templates-page.tsx";
+import { importNotice } from "../web/import-nda-form.tsx";
 import { importNdaFromRequest } from "../web/submit-import.ts";
 import { SCRIPT_FULL, TEMPLATE, config } from "./helpers/nda-fixture.ts";
 import { type TestDb, openMigratedPool } from "./helpers/db.ts";
@@ -60,26 +60,26 @@ describe("the Import NDA form", () => {
 
   test("asks for all three files, and writes nothing without them", async () => {
     for (const parts of [{ template: good().template }, { config: good().config }, { ...good(), script: undefined }, { template: file("", "nda.html"), config: good().config }]) {
-      assert.equal(where(await importNdaFromRequest(request(parts), () => pool!))[1], "/documents/templates?import_error=missing-files");
+      assert.equal(where(await importNdaFromRequest(request(parts), () => pool!))[1], "/documents/templates/new?import_error=missing-files");
     }
     assert.deepEqual([await count("templates"), await count("settings")], [0, 0]);
   });
 
   test("refuses a config that is not JSON, without echoing it, and writes nothing", async () => {
     const response = await importNdaFromRequest(request({ ...good(), config: file("{ not json: secret-value", "config.json") }), () => pool!);
-    assert.equal(where(response)[1], "/documents/templates?import_error=invalid-files");
+    assert.equal(where(response)[1], "/documents/templates/new?import_error=invalid-files");
     assert.deepEqual([await count("templates"), await count("settings")], [0, 0]);
   });
 
   test("refuses a script that is not the skill's, instead of importing a different document", async () => {
     const response = await importNdaFromRequest(request({ ...good(), script: file("print('hello')", "nda.py") }), () => pool!);
-    assert.equal(where(response)[1], "/documents/templates?import_error=invalid-files");
+    assert.equal(where(response)[1], "/documents/templates/new?import_error=invalid-files");
     assert.equal(await count("templates"), 0);
   });
 
   test("refuses a file larger than a skill file", async () => {
     const response = await importNdaFromRequest(request({ ...good(), template: file("x".repeat(1_000_001), "nda.html") }), () => pool!);
-    assert.equal(where(response)[1], "/documents/templates?import_error=too-large");
+    assert.equal(where(response)[1], "/documents/templates/new?import_error=too-large");
     assert.equal(await count("templates"), 0);
   });
 

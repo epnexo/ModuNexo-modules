@@ -10,7 +10,8 @@ const MAX_FILE_BYTES = 1_000_000;
 export type ImportError = "missing-files" | "too-large" | "invalid-files" | "failed";
 
 const back = (query: string): Response => new Response(null, { status: 303, headers: { location: `/documents/templates?${query}` } });
-const failed = (code: ImportError): Response => back(`import_error=${code}`);
+/** A failure goes back to the page that holds the form, where the owner can fix the files. */
+const failed = (code: ImportError): Response => new Response(null, { status: 303, headers: { location: `/documents/templates/new?import_error=${code}` } });
 
 async function textOf(value: FormDataEntryValue | null): Promise<string | "too-large" | null> {
   if (typeof value === "string" || value === null) return null;

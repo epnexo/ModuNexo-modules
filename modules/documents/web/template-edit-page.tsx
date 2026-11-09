@@ -9,6 +9,7 @@ import { ENDPOINTS } from "./endpoints.ts";
 import { MarkerPanel, Notice, Portlet } from "./components.tsx";
 import { EMPTY_TEMPLATE_VALUES } from "./form-state.ts";
 import { ArchiveForm, TemplateForm } from "./forms.tsx";
+import { ImportNda, importNotice } from "./import-nda-form.tsx";
 import { logFailure } from "./log.ts";
 import { PageBar } from "./nav.tsx";
 import { Unavailable } from "./page-state.tsx";
@@ -26,10 +27,13 @@ export interface TemplateEditData {
 export async function renderTemplateEditPage({
   idParam,
   saved,
+  importError,
   load,
 }: {
   idParam: string | undefined;
   saved: boolean;
+  /** The code the Import NDA form left in the address when it failed. */
+  importError?: string | undefined;
   load: (id: number) => Promise<TemplateEditData>;
 }) {
   if (idParam === undefined) {
@@ -37,8 +41,12 @@ export async function renderTemplateEditPage({
       <div>
         <PageBar title="New template" description="Write the document as HTML and mark each value to fill with {{NAME}}." current="templates" />
         <div className="page-body">
+          {importNotice({ error: importError })}
           <Portlet title="Template">
             <TemplateForm endpoint={ENDPOINTS.createTemplate} initial={{ values: EMPTY_TEMPLATE_VALUES, errors: {} }} mode="create" counterpartyOptions={[]} />
+          </Portlet>
+          <Portlet title="Import ready-made templates">
+            <ImportNda />
           </Portlet>
         </div>
       </div>

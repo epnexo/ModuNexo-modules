@@ -3,9 +3,10 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useActionState, useEffect, useMemo, useRef } from "react";
+import { type ReactNode, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { PAGE_SIZES, PROFILE_FIELDS, PROFILE_SECTIONS, type ProfileField } from "../src/profile.ts";
 import { type DocumentFieldSpec, fieldUses, isMultiline } from "../src/document-rules.ts";
+import { MAX_IMPORT_BYTES, looksLikeHtml, suggestFromFileName } from "../src/template-import.ts";
 import type { TemplateField } from "../src/template-rules.ts";
 import { type VariableField, type VariableRow, variableFieldName } from "../src/variable-rules.ts";
 import { Notice, Portlet } from "./components.tsx";
@@ -231,6 +232,45 @@ function VariablesSection({ rows, errors }: { rows: VariableRow[]; errors: Recor
  * `counterpartyOptions` are the markers of the saved body that are asked for each document: the choice of the
  * counterparty-name marker depends on the saved body, so a new template offers none until it is saved.
  */
+/**
+ * Load the body of any document from an HTML file on the owner's computer. The file is read in the browser and put in the
+ * form below; nothing is saved until the form is. A name and a slug are suggested from the file name, only into empty fields.
+ */
+function LoadFromFile({ form }: { form: React.RefObject<HTMLFormElement | null> }) {
+  const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const control = (name: string) => form.current?.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null;
+  async function load(file: File | undefined) {
+    if (!file) return;
+    if (!looksLikeHtml(file.name)) return setMessage({ tone: "error", text: "Choose an HTML file (.html or .htm)." });
+    if (file.size > MAX_IMPORT_BYTES) return setMessage({ tone: "error", text: "The file is too large to be a template body (the limit is 1 MB)." });
+    const body = control("bodyHtml");
+    const text = await file.text();
+    if (!body) return;
+    if (body.value.trim() !== "" && !window.confirm("Replace the body already written in the form with this file?")) return;
+    body.value = text;
+    const suggested = suggestFromFileName(file.name);
+    for (const field of ["name", "slug"] as const) {
+      const input = control(field);
+      if (input && input.value.trim() === "") input.value = suggested[field];
+    }
+    setMessage({ tone: "ok", text: `Loaded ${file.name}. Review the fields below and create the template.` });
+  }
+  return (
+    <div className="field wide">
+      <label className="field-label" htmlFor="load-html">
+        Load the body from an HTML file
+      </label>
+      <input id="load-html" className="input" type="file" accept=".html,.htm,text/html" onChange={(event) => void load(event.target.files?.[0])} />
+      <span className="field-help">Works for any document: a contract, a proposal, an NDA. Mark each value to fill with {"{{NAME}}"}.</span>
+      {message ? (
+        <span className={message.tone === "error" ? "field-error" : "field-help"} role={message.tone === "error" ? "alert" : "status"}>
+          {message.text}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export function TemplateForm({
   endpoint,
   initial,
@@ -259,6 +299,7 @@ export function TemplateForm({
       {state.dropped && state.dropped.length > 0 ? <Notice title={`Settings dropped for markers no longer in the body: ${state.dropped.join(", ")}.`} /> : null}
       {mode === "edit" && id !== undefined ? <input type="hidden" name="id" value={id} /> : null}
       <div className="form-grid">
+        {mode === "create" ? <LoadFromFile form={form} /> : null}
         <Field name="name" label="Name" error={error("name")} required>
           {(aria) => <input {...aria} className="input" type="text" defaultValue={state.values.name} autoComplete="off" />}
         </Field>

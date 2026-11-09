@@ -184,3 +184,36 @@ describe("profile page", () => {
     assert.doesNotMatch(markup, /<form|boom/);
   });
 });
+
+describe("importing a template", () => {
+  const load = async () => ({ template: null, profile: {} });
+
+  it("offers, on the new-template page, to load any document from an HTML file and to import the NDA", async () => {
+    const markup = html(await renderTemplateEditPage({ idParam: undefined, saved: false, load }));
+    assert.match(markup, /Load the body from an HTML file/);
+    assert.match(markup, /type="file"[^>]*accept="\.html,\.htm,text\/html"/);
+    const form = markup.match(/<form [^>]*action="\/documents\/templates\/import-nda"[^>]*>/)?.[0] ?? "";
+    assert.match(form, /enctype="multipart\/form-data"/i);
+    assert.match(form, /method="post"/);
+    for (const field of ["template", "config", "script"]) {
+      const input = markup.match(new RegExp(`<input [^>]*name="${field}"[^>]*>`))?.[0] ?? "";
+      assert.match(input, /type="file"/, field);
+    }
+  });
+
+  it("does not offer the file loader when editing a template, where it could overwrite a saved body by accident", async () => {
+    const markup = html(await renderTemplateEditPage({ idParam: "7", saved: false, load: async () => ({ template: template(), profile: {} }) }));
+    assert.doesNotMatch(markup, /Load the body from an HTML file|import-nda/);
+  });
+
+  it("shows why an NDA import failed where the form is, for a known code only", async () => {
+    assert.match(html(await renderTemplateEditPage({ idParam: undefined, saved: false, importError: "invalid-files", load })), /NDA not imported/);
+    assert.doesNotMatch(html(await renderTemplateEditPage({ idParam: undefined, saved: false, importError: "<b>x</b>", load })), /NDA not imported|<b>x/);
+  });
+
+  it("no longer carries the import form on the list, which only reports the result", async () => {
+    const markup = html(await renderTemplatesPage(async () => ({ templates: [], profile: {} }), { imported: "created", profile: "2" }));
+    assert.doesNotMatch(markup, /import-nda/);
+    assert.match(markup, /NDA template was created\. 2 profile fields were added/);
+  });
+});
