@@ -944,3 +944,58 @@
     transform: none;
   }
 }
+
+/* More headline cards than four: fill the row, two per row on a phone. */
+.au .kpis {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+@media (max-width: 900px) {
+  .au .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* When it is used: weekday by hour. Cells use one color in five steps so the grid reads in both themes. */
+.au-heat {
+  display: grid;
+  grid-template-columns: 2.4rem repeat(24, minmax(0, 1fr));
+  gap: 3px;
+  align-items: center;
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.au-heat-row {
+  display: contents;
+}
+
+.au-heat-hour,
+.au-heat-day {
+  color: var(--ink-muted);
+  font-size: var(--text-label);
+  line-height: 1;
+}
+
+.au-heat-hour {
+  text-align: left;
+}
+
+.au-heat-cell {
+  height: 22px;
+  min-width: 10px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--series-total) var(--heat), var(--wash));
+}
+
+.au-heat-0 { --heat: 0%; }
+.au-heat-1 { --heat: 22%; }
+.au-heat-2 { --heat: 42%; }
+.au-heat-3 { --heat: 66%; }
+.au-heat-4 { --heat: 92%; }
+
+@media (max-width: 700px) {
+  .au-heat {
+    min-width: 520px;
+  }
+}

@@ -7,7 +7,7 @@ import { migrate } from "@modunexo/core/runner";
 import { createScratchDatabase } from "@modunexo/core/testing";
 import aiUsage from "../../modules/ai-usage/manifest.ts";
 import type pg from "pg";
-import { getProjects, getToolActivity, getTopSkills, getTopTools } from "../../modules/ai-usage/web/queries.ts";
+import { getHourly, getModelTokens, getProjects, getToolActivity, getTopSkills, getTopTools } from "../../modules/ai-usage/web/queries.ts";
 
 const MODULE_DIR = fileURLToPath(new URL("../../modules/ai-usage/", import.meta.url));
 
@@ -138,5 +138,22 @@ describe("web queries for skills, tools and projects (integration)", () => {
       ["demo-pi", "pi", 5, 1],
     ]);
     assert.deepEqual((await getProjects(pool!, { since: null, tool: "pi" })).map((r) => r.project), ["demo-pi"]);
+  });
+
+  test("getModelTokens gives every counter per tool and model, with null where nothing was reported", async () => {
+    const rows = await getModelTokens(pool!, ALL);
+    assert.deepEqual(rows.map((r) => [r.tool, r.model, r.inputTokens, r.cacheReadTokens, r.cacheWriteTokens, r.outputTokens]), [
+      ["claude-code", "m1", 100, null, null, null],
+      ["codex", "m1", 40, null, null, null],
+      ["pi", "m1", 5, null, null, null],
+    ]);
+    assert.deepEqual((await getModelTokens(pool!, OCTOBER)).map((r) => r.tool), ["claude-code", "codex"]);
+  });
+
+  test("getHourly sums tokens by UTC weekday (Monday is 0) and hour, and follows the period and tool filters", async () => {
+    const rows = await getHourly(pool!, ALL);
+    assert.deepEqual(rows.map((r) => [r.weekday, r.hour, r.totalTokens]), [[1, 9, 5], [3, 23, 100], [4, 12, 40]]);
+    assert.deepEqual((await getHourly(pool!, OCTOBER)).map((r) => [r.weekday, r.hour]), [[3, 23], [4, 12]]);
+    assert.deepEqual((await getHourly(pool!, { since: null, tool: "codex" })).map((r) => [r.weekday, r.hour, r.totalTokens]), [[4, 12, 40]]);
   });
 });

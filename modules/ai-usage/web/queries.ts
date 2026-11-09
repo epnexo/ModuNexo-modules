@@ -311,3 +311,59 @@ export async function getProjects(db: Queryable, filter: QueryFilter, limit = 10
     sessions: required(row.sessions),
   }));
 }
+
+export interface ModelTokenRow {
+  tool: string;
+  model: string | null;
+  inputTokens: number | null;
+  cacheReadTokens: number | null;
+  cacheWriteTokens: number | null;
+  outputTokens: number | null;
+}
+
+export interface HourRow {
+  /** UTC weekday, Monday is 0 and Sunday is 6. */
+  weekday: number;
+  /** UTC hour, 0 to 23. */
+  hour: number;
+  totalTokens: number;
+}
+
+/** Every counter per tool and model, the input of the cost estimate. A counter nothing reported stays null. */
+export async function getModelTokens(db: Queryable, filter: QueryFilter): Promise<ModelTokenRow[]> {
+  const { rows } = await db.query(
+    `select t.slug as tool, e.model,
+            sum(e.input_tokens) as input_tokens, sum(e.cache_read_tokens) as cache_read_tokens,
+            sum(e.cache_write_tokens) as cache_write_tokens, sum(e.output_tokens) as output_tokens
+       from ai_usage.usage_events e
+       join ai_usage.tools t on t.id = e.tool_id
+      where ${EVENT_FILTER}
+      group by t.slug, e.model
+      order by t.slug, e.model nulls last`,
+    [filter.since, filter.tool],
+  );
+  return rows.map((row) => ({
+    tool: String(row.tool),
+    model: row.model === null ? null : String(row.model),
+    inputTokens: num(row.input_tokens),
+    cacheReadTokens: num(row.cache_read_tokens),
+    cacheWriteTokens: num(row.cache_write_tokens),
+    outputTokens: num(row.output_tokens),
+  }));
+}
+
+/** Tokens by UTC weekday and hour: when the tools are used. Hours with no events have no row. */
+export async function getHourly(db: Queryable, filter: QueryFilter): Promise<HourRow[]> {
+  const { rows } = await db.query(
+    `select (extract(isodow from e.occurred_at at time zone 'UTC')::int - 1) as weekday,
+            extract(hour from e.occurred_at at time zone 'UTC')::int as hour,
+            coalesce(sum(e.total_tokens), 0) as total_tokens
+       from ai_usage.usage_events e
+       join ai_usage.tools t on t.id = e.tool_id
+      where ${EVENT_FILTER}
+      group by 1, 2
+      order by 1, 2`,
+    [filter.since, filter.tool],
+  );
+  return rows.map((row) => ({ weekday: required(row.weekday), hour: required(row.hour), totalTokens: required(row.total_tokens) }));
+}

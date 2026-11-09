@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "ai-usage",
-  version: "0.6.1", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.6.2", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "AI usage",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -18,6 +18,13 @@ export default defineModule({
       type: "string",
       description:
         "The address of this platform as the computers see it, for example https://modunexo.home.arpa. It only fills in the send command shown on the AI usage page. To connect a computer, open API access on this module in Settings: it lists the endpoint and creates one token per computer, with the scope ai_usage.write. Check what would be sent with --dry-run before sending. Only counters, model names, dates and project names are sent, never prompts, answers or file paths.",
+    },
+    {
+      key: "model_prices",
+      label: "Model prices",
+      type: "string",
+      description:
+        "Prices in US dollars per million tokens, one entry per model as model=input/cache read/cache write/output, separated by semicolons, for example claude-model=3/0.3/3.75/15; gpt-model=1.25/0.125/0/10. A model ending in * matches every model that starts with the rest. The AI usage page uses them for an estimated cost at API prices; models with no entry are left out and counted as unpriced. The module ships no prices, so enter the ones you trust.",
     },
   ],
   dashboard: {

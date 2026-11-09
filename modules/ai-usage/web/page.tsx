@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { PAGE_PATH, PERIOD_LABELS } from "./filters.ts";
+import { estimateCost } from "./metrics.ts";
 import { loadOverview, type OverviewData } from "./data.ts";
-import { ByToolTable, CumulativeTokens, DailyCharts, EmptyState, Headline, Notice, RecentSessions, toolStyles } from "./components.tsx";
+import { ByToolTable, CumulativeTokens, DailyCharts, EmptyState, Headline, Notice, RecentSessions, UsageHours, toolStyles, type CostView } from "./components.tsx";
 import { PeriodBar, Projects, ToolCards, ToolTabs, TopSkills, TopTools, Unavailable } from "./panels.tsx";
 import { mergeSkills, toolPageHref, toolTabs } from "./tools.ts";
 import "./ai-usage.css";
@@ -42,7 +43,8 @@ export default async function AiUsagePage({ searchParams }: { searchParams: Sear
   }
   if (data.redirectTool !== null) redirect(toolPageHref(data.redirectTool, data.filters.period));
 
-  const { tools, filters, problems, since, today, summary, daily, byTool, activity, skills, toolUse, projects, sessions } = data;
+  const { tools, filters, problems, since, today, summary, daily, byTool, activity, skills, toolUse, projects, sessions, modelTokens, hours, prices } = data;
+  const cost: CostView = { estimate: estimateCost(modelTokens, prices), hasPrices: prices.entries.length > 0 };
   const styles = toolStyles(tools);
   const from = since ?? daily[0]?.day ?? today;
   const hasUsage = summary.sessions > 0 || summary.totalTokens > 0;
@@ -69,7 +71,7 @@ export default async function AiUsagePage({ searchParams }: { searchParams: Sear
           </>
         ) : (
           <>
-            <Headline summary={summary} />
+            <Headline summary={summary} cost={cost} />
             <ToolCards cards={cards} period={filters.period} styles={styles} />
             <DailyCharts daily={daily} tools={withData.length > 0 ? withData : tools} styles={styles} from={from} to={today} />
             <div className="au-pair">
@@ -77,8 +79,9 @@ export default async function AiUsagePage({ searchParams }: { searchParams: Sear
               <TopTools rows={toolUse} styles={styles} showCli />
             </div>
             <CumulativeTokens daily={daily} from={from} to={today} />
+            <UsageHours rows={hours} />
             <div className="au-pair">
-              <ByToolTable rows={byTool} styles={styles} />
+              <ByToolTable rows={byTool} styles={styles} cost={cost} />
               <Projects rows={projects} styles={styles} showCli />
             </div>
             <RecentSessions rows={sessions} styles={styles} />

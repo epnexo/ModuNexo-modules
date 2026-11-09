@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { validateManifest } from "@modunexo/sdk";
 import { readMigrationFiles } from "@modunexo/core";
 import aiUsage from "../../modules/ai-usage/manifest.ts";
+import { parsePrices } from "../../modules/ai-usage/web/metrics.ts";
 
 const MODULE_DIR = fileURLToPath(new URL("../../modules/ai-usage/", import.meta.url));
 
@@ -26,6 +27,15 @@ describe("ai-usage manifest", () => {
     assert.match(setting.description ?? "", /API access/);
     assert.match(setting.description ?? "", /ai_usage\.write/);
     assert.match(setting.description ?? "", /--dry-run/);
+  });
+
+  it("lets an administrator enter model prices, in a format the price parser reads", () => {
+    const setting = aiUsage.settings?.find((entry) => entry.key === "model_prices");
+    assert.ok(setting);
+    assert.equal(setting.type, "string");
+    assert.match(setting.description ?? "", /input\/cache read\/cache write\/output/);
+    assert.match(setting.description ?? "", /million tokens/);
+    assert.equal(parsePrices(setting.default).ignored, 0, "the example in the description must parse");
   });
 
   it("ships ordered migrations", () => {

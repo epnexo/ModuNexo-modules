@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PAGE_PATH, PERIOD_LABELS } from "./filters.ts";
 import { loadToolPage, type ToolPageData } from "./data.ts";
-import { ByModelTable, CumulativeTokens, DailyCharts, EmptyState, Headline, ModelShare, Notice, RecentSessions, TokenSplit, toolStyles } from "./components.tsx";
+import { ByModelTable, CumulativeTokens, DailyCharts, EmptyState, Headline, ModelShare, Notice, RecentSessions, TokenSplit, UsageHours, toolStyles, type CostView } from "./components.tsx";
 import { formatCount } from "./format.ts";
+import { estimateCost } from "./metrics.ts";
 import { groupModels } from "./group.ts";
 import { PeriodBar, Projects, ToolHero, ToolTabs, TopSkills, TopTools, Unavailable } from "./panels.tsx";
 import { mergeSkills, toolTabs } from "./tools.ts";
@@ -31,7 +32,8 @@ export default async function ToolUsagePage({ params, searchParams }: { params: 
   }
   if (data === null) notFound();
 
-  const { tool, filters, problems, since, today, summary, daily, activity, skills, toolUse, projects, sessions, byModel } = data;
+  const { tool, filters, problems, since, today, summary, daily, activity, skills, toolUse, projects, sessions, byModel, modelTokens, hours, prices } = data;
+  const cost: CostView = { estimate: estimateCost(modelTokens, prices), hasPrices: prices.entries.length > 0 };
   const styles = toolStyles(data.tools);
   const path = `${PAGE_PATH}/${encodeURIComponent(slug)}`;
   const from = since ?? daily[0]?.day ?? today;
@@ -68,7 +70,7 @@ export default async function ToolUsagePage({ params, searchParams }: { params: 
           <EmptyState periodLabel={PERIOD_LABELS[filters.period]} toolName={tool.name} sendCommand={data.sendCommand} />
         ) : (
           <>
-            <Headline summary={summary} />
+            <Headline summary={summary} cost={cost} />
             <DailyCharts daily={daily} tools={[tool]} styles={styles} from={from} to={today} />
             <div className="au-pair">
               <CumulativeTokens daily={daily} from={from} to={today} />
@@ -77,6 +79,7 @@ export default async function ToolUsagePage({ params, searchParams }: { params: 
                 <ModelShare grouped={grouped} />
               </div>
             </div>
+            <UsageHours rows={hours} />
             <div className="au-pair">
               <TopSkills skills={mergeSkills(skills, 10)} perTool />
               <TopTools rows={toolUse} styles={styles} showCli={false} />

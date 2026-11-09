@@ -3,7 +3,9 @@ import { cleanAddress, sendCommand } from "../lib/connect.ts";
 import { parseFilters, periodStart, type Filters } from "./filters.ts";
 import {
   type DailyRow,
+  type HourRow,
   type ModelRow,
+  type ModelTokenRow,
   type ProjectRow,
   type SessionRow,
   type SkillRow,
@@ -15,6 +17,8 @@ import {
   getByModel,
   getByTool,
   getDaily,
+  getHourly,
+  getModelTokens,
   getProjects,
   getRecentSessions,
   getSummary,
@@ -23,6 +27,7 @@ import {
   getTopSkills,
   getTopTools,
 } from "./queries.ts";
+import { parsePrices, type PriceTable } from "./metrics.ts";
 import { overviewTools } from "./tools.ts";
 
 type RawParams = Record<string, string | string[] | undefined>;
@@ -42,6 +47,10 @@ interface Common {
   toolUse: ToolUseRow[];
   projects: ProjectRow[];
   sessions: SessionRow[];
+  modelTokens: ModelTokenRow[];
+  hours: HourRow[];
+  /** The prices an administrator entered in Settings; empty until they do. */
+  prices: PriceTable;
   sendCommand: string | null;
 }
 
@@ -65,6 +74,15 @@ async function connectCommand(): Promise<string | null> {
   }
 }
 
+/** The price table from the settings, or an empty one when the setting is unset or the settings cannot be read. */
+async function modelPrices(): Promise<PriceTable> {
+  try {
+    return parsePrices(await getSetting("ai-usage", "model_prices"));
+  } catch {
+    return parsePrices(null);
+  }
+}
+
 /** Skills are fetched wide so that merging them across tools still leaves enough to rank. */
 const SKILL_FETCH = 60;
 
@@ -75,7 +93,7 @@ async function common(raw: RawParams, now: Date, tool: string | null) {
   const parsed = parseFilters(raw, tools.map((t) => t.slug));
   const since = periodStart(parsed.period, now);
   const filter = { since, tool: tool ?? parsed.tool };
-  const [summary, daily, byTool, activity, skills, toolUse, projects, sessions] = await Promise.all([
+  const [summary, daily, byTool, activity, skills, toolUse, projects, sessions, modelTokens, hours] = await Promise.all([
     getSummary(db, filter),
     getDaily(db, filter),
     getByTool(db, filter),
@@ -84,6 +102,8 @@ async function common(raw: RawParams, now: Date, tool: string | null) {
     getTopTools(db, filter, 12),
     getProjects(db, filter, 10),
     getRecentSessions(db, filter),
+    getModelTokens(db, filter),
+    getHourly(db, filter),
   ]);
   return {
     db,
@@ -102,6 +122,9 @@ async function common(raw: RawParams, now: Date, tool: string | null) {
       toolUse,
       projects,
       sessions,
+      modelTokens,
+      hours,
+      prices: await modelPrices(),
       sendCommand: await connectCommand(),
     } satisfies Common,
   };

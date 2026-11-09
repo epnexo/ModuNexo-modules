@@ -5,7 +5,8 @@ import { barFractions, cumulative, fillDays, stackShares, topWithOther } from ".
 import { PERIODS, PERIOD_LABELS, type Filters, toolColorSlot, withFilters } from "./filters.ts";
 import { NOT_AVAILABLE, formatCompact, formatCount, formatPercent, formatUtcMinute } from "./format.ts";
 import type { GroupedModels } from "./group.ts";
-import type { DailyRow, SessionRow, Summary, ToolInfo, ToolRow } from "./queries.ts";
+import { cacheHitRate, formatUsd, heatLevel, type CostEstimate } from "./metrics.ts";
+import type { DailyRow, HourRow, SessionRow, Summary, ToolInfo, ToolRow } from "./queries.ts";
 
 /** Tools with their display name and fixed color class. */
 export interface ToolStyle {
@@ -105,17 +106,38 @@ export function EmptyState({ periodLabel, toolName, sendCommand }: { periodLabel
   );
 }
 
-export function Headline({ summary }: { summary: Summary }) {
+/** The cost estimate and whether the administrator entered any price at all. */
+export interface CostView {
+  estimate: CostEstimate;
+  hasPrices: boolean;
+}
+
+function costCard(cost: CostView): { label: string; value: string; sub: string; title?: string } {
+  if (!cost.hasPrices) return { label: "Est. cost", value: "Not set", sub: "Enter model prices in Settings", title: "No model price has been entered, so no cost can be estimated" };
+  const { cost: dollars, pricedTokens, unpricedTokens } = cost.estimate;
+  const covered = pricedTokens + unpricedTokens > 0 ? pricedTokens / (pricedTokens + unpricedTokens) : 0;
+  return {
+    label: "Est. cost",
+    value: formatUsd(dollars),
+    sub: `${formatPercent(covered)} of tokens priced`,
+    title: `What the priced tokens would cost at API prices. ${formatCompact(unpricedTokens)} tokens have no price and are left out.`,
+  };
+}
+
+export function Headline({ summary, cost }: { summary: Summary; cost?: CostView }) {
+  const hit = cacheHitRate(summary);
   const cards: { label: string; value: string; sub: string; title?: string }[] = [
     { label: "Total tokens", value: formatCompact(summary.totalTokens), sub: formatCount(summary.totalTokens), title: `${formatCount(summary.totalTokens)} tokens` },
     { label: "Sessions", value: formatCount(summary.sessions), sub: "with recorded usage" },
     { label: "Active days", value: formatCount(summary.activeDays), sub: "UTC days with usage" },
     { label: "Output tokens", value: formatCompact(summary.outputTokens), sub: `Fresh input ${formatCompact(summary.inputTokens)}` },
+    { label: "Cache hit", value: hit === null ? NOT_AVAILABLE : formatPercent(hit), sub: "of input served from cache", title: "Cache reads over fresh input, cache reads and cache writes" },
+    ...(cost === undefined ? [] : [costCard(cost)]),
   ];
   return (
     <dl className="kpis" aria-label="Headline numbers">
       {cards.map((card, i) => (
-        <div key={card.label} className={`kpi kpi-${i + 1}`}>
+        <div key={card.label} className={`kpi kpi-${(i % 4) + 1}`}>
           <dt>{card.label}</dt>
           <dd className="kpi-value" title={card.title}>
             {card.value}
@@ -346,7 +368,7 @@ export function Share({ amount, total, className }: { amount: number; total: num
   );
 }
 
-export function ByToolTable({ rows, styles }: { rows: ToolRow[]; styles: Map<string, ToolStyle> }) {
+export function ByToolTable({ rows, styles, cost }: { rows: ToolRow[]; styles: Map<string, ToolStyle>; cost?: CostView }) {
   const total = rows.reduce((sum, row) => sum + row.totalTokens, 0);
   return (
     <Portlet label="Usage by tool" title="By tool" note={`Tool-reported token counters. ${NOT_AVAILABLE} means the tool does not report that counter.`}>
@@ -357,6 +379,8 @@ export function ByToolTable({ rows, styles }: { rows: ToolRow[]; styles: Map<str
               <th>Tool</th>
               <th className="right">Tokens</th>
               <th>Share</th>
+              <th className="right">Cache hit</th>
+              {cost?.hasPrices ? <th className="right">Est. cost</th> : null}
               <th className="right">Sessions</th>
               <th className="right">Active days</th>
               <th className="right">Fresh input</th>
@@ -377,6 +401,8 @@ export function ByToolTable({ rows, styles }: { rows: ToolRow[]; styles: Map<str
                   <td>
                     <Share amount={row.totalTokens} total={total} />
                   </td>
+                  <td className="right num">{value(cacheHitRate(row), formatPercent)}</td>
+                  {cost?.hasPrices ? <td className="right num">{cost.estimate.byTool.has(row.tool) ? formatUsd(cost.estimate.byTool.get(row.tool)!) : <Na />}</td> : null}
                   <td className="right num">{formatCount(row.sessions)}</td>
                   <td className="right num">{formatCount(row.activeDays)}</td>
                   <td className="right num">{value(row.inputTokens)}</td>
@@ -489,6 +515,43 @@ export function RecentSessions({ rows, styles }: { rows: SessionRow[]; styles: M
         </div>
       )}
       <p className="au-note">Prompt and tool-call counts come from each tool&apos;s own logs; a 0 can mean the tool does not log them.</p>
+    </Portlet>
+  );
+}
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
+
+/** When the tools are used: tokens by UTC weekday and hour as a heat grid. Each cell names its slot and amount. */
+export function UsageHours({ rows }: { rows: HourRow[] }) {
+  const cell = new Map(rows.map((row) => [`${row.weekday}:${row.hour}`, row.totalTokens]));
+  const max = rows.reduce((top, row) => Math.max(top, row.totalTokens), 0);
+  const busiest = rows.reduce<HourRow | null>((top, row) => (top === null || row.totalTokens > top.totalTokens ? row : top), null);
+  return (
+    <Portlet
+      label="Usage by weekday and hour"
+      title="When it is used"
+      note={busiest === null ? "No usage in this period." : `Tokens by UTC weekday and hour. Busiest: ${WEEKDAYS[busiest.weekday]} ${String(busiest.hour).padStart(2, "0")}:00, ${formatCompact(busiest.totalTokens)} tokens.`}
+    >
+      <div className="au-heat" role="img" aria-label={busiest === null ? "No usage" : `Heat grid of tokens by weekday and hour; busiest ${WEEKDAYS[busiest.weekday]} ${busiest.hour}:00 UTC`}>
+        <span />
+        {HOURS.map((hour) => (
+          <span key={hour} className="au-heat-hour" aria-hidden="true">
+            {hour % 3 === 0 ? String(hour).padStart(2, "0") : ""}
+          </span>
+        ))}
+        {WEEKDAYS.map((day, weekday) => (
+          <div key={day} className="au-heat-row">
+            <span className="au-heat-day" aria-hidden="true">
+              {day}
+            </span>
+            {HOURS.map((hour) => {
+              const tokens = cell.get(`${weekday}:${hour}`) ?? 0;
+              return <span key={hour} className={`au-heat-cell au-heat-${heatLevel(tokens, max)}`} title={`${day} ${String(hour).padStart(2, "0")}:00 UTC: ${tokens === 0 ? "no usage" : `${formatCompact(tokens)} tokens`}`} />;
+            })}
+          </div>
+        ))}
+      </div>
     </Portlet>
   );
 }
