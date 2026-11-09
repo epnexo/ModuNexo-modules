@@ -63,6 +63,68 @@ describe("remote sender", () => {
     assert.ok(retry.calls.length >= 1);
   });
 
+  it("reports the code of a network failure, which fetch keeps in the error's cause", async () => {
+    const state = join(work, "state-4.json");
+    const unreachable = (async () => {
+      throw new TypeError("fetch failed", { cause: Object.assign(new Error("self-signed certificate at https://platform.test"), { code: "SELF_SIGNED_CERT_IN_CHAIN" }) });
+    }) as unknown as typeof fetch;
+    const [failed] = await send([collector()], { url: "https://platform.test", token: "t", stateFile: state, fetch: unreachable });
+    assert.ok(failed!.filesFailed >= 1);
+    assert.ok(failed!.failedFiles.every((f) => f.reason === "SELF_SIGNED_CERT_IN_CHAIN"));
+  });
+
+  it("waits as long as the platform asks after a 429 and sends the same request again", async () => {
+    const state = join(work, "state-6.json");
+    const platform = fakePlatform();
+    let refused = false;
+    const limited = (async (url: string, init: RequestInit) => {
+      if (!refused) {
+        refused = true;
+        return new Response("Too many requests", { status: 429, headers: { "retry-after": "7" } });
+      }
+      return platform.fetcher(url, init);
+    }) as unknown as typeof fetch;
+    const waits: number[] = [];
+    const [report] = await send([collector()], { url: "https://platform.test", token: "t", stateFile: state, fetch: limited, pauseMs: 0, sleep: async (ms) => void waits.push(ms) });
+    assert.equal(report!.filesFailed, 0);
+    assert.deepEqual(waits, [7000]);
+    assert.ok(report!.eventsInserted >= 1);
+  });
+
+  it("gives up on a request the platform keeps refusing with 429, reports HTTP_429 and sends the file again next run", async () => {
+    const state = join(work, "state-7.json");
+    let attempts = 0;
+    const always = (async () => {
+      attempts++;
+      return new Response("Too many requests", { status: 429, headers: { "retry-after": "1" } });
+    }) as unknown as typeof fetch;
+    const [failed] = await send([collector()], { url: "https://platform.test", token: "t", stateFile: state, fetch: always, pauseMs: 0, sleep: async () => {} });
+    assert.ok(failed!.filesFailed >= 1);
+    assert.ok(failed!.failedFiles.every((f) => f.reason === "HTTP_429"));
+    assert.ok(attempts <= (failed!.filesFailed + 1) * 6, "it must not retry without bound");
+    const retry = fakePlatform();
+    const [again] = await send([collector()], { url: "https://platform.test", token: "t", stateFile: state, fetch: retry.fetcher, pauseMs: 0, sleep: async () => {} });
+    assert.equal(again!.filesFailed, 0);
+  });
+
+  it("pauses between requests so it stays under the platform's rate limit, but not before the first", async () => {
+    const state = join(work, "state-8.json");
+    const { calls, fetcher } = fakePlatform();
+    const waits: number[] = [];
+    await send([collector()], { url: "https://platform.test", token: "t", stateFile: state, fetch: fetcher, pauseMs: 600, sleep: async (ms) => void waits.push(ms) });
+    assert.ok(calls.length >= 2, "the fixture must produce at least two requests");
+    assert.deepEqual(waits, Array(calls.length - 1).fill(600));
+  });
+
+  it("in a dry run counts what it found, sends nothing and writes no state", async () => {
+    const state = join(work, "state-5.json");
+    const { calls, fetcher } = fakePlatform();
+    const [report] = await send([collector()], { url: "https://platform.test", token: "", stateFile: state, fetch: fetcher, dryRun: true });
+    assert.equal(calls.length, 0);
+    assert.ok(report!.eventsInserted >= 1 && report!.sessionsInserted >= 1);
+    assert.equal(existsSync(state), false);
+  });
+
   it("starts over when the state file is unreadable", async () => {
     const state = join(work, "state-4.json");
     writeFileSync(state, "{not json");

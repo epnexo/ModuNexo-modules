@@ -5,6 +5,12 @@ import { sourceKey, type FailedFile } from "./ingest.ts";
 
 const MAX_ENTRIES = 2000;
 const REQUEST_TIMEOUT_MS = 30_000;
+/** The platform accepts 120 requests a minute per client and route; 600 ms between requests stays under that. */
+const DEFAULT_PAUSE_MS = 600;
+/** How many times one request is sent again after a 429 before its file is left for the next run. */
+const MAX_RATE_RETRIES = 5;
+const DEFAULT_RETRY_AFTER_S = 5;
+const MAX_RETRY_AFTER_S = 120;
 const FAILED_ID_LENGTH = 12;
 export const INGEST_PATH = "/svc/ai-usage/ingest";
 
@@ -35,6 +41,12 @@ export interface SendOptions {
   token: string;
   stateFile: string;
   fetch?: typeof fetch;
+  /** Parse everything and count it, but send nothing and leave the state file alone. */
+  dryRun?: boolean;
+  /** Milliseconds to wait between two requests, so the platform's rate limit is not reached. Default 600. */
+  pauseMs?: number;
+  /** How to wait; replaced in tests. */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 interface Part {
@@ -69,6 +81,18 @@ export function toParts(sessions: SessionRecord[], usage: UsageRecord[], activit
   return parts;
 }
 
+/** A code or class name only: messages can contain paths or addresses. fetch hides the network code (ENOTFOUND, a certificate error) in `cause`. */
+function failureReason(error: unknown): string {
+  const code = (error as { code?: unknown }).code ?? (error as { cause?: { code?: unknown } }).cause?.code;
+  return typeof code === "string" ? code : (error as Error).name ?? "Error";
+}
+
+/** The seconds a 429 asks to wait: its Retry-After header, kept within sensible bounds. */
+function retryAfterSeconds(response: Response): number {
+  const seconds = Number(response.headers.get("retry-after"));
+  return Number.isFinite(seconds) && seconds > 0 ? Math.min(Math.ceil(seconds), MAX_RETRY_AFTER_S) : DEFAULT_RETRY_AFTER_S;
+}
+
 function loadState(file: string): SenderState {
   try {
     return JSON.parse(readFileSync(file, "utf8")) as SenderState;
@@ -91,8 +115,11 @@ function saveState(file: string, state: SenderState): void {
  */
 export async function send(collectors: Collector[], options: SendOptions): Promise<SendReport[]> {
   const post = options.fetch ?? fetch;
+  const sleep = options.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)));
+  const pauseMs = options.pauseMs ?? DEFAULT_PAUSE_MS;
+  let sentAny = false;
   const endpoint = new URL(INGEST_PATH, options.url).toString();
-  const state = loadState(options.stateFile);
+  const state = options.dryRun ? {} : loadState(options.stateFile);
   const reports: SendReport[] = [];
 
   for (const collector of collectors) {
@@ -109,13 +136,27 @@ export async function send(collectors: Collector[], options: SendOptions): Promi
       try {
         const resumable = previous !== undefined && file.size >= previous.offset;
         const parsed = await collector.parse(file, resumable ? { offset: previous.offset, state: previous.parserState } : { offset: 0, state: null });
+        if (options.dryRun) {
+          report.sessionsInserted += parsed.sessions.length;
+          report.eventsInserted += parsed.usage.length;
+          report.tokensInserted += parsed.usage.reduce((sum, u) => sum + (u.inputTokens ?? 0) + (u.cacheReadTokens ?? 0) + (u.cacheWriteTokens ?? 0) + (u.outputTokens ?? 0), 0);
+          continue;
+        }
         for (const part of toParts(parsed.sessions, parsed.usage, parsed.activity ?? [])) {
-          const response = await post(endpoint, {
-            method: "POST",
-            headers: { authorization: `Bearer ${options.token}`, "content-type": "application/json" },
-            body: JSON.stringify({ tool: { slug: collector.toolId, name: collector.toolName }, ...part }),
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-          });
+          const body = JSON.stringify({ tool: { slug: collector.toolId, name: collector.toolName }, ...part });
+          let response: Response;
+          for (let retries = 0; ; retries++) {
+            if (sentAny && pauseMs > 0) await sleep(pauseMs);
+            sentAny = true;
+            response = await post(endpoint, {
+              method: "POST",
+              headers: { authorization: `Bearer ${options.token}`, "content-type": "application/json" },
+              body,
+              signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            });
+            if (response.status !== 429 || retries >= MAX_RATE_RETRIES) break;
+            await sleep(retryAfterSeconds(response) * 1000);
+          }
           if (!response.ok) throw Object.assign(new Error(`the platform answered ${response.status}`), { code: `HTTP_${response.status}` });
           const added = (await response.json()) as { sessionsInserted: number; eventsInserted: number; tokensInserted: number };
           report.sessionsInserted += added.sessionsInserted;
@@ -127,7 +168,7 @@ export async function send(collectors: Collector[], options: SendOptions): Promi
       } catch (error) {
         // Only a code or class name is kept: messages can contain paths or addresses.
         report.filesFailed++;
-        report.failedFiles.push({ id: `${collector.toolId}:${key.slice(0, FAILED_ID_LENGTH)}`, reason: (error as { code?: string }).code ?? (error as Error).name ?? "Error" });
+        report.failedFiles.push({ id: `${collector.toolId}:${key.slice(0, FAILED_ID_LENGTH)}`, reason: failureReason(error) });
       }
     }
     reports.push(report);

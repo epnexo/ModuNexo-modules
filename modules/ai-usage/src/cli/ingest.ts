@@ -4,14 +4,16 @@ import pg from "pg";
 import { createCollectors } from "../collectors/index.ts";
 import { ingest } from "../ingest.ts";
 import { send } from "../remote-sender.ts";
-import { parseIngestArgs } from "./args.ts";
+import { HELP, parseIngestArgs } from "./args.ts";
+import { defaultConfigPath, loadConfig, resolveSending, trustCertificateAuthority } from "./config.ts";
+import { terminalPrompter } from "./prompt.ts";
+import { runSetup } from "./setup.ts";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 
 /** Sends instead of writing to a database: needs only the platform address and a token with the scope `ai_usage.write`. */
-async function sendToPlatform(url: string, stateFile: string | undefined, collectors: ReturnType<typeof createCollectors>): Promise<void> {
-  const token = process.env.AI_USAGE_TOKEN;
-  if (!token) throw new Error("AI_USAGE_TOKEN is not set. Export a service token that holds the scope ai_usage.write.");
+async function sendToPlatform(url: string, token: string | undefined, stateFile: string | undefined, collectors: ReturnType<typeof createCollectors>): Promise<void> {
+  if (!token) throw new Error("There is no token. Run this command with --setup, or export AI_USAGE_TOKEN with a service token that holds the scope ai_usage.write.");
   const file = stateFile ?? join(homedir(), ".config", "ai-usage", "state.json");
   for (const report of await send(collectors, { url, token, stateFile: file })) {
     console.log(
@@ -23,10 +25,32 @@ async function sendToPlatform(url: string, stateFile: string | undefined, collec
   }
 }
 
+/** Shows what the logs hold, so you can see what a real run would send. Nothing leaves the machine. */
+async function dryRun(collectors: ReturnType<typeof createCollectors>): Promise<void> {
+  for (const report of await send(collectors, { url: "http://dry-run.invalid", token: "", stateFile: "", dryRun: true })) {
+    console.log(`${report.tool}: files found ${fmt(report.filesScanned)}, sessions ${fmt(report.sessionsInserted)}, events ${fmt(report.eventsInserted)}, tokens ${fmt(report.tokensInserted)} (dry run: nothing sent)`);
+    for (const failed of report.failedFiles) console.log(`  failed: ${failed.id} (${failed.reason})`);
+  }
+}
+
 async function main(): Promise<void> {
   const args = parseIngestArgs(process.argv.slice(2), process.env);
+  if (args.help) {
+    console.log(HELP);
+    return;
+  }
+  const configPath = args.configFile ?? defaultConfigPath();
+  if (args.setup) {
+    await runSetup({ path: configPath, prompter: terminalPrompter(), current: { ...loadConfig(configPath), ...(args.url !== undefined ? { url: args.url } : {}) }, log: (line) => console.log(line) });
+    return;
+  }
   const collectors = createCollectors({ claudeDir: args.claudeDir, codexDir: args.codexDir, piDir: args.piDir, opencodeDir: args.opencodeDir }).filter((c) => !args.tool || c.toolId === args.tool);
-  if (args.url !== undefined) return sendToPlatform(args.url, args.stateFile, collectors);
+  if (args.dryRun) return dryRun(collectors);
+  const sending = resolveSending(args, process.env, loadConfig(configPath));
+  if (sending.url !== undefined) {
+    if (sending.caFile !== undefined) trustCertificateAuthority(sending.caFile);
+    return sendToPlatform(sending.url, sending.token, args.stateFile, collectors);
+  }
 
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set. Copy .env.example to .env or export it.");

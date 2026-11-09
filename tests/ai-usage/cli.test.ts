@@ -5,7 +5,7 @@ import { createCollectors } from "../../modules/ai-usage/src/collectors/index.ts
 
 describe("parseIngestArgs", () => {
   it("defaults to every tool and the home directory roots", () => {
-    assert.deepEqual(parseIngestArgs([], {}), { tool: undefined, claudeDir: undefined, codexDir: undefined, piDir: undefined, opencodeDir: undefined, url: undefined, stateFile: undefined });
+    assert.deepEqual(parseIngestArgs([], {}), { tool: undefined, claudeDir: undefined, codexDir: undefined, piDir: undefined, opencodeDir: undefined, url: undefined, stateFile: undefined, help: false, dryRun: false, setup: false, configFile: undefined });
   });
 
   it("reads the tool and roots from flags", () => {
@@ -17,6 +17,8 @@ describe("parseIngestArgs", () => {
       opencodeDir: undefined,
       url: undefined,
       stateFile: undefined,
+      help: false,
+      dryRun: false, setup: false, configFile: undefined,
     });
   });
 
@@ -30,13 +32,15 @@ describe("parseIngestArgs", () => {
       opencodeDir: "/flag/oc",
       url: undefined,
       stateFile: undefined,
+      help: false,
+      dryRun: false, setup: false, configFile: undefined,
     });
     assert.equal(parseIngestArgs(["--tool", "opencode"], {}).tool, "opencode");
   });
 
   it("falls back to environment variables, with flags taking precedence", () => {
     const env = { AI_USAGE_CLAUDE_DIR: "/env/claude", AI_USAGE_CODEX_DIR: "/env/codex" };
-    assert.deepEqual(parseIngestArgs(["--codex-dir", "/flag"], env), { tool: undefined, claudeDir: "/env/claude", codexDir: "/flag", piDir: undefined, opencodeDir: undefined, url: undefined, stateFile: undefined });
+    assert.deepEqual(parseIngestArgs(["--codex-dir", "/flag"], env), { tool: undefined, claudeDir: "/env/claude", codexDir: "/flag", piDir: undefined, opencodeDir: undefined, url: undefined, stateFile: undefined, help: false, dryRun: false, setup: false, configFile: undefined });
   });
 
   it("rejects an unknown tool", () => {
@@ -65,5 +69,18 @@ describe("parseIngestArgs sending", () => {
 
   it("has no token flag, so a token never ends up in the shell history", () => {
     assert.throws(() => parseIngestArgs(["--token", "x"], {}));
+  });
+
+  it("reads --help and --dry-run", () => {
+    const args = parseIngestArgs(["-h", "--dry-run"], {});
+    assert.deepEqual([args.help, args.dryRun], [true, true]);
+  });
+});
+
+describe("parseIngestArgs setup", () => {
+  it("reads --setup and the config file from a flag or the environment", () => {
+    assert.equal(parseIngestArgs(["--setup"], {}).setup, true);
+    assert.equal(parseIngestArgs(["--config-file", "/c.json"], {}).configFile, "/c.json");
+    assert.equal(parseIngestArgs([], { AI_USAGE_CONFIG_FILE: "/env.json" }).configFile, "/env.json");
   });
 });
