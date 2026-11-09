@@ -12,8 +12,20 @@ describe("ai-usage manifest", () => {
     assert.doesNotThrow(() => validateManifest(aiUsage));
     assert.equal(aiUsage.id, "ai-usage");
     assert.equal(aiUsage.schema, "ai_usage");
-    assert.deepEqual(aiUsage.nav, [{ label: "AI usage", href: "/ai-usage", icon: "chart", permission: "ai_usage.read" }]);
+    assert.deepEqual(aiUsage.nav?.map((n) => n.href), ["/ai-usage"]);
+    assert.deepEqual(aiUsage.pages?.map((p) => p.path), ["/ai-usage", "/ai-usage/[tool]", "/svc/ai-usage/ingest"]);
     assert.equal(aiUsage.pages?.[0]?.entry, "./web/page.tsx");
+    assert.equal(aiUsage.pages?.[1]?.entry, "./web/tool-page.tsx");
+    assert.equal(aiUsage.pages?.[1]?.permission, "ai_usage.read", "a tool page needs the same permission as the overview");
+  });
+
+  it("explains how to connect a machine in its settings, which only an administrator can open", () => {
+    const setting = aiUsage.settings?.find((entry) => entry.key === "platform_url");
+    assert.ok(setting);
+    assert.equal(setting.type, "string");
+    assert.match(setting.description ?? "", /API access/);
+    assert.match(setting.description ?? "", /ai_usage\.write/);
+    assert.match(setting.description ?? "", /--dry-run/);
   });
 
   it("ships ordered migrations", () => {

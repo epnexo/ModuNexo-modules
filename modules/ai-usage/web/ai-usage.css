@@ -1,12 +1,299 @@
 /*
  * Styles owned by the ai-usage module. Every class is prefixed `au-` so nothing leaks into other pages.
- * Colors, sizes and weights come from the theme tokens in apps/web/src/app/theme.css, including the chart palette.
+ * Colors, sizes and weights come from the design layer right below, which builds on the platform's own tokens.
  *
  * Tool colors are categorical slots 1 to 4 of the reference palette, validated for color-vision deficiency
  * in both modes. Slots 3 and 4 are below 3:1 on the light portlet body, so every mark is also named in text.
  * Single-series marks (cumulative line, token and model bars) share one color, --series-total, that no tool wears.
  * Text in charts wears ink tokens, never a series color.
  */
+
+/*
+ * Design layer. The platform ships tokens (--panel, --border, --accent...) but not the portlet, KPI, table and notice
+ * patterns this page was built on, so they are defined here, scoped to `.au` so nothing leaks into other pages.
+ * Surfaces, ink and borders follow the platform tokens, so the page follows its light and dark themes.
+ */
+.au {
+  /* Surfaces and lines. */
+  --portlet-body: var(--panel);
+  --portlet-border: var(--border);
+  --portlet-head: var(--accent-soft);
+  --portlet-head-ink: var(--accent-soft-foreground);
+  --bar: var(--surface);
+  --bar-line: var(--border);
+  --row-line: var(--border);
+  --zebra: var(--panel-hover);
+  --wash: var(--panel-hover);
+  --axis: var(--border-strong);
+  --grid: var(--border);
+  --surface-muted: var(--panel-hover);
+
+  /* Ink. */
+  --ink-title: var(--foreground);
+  --ink: var(--foreground);
+  --ink-muted: var(--muted-foreground);
+  --th-ink: var(--muted-foreground);
+  --td-first-ink: var(--foreground);
+  --link: var(--accent);
+
+  /* Notices. */
+  --warn-bg: var(--warning-soft);
+  --warn-ink: var(--foreground);
+  --error-bg: var(--danger-soft);
+  --error-ink: var(--danger-soft-foreground);
+  --pos-bg: var(--success-soft);
+  --pos-ink: var(--foreground);
+
+  /* KPI numbers: each at least 4.5:1 on the panel in both themes. */
+  --kpi-1: light-dark(#9a5a00, #f0b44c);
+  --kpi-2: light-dark(#1a7a3c, #6fd38a);
+  --kpi-3: light-dark(#1b5fa8, #8fbbf0);
+  --kpi-4: light-dark(#6a3fc0, #b9a6f5);
+
+  /* Chart series: 1 to 4 are the tools, 0 is "other", total is the color of single-series marks. */
+  --series-0: #898781;
+  --series-1: light-dark(#2a78d6, #3987e5);
+  --series-2: light-dark(#eb6834, #d95926);
+  --series-3: light-dark(#1baf7a, #199e70);
+  --series-4: light-dark(#eda100, #c98500);
+  --series-5: light-dark(#e87ba4, #d55181);
+  --series-6: #008300;
+  --series-7: light-dark(#4a3aa7, #9085e9);
+  --series-8: light-dark(#e34948, #e66767);
+  --series-total: light-dark(#4a3aa7, #9085e9);
+  --chart-height-bars: 320px;
+  --chart-height-line: 240px;
+  --chart-bar-gap: 2px;
+  --chart-bar-radius: 4px;
+  --chart-bar-max: 24px;
+  --chart-hbar-height: 14px;
+  --chart-line-width: 2px;
+  --chart-dot-radius: 4px;
+  --chart-area-opacity: 0.12;
+
+  /* Type, shape and density. */
+  --text-small: 12px;
+  --text-label: 11px;
+  --text-chart: 11px;
+  --text-stat: 28px;
+  --text-portlet-title: 14px;
+  --tracking-label: 0.06em;
+  --weight-body: 400;
+  --weight-label: 600;
+  --weight-bold: 700;
+  --border-width: 1px;
+  --portlet-pad: 14px;
+  --grid-gap: 12px;
+  --row-pad: 8px 12px;
+  --control-height: 30px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --content-max: 1680px;
+  --au-radius: 8px;
+
+  color: var(--ink);
+}
+
+.au h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: var(--weight-bold);
+  color: var(--ink-title);
+}
+
+.au .page-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 12px 0;
+}
+
+.au .page-bar-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.au .page-bar-text p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-small);
+}
+
+.au .page-bar-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 16px;
+}
+
+.au .page-body {
+  display: grid;
+  gap: var(--grid-gap);
+  max-width: var(--content-max);
+  padding-bottom: 48px;
+}
+
+.au .portlet {
+  min-width: 0;
+  background: var(--portlet-body);
+  border: var(--border-width) solid var(--portlet-border);
+  border-radius: var(--au-radius);
+  box-shadow: var(--shadow-raised);
+  overflow: hidden;
+}
+
+.au .portlet-head {
+  padding: 8px var(--portlet-pad);
+  background: var(--portlet-head);
+  color: var(--portlet-head-ink);
+  border-bottom: var(--border-width) solid var(--portlet-border);
+}
+
+.au .portlet-head h2 {
+  margin: 0;
+  font-size: var(--text-portlet-title);
+  font-weight: var(--weight-label);
+  color: inherit;
+}
+
+.au .portlet-body {
+  padding: var(--portlet-pad);
+}
+
+.au .portlet-note {
+  margin: 0 0 var(--portlet-pad);
+  color: var(--ink-muted);
+  font-size: var(--text-small);
+}
+
+.au .kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--grid-gap);
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .au .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.au .kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--portlet-pad) calc(var(--portlet-pad) * 1.25);
+  background: var(--portlet-body);
+  border: var(--border-width) solid var(--portlet-border);
+  border-top: 3px solid var(--kpi);
+  border-radius: var(--au-radius);
+  box-shadow: var(--shadow-raised);
+}
+
+.au .kpi dt {
+  font-size: var(--text-label);
+  font-weight: var(--weight-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.au .kpi dd {
+  margin: 0;
+}
+
+.au .kpi-value {
+  font-size: var(--text-stat);
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+  color: var(--kpi);
+}
+
+.au .kpi-sub {
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+}
+
+.au .kpi-1 { --kpi: var(--kpi-1); }
+.au .kpi-2 { --kpi: var(--kpi-2); }
+.au .kpi-3 { --kpi: var(--kpi-3); }
+.au .kpi-4 { --kpi: var(--kpi-4); }
+
+.au .table-wrap {
+  overflow-x: auto;
+  scrollbar-color: var(--axis) transparent;
+}
+
+.au table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.au th,
+.au td {
+  padding: var(--row-pad);
+  text-align: left;
+  border-bottom: var(--border-width) solid var(--row-line);
+  vertical-align: middle;
+}
+
+.au th {
+  font-size: var(--text-small);
+  font-weight: var(--weight-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--th-ink);
+  white-space: nowrap;
+}
+
+.au td.right,
+.au th.right {
+  text-align: right;
+}
+
+.au tbody tr:nth-child(even) {
+  background: var(--zebra);
+}
+
+.au tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.au tbody td:first-child {
+  font-weight: var(--weight-bold);
+  color: var(--td-first-ink);
+}
+
+.au .num {
+  font-variant-numeric: tabular-nums;
+}
+
+.au .muted {
+  color: var(--ink-muted);
+}
+
+.au .notice {
+  padding: 10px var(--portlet-pad);
+  border-radius: var(--au-radius);
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+
+.au .notice.error {
+  background: var(--error-bg);
+  color: var(--error-ink);
+}
+
+.au .notice strong {
+  display: block;
+}
+
 .au-t0 { --tool: var(--series-0); }
 .au-t1 { --tool: var(--series-1); }
 .au-t2 { --tool: var(--series-2); }
@@ -412,4 +699,250 @@
 .au-empty p {
   margin: 0;
   color: var(--ink);
+}
+
+/* The commands and addresses on the Connect page: plain text a person copies. */
+.au-code {
+  margin: var(--space-2, 0.5rem) 0;
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.875em;
+  background: var(--surface-muted, rgba(127, 127, 127, 0.12));
+  border-radius: 6px;
+}
+
+/* ===== Overview, tool pages and mascots ===== */
+
+/* Two portlets side by side on wide screens, stacked below. min-width: 0 lets tables scroll inside their portlet. */
+.au-pair,
+.au-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--grid-gap);
+  align-items: start;
+}
+
+.au-pair > * {
+  min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .au-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.au-clip {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.au-tag {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border: var(--border-width) solid var(--axis);
+  border-radius: 4px;
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: var(--weight-label);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: help;
+}
+
+/* The accent of a mascot's stage follows the mascot itself; --tool (the chart color) is kept for hover and focus. */
+.au [data-tool] { --mascot: var(--tool); }
+.au [data-tool="claude-code"] { --mascot: #d9662b; }
+.au [data-tool="codex"] { --mascot: #6a5cf5; }
+.au [data-tool="opencode"] { --mascot: #2e9e82; }
+.au [data-tool="pi"] { --mascot: #8a62f0; }
+
+/* One card per CLI. The tool color (--tool) comes from the au-tN class on the card. */
+.au-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--grid-gap);
+}
+
+.au-card {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 10px 12px;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--portlet-body);
+  border: var(--border-width) solid var(--portlet-border);
+  border-radius: var(--au-radius);
+  box-shadow: var(--shadow-raised);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.au-card:hover {
+  border-color: var(--tool);
+  transform: translateY(-2px);
+}
+
+.au-card:focus-visible {
+  outline: 2px solid var(--tool);
+  outline-offset: 2px;
+}
+
+.au-card-stage {
+  display: grid;
+  place-items: center;
+  height: 172px;
+  margin-bottom: 6px;
+  background: radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--mascot) 18%, transparent), transparent 70%), color-mix(in srgb, var(--mascot) 7%, var(--portlet-body));
+  border-radius: 6px;
+}
+
+.au-card-stage .au-mascot {
+  width: 138px;
+  height: 138px;
+}
+
+.au-card-name {
+  padding: 0 4px;
+  font-size: 16px;
+  font-weight: var(--weight-bold);
+  color: var(--ink-title);
+}
+
+.au-card-tagline,
+.au-card-empty,
+.au-card-foot {
+  padding: 0 4px;
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+}
+
+.au-card-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  margin: 6px 4px 2px;
+}
+
+.au-card-stats div {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.au-card-stats dt {
+  font-size: var(--text-label);
+  font-weight: var(--weight-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.au-card-stats dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: var(--weight-bold);
+  color: var(--ink-title);
+}
+
+.au-card-idle .au-mascot {
+  filter: grayscale(0.7);
+  opacity: 0.75;
+}
+
+/* The page of one tool: a large mascot beside its name. */
+.au-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  padding: 16px;
+  background: radial-gradient(ellipse at 15% 100%, color-mix(in srgb, var(--mascot) 16%, transparent), transparent 60%), var(--portlet-body);
+  border: var(--border-width) solid var(--portlet-border);
+  border-top: 3px solid var(--mascot);
+  border-radius: var(--au-radius);
+  box-shadow: var(--shadow-raised);
+}
+
+.au-hero-stage .au-mascot {
+  width: 150px;
+  height: 150px;
+}
+
+.au-hero-text {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.au-hero-text p {
+  margin: 0;
+}
+
+.au-back {
+  width: fit-content;
+  color: var(--link);
+  font-size: var(--text-small);
+}
+
+.au-back::before {
+  content: "\2190\00a0";
+}
+
+/* Mascots: original drawings, animated with CSS only. */
+.au-mascot {
+  display: block;
+  overflow: visible;
+}
+
+.au-m-body { animation: au-squash 1.6s ease-in-out infinite; transform-origin: 80px 128px; }
+.au-m-eye { transform-box: fill-box; transform-origin: center; animation: au-blink 4.5s infinite; }
+.au-m-leg-a { animation: au-step 0.8s steps(2) infinite; }
+.au-m-leg-b { animation: au-step 0.8s steps(2) infinite reverse; }
+.au-m-dot { transform-box: fill-box; transform-origin: center; animation: au-dots 1.4s ease-in-out infinite; }
+.au-m-dot:nth-child(2) { animation-delay: 0.2s; }
+.au-m-dot:nth-child(3) { animation-delay: 0.4s; }
+
+.au-m-cloud { animation: au-float 3.4s ease-in-out infinite; }
+.au-m-chev { animation: au-nudge 2s ease-in-out infinite; }
+.au-m-caret { animation: au-caret 1s steps(1) infinite; }
+.au-m-sheen { animation: au-sheen 3.4s ease-in-out infinite; }
+
+.au-m-mark { animation: au-float 4s ease-in-out infinite; }
+.au-m-core { transform-box: fill-box; transform-origin: center; animation: au-breathe 2.6s ease-in-out infinite; }
+.au-m-scan { animation: au-scan 3s linear infinite; }
+
+.au-m-orb { animation: au-float 3.2s ease-in-out infinite; }
+.au-m-orbit { transform-origin: 80px 78px; animation: au-spin 5s linear infinite; }
+.au-m-glyph { transform-box: fill-box; transform-origin: center; animation: au-breathe 3.2s ease-in-out infinite; }
+
+@keyframes au-squash { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.03, 0.96); } }
+@keyframes au-blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.08); } }
+@keyframes au-step { 0% { transform: translateY(0); } 100% { transform: translateY(-4px); } }
+@keyframes au-dots { 0%, 100% { transform: scale(0.6); opacity: 0.35; } 50% { transform: scale(1.1); opacity: 1; } }
+@keyframes au-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes au-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
+@keyframes au-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes au-sheen { 0%, 100% { opacity: 0.25; transform: translateX(-6px); } 50% { opacity: 0.6; transform: translateX(8px); } }
+@keyframes au-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes au-scan { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 0.8; } 85% { opacity: 0.8; } 100% { transform: translateY(68px); opacity: 0; } }
+@keyframes au-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .au-mascot *,
+  .au-card {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .au-card:hover {
+    transform: none;
+  }
 }

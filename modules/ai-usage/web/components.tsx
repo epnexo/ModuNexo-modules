@@ -20,12 +20,12 @@ export function toolStyles(tools: ToolInfo[]): Map<string, ToolStyle> {
 }
 
 /** A tool that is not in the tools table any more still renders, in the neutral color. */
-function styleOf(styles: Map<string, ToolStyle>, slug: string): ToolStyle {
+export function styleOf(styles: Map<string, ToolStyle>, slug: string): ToolStyle {
   return styles.get(slug) ?? { slug, name: slug, className: "au-t0" };
 }
 
 /** The shell's portlet pattern: a header band holding the heading, a body holding the note and the content. */
-function Portlet({ label, title, note, className, children }: { label: string; title: string; note?: ReactNode; className?: string; children: ReactNode }) {
+export function Portlet({ label, title, note, className, children }: { label: string; title: string; note?: ReactNode; className?: string; children: ReactNode }) {
   return (
     <section className={`portlet ${className ?? ""}`} aria-label={label}>
       <header className="portlet-head">
@@ -47,7 +47,7 @@ function Na() {
   );
 }
 
-const value = (n: number | null, format: (n: number) => string = formatCompact): ReactNode => (n === null ? <Na /> : format(n));
+export const value = (n: number | null, format: (n: number) => string = formatCompact): ReactNode => (n === null ? <Na /> : format(n));
 
 export function ToolName({ style }: { style: ToolStyle }) {
   return (
@@ -93,13 +93,14 @@ export function Notice({ title, children, tone = "warn" }: { title: string; chil
   );
 }
 
-export function EmptyState({ periodLabel, toolName }: { periodLabel: string; toolName: string | null }) {
+export function EmptyState({ periodLabel, toolName, sendCommand }: { periodLabel: string; toolName: string | null; sendCommand: string | null }) {
   return (
     <Portlet label="No usage recorded" title="No usage recorded" className="au-empty">
       <p>
         {toolName === null ? "No tool reported" : `${toolName} reported`} token usage for {periodLabel.toLowerCase()}. Try a longer period
-        {toolName === null ? "" : " or another tool"}, or run <code>npm run ai-usage:ingest</code> to load newer sessions.
+        {toolName === null ? "" : " or another tool"}. To load usage from a computer, an administrator can find how to connect it under AI usage in Settings.
       </p>
+      {sendCommand === null ? null : <pre className="au-code">{sendCommand}</pre>}
     </Portlet>
   );
 }
@@ -126,7 +127,7 @@ export function Headline({ summary }: { summary: Summary }) {
   );
 }
 
-interface HBarRow {
+export interface HBarRow {
   key: string;
   label: string;
   amount: number | null;
@@ -136,10 +137,12 @@ interface HBarRow {
   other?: boolean;
   /** The label is not a real name (a model the tool did not report). */
   quiet?: boolean;
+  /** A short mark printed after the label, for example `est.` for a count that is inferred. */
+  tag?: { text: string; title: string };
 }
 
 /** Horizontal bars as plain HTML so labels keep their real size on a phone. Length is relative to the largest bar; the value and share are printed. */
-function HBars({ rows, label }: { rows: HBarRow[]; label: string }) {
+export function HBars({ rows, label }: { rows: HBarRow[]; label: string }) {
   const fractions = barFractions(rows.map((row) => row.amount));
   return (
     <ul className="au-hbars" aria-label={label}>
@@ -149,6 +152,11 @@ function HBars({ rows, label }: { rows: HBarRow[]; label: string }) {
           <li key={row.key} className={`au-hbar ${row.other === true ? "au-hbar-other" : ""}`}>
             <span className={`au-hbar-label ${row.quiet === true ? "muted" : ""}`} title={row.label}>
               {row.label}
+              {row.tag === undefined ? null : (
+                <abbr className="au-tag" title={row.tag.title}>
+                  {row.tag.text}
+                </abbr>
+              )}
             </span>
             <span className="au-hbar-track" aria-hidden="true">
               {fraction === null ? null : <span className="au-hbar-fill" style={{ width: `${fraction * 100}%` }} />}
@@ -326,7 +334,7 @@ export function CumulativeTokens({ daily, from, to }: { daily: DailyRow[]; from:
   );
 }
 
-function Share({ amount, total, className }: { amount: number; total: number; className?: string }) {
+export function Share({ amount, total, className }: { amount: number; total: number; className?: string }) {
   const share = total > 0 ? amount / total : 0;
   return (
     <div className={`au-share ${className ?? ""}`}>

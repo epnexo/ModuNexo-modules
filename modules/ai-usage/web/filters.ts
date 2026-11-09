@@ -62,14 +62,14 @@ export function periodStart(period: Period, now: Date): string | null {
 }
 
 /** A link to the page with the current filters changed by `patch`. Defaults are left out to keep URLs short. */
-export function withFilters(current: Filters, patch: { period?: Period; tool?: string | null }): string {
+export function withFilters(current: Filters, patch: { period?: Period; tool?: string | null }, path: string = PAGE_PATH): string {
   const period = patch.period ?? current.period;
   const tool = patch.tool === undefined ? current.tool : patch.tool;
   const params = new URLSearchParams();
   if (period !== DEFAULT_PERIOD) params.set("period", period);
   if (tool !== null) params.set("tool", tool);
   const query = params.toString();
-  return query === "" ? PAGE_PATH : `${PAGE_PATH}?${query}`;
+  return query === "" ? path : `${path}?${query}`;
 }
 
 const KNOWN_TOOL_SLOTS: Record<string, number> = { "claude-code": 1, codex: 2, pi: 3, opencode: 4 };
