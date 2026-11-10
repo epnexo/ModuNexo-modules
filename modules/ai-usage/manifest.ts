@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "ai-usage",
-  version: "0.6.4", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.6.5", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "AI usage",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -31,6 +31,16 @@ export default defineModule({
     stats: [
       { key: "tokens_7d", label: "Tokens, last 7 days", href: "/ai-usage", permission: "ai_usage.read", sql: "select coalesce(sum(total_tokens), 0)::bigint from usage_events where occurred_at >= now() - interval '7 days'" },
       { key: "sessions_7d", label: "Sessions, last 7 days", href: "/ai-usage", permission: "ai_usage.read", sql: "select count(*) from sessions where started_at >= now() - interval '7 days'" },
+    ],
+    // One bar per day for the last 14 days (UTC), a day with nothing recorded counts as zero. The platform draws it.
+    charts: [
+      {
+        key: "tokens_by_day",
+        label: "Tokens per day, last 14 days",
+        href: "/ai-usage",
+        permission: "ai_usage.read",
+        sql: "select to_char(d, 'DD Mon') as label, coalesce(sum(e.total_tokens), 0)::bigint as value from generate_series((now() at time zone 'utc')::date - 13, (now() at time zone 'utc')::date, interval '1 day') d left join usage_events e on e.occurred_at >= d at time zone 'utc' and e.occurred_at < (d + interval '1 day') at time zone 'utc' group by d order by d",
+      },
     ],
     alerts: [],
   },
