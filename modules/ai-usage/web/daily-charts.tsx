@@ -105,14 +105,14 @@ export function DailyChartsView({
           {`Days are UTC${grain === "week" ? ", weeks start on Monday" : ""}. Gaps are ${unit}s with no recorded usage${grain === "day" ? "" : "; the first and last bar can cover only part of a " + unit}. Hover a bar, or use the arrow keys, to read it.`}
         </p>
         <div className="au-chart-controls">
-          <nav className="au-seg au-grain" aria-label="Chart period">
+          <nav className="seg au-grain" aria-label="Chart period">
             {PERIODS.map((option) => (
               <Link key={option} href={hrefFor({ period: option })} scroll={false} prefetch={false} aria-current={period === option} onClick={(event) => void choosePeriod(event, option)}>
                 {PERIOD_LABELS[option]}
               </Link>
             ))}
           </nav>
-          <nav className="au-seg au-grain" aria-label="Chart interval">
+          <nav className="seg au-grain" aria-label="Chart interval">
             {GRAINS.map((option) => (
               <Link key={option} href={hrefFor({ grain: option })} scroll={false} aria-current={grain === option} onClick={(event) => choose(event, option)}>
                 {GRAIN_LABELS[option]}
@@ -138,8 +138,8 @@ export function DailyChartsView({
 
         <details>
           <summary>Show as table</summary>
-          <div className="au-scroll table-wrap">
-            <table>
+          <div className="au-scroll table-scroll">
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>{grain === "day" ? "Day (UTC)" : grain === "week" ? "Week starting (UTC)" : "Month (UTC)"}</th>

@@ -21,9 +21,14 @@ describe("ai-usage styles", () => {
     assert.deepEqual(undefinedTokens, []);
   });
 
-  it("marks the current item of a switcher whether the link says aria-current true or page", () => {
-    assert.match(css, /\.au-seg a\[aria-current="true"\],\s*\.au-seg a\[aria-current="page"\]\s*\{/);
-    assert.match(css, /\.au-seg a\[aria-current="page"\]::before/);
+  it("leaves the switcher, figures, notices and tables to the platform: its pages use the platform classes and its css does not redefine them", () => {
+    const web = new URL("../../modules/ai-usage/web/", import.meta.url);
+    const markup = ["components.tsx", "panels.tsx", "daily-charts.tsx"].map((name) => readFileSync(new URL(name, web), "utf8")).join("\n");
+    for (const platformClass of ["seg", "stats", "stat-value", "notice", "table-scroll", "data-table"]) {
+      assert.match(markup, new RegExp(`className="[^"]*\\b${platformClass}\\b`), `a page uses ${platformClass}`);
+    }
+    assert.doesNotMatch(markup, /\bau-seg\b|\bkpi-value\b|\btable-wrap\b/, "no page keeps an old class");
+    assert.doesNotMatch(css, /(^|[\s,}])(\.au-seg|\.au \.kpis|\.au \.kpi(?![-\w])|\.au \.notice|\.au \.table-wrap|\.au table|\.au th|\.au td)\b/m, "the css does not restyle what the platform owns");
   });
 
   it("turns the bar animation off for anyone who asked for less motion", () => {

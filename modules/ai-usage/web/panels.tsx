@@ -10,7 +10,7 @@ import { failureRate, profileOf, toolPageHref, type MergedSkill, type TabItem } 
 /** Period links for a page at `path`. The tool is not a filter here: each CLI has its own page. */
 export function PeriodBar({ filters, path }: { filters: Filters; path: string }) {
   return (
-    <nav className="au-seg" aria-label="Period">
+    <nav className="seg" aria-label="Period">
       {PERIODS.map((period) => (
         <Link key={period} href={withFilters(filters, { period }, path)} aria-current={filters.period === period}>
           {PERIOD_LABELS[period]}
@@ -23,7 +23,7 @@ export function PeriodBar({ filters, path }: { filters: Filters; path: string })
 /** Switch between the overview and each tool without going back. Present on every page, with the current one marked. */
 export function ToolTabs({ tabs, styles }: { tabs: TabItem[]; styles: Map<string, ToolStyle> }) {
   return (
-    <nav className="au-seg au-tabs" aria-label="Views">
+    <nav className="seg au-tabs" aria-label="Views">
       {tabs.map((tab) => (
         <Link key={tab.slug ?? "overview"} href={tab.href} aria-current={tab.current ? "page" : undefined} className={tab.slug === null ? undefined : styleOf(styles, tab.slug).className}>
           {tab.slug === null ? null : <span className="au-dot" aria-hidden="true" />}
@@ -119,8 +119,8 @@ export function TopTools({ rows, styles, showCli }: { rows: ToolUseRow[]; styles
       {rows.length === 0 ? (
         <p className="muted">No tool call was recorded in this period. Names appear after the module is on version 0.6.0 and the logs are sent again.</p>
       ) : (
-        <div className="table-wrap">
-          <table>
+        <div className="table-scroll">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Tool</th>
@@ -164,8 +164,8 @@ export function Projects({ rows, styles, showCli }: { rows: ProjectRow[]; styles
       {rows.length === 0 ? (
         <p className="muted">No project was recorded in this period.</p>
       ) : (
-        <div className="table-wrap">
-          <table>
+        <div className="table-scroll">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Project</th>
@@ -218,7 +218,7 @@ export function ToolHero({ tool, children }: { tool: ToolInfo; children?: ReactN
 export function Unavailable() {
   return (
     <div className="page-body">
-      <div className="notice error" role="alert">
+      <div className="notice notice-error" role="alert">
         <strong>AI usage data is unavailable</strong>
         The database could not be reached. Check that the platform database is up and try again.
       </div>

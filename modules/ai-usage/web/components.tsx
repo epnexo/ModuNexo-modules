@@ -65,14 +65,14 @@ export function FilterBar({ filters, tools }: { filters: Filters; tools: ToolInf
   const styles = toolStyles(tools);
   return (
     <div className="au-filters">
-      <nav className="au-seg" aria-label="Period">
+      <nav className="seg" aria-label="Period">
         {PERIODS.map((period) => (
           <Link key={period} href={withFilters(filters, { period })} aria-current={filters.period === period}>
             {PERIOD_LABELS[period]}
           </Link>
         ))}
       </nav>
-      <nav className="au-seg" aria-label="Tool">
+      <nav className="seg" aria-label="Tool">
         <Link href={withFilters(filters, { tool: null })} aria-current={filters.tool === null}>
           All tools
         </Link>
@@ -89,7 +89,7 @@ export function FilterBar({ filters, tools }: { filters: Filters; tools: ToolInf
 
 export function Notice({ title, children, tone = "warn" }: { title: string; children: ReactNode; tone?: "warn" | "error" }) {
   return (
-    <div className={`notice ${tone === "error" ? "error" : ""}`} role={tone === "error" ? "alert" : "status"}>
+    <div className={`notice${tone === "error" ? " notice-error" : ""}`} role={tone === "error" ? "alert" : "status"}>
       <strong>{title}</strong>
       {children}
     </div>
@@ -137,14 +137,14 @@ export function Headline({ summary, cost }: { summary: Summary; cost?: CostView 
     ...(cost === undefined ? [] : [costCard(cost)]),
   ];
   return (
-    <dl className="kpis" aria-label="Headline numbers">
+    <dl className="stats" aria-label="Headline numbers">
       {cards.map((card, i) => (
-        <div key={card.label} className={`kpi kpi-${(i % 4) + 1}`}>
-          <dt>{card.label}</dt>
-          <dd className="kpi-value" title={card.title}>
+        <div key={card.label} className={`stat kpi-${(i % 4) + 1}`}>
+          <dt className="stat-label">{card.label}</dt>
+          <dd className="stat-value" title={card.title}>
             {card.value}
           </dd>
-          <dd className="kpi-sub num">{card.sub}</dd>
+          <dd className="stat-sub num">{card.sub}</dd>
         </div>
       ))}
     </dl>
@@ -282,8 +282,8 @@ export function CumulativeTokens({ daily, from, to }: { daily: DailyRow[]; from:
       <CumulativeLine days={days} />
       <details>
         <summary>Show as table</summary>
-        <div className="au-scroll table-wrap">
-          <table>
+        <div className="au-scroll table-scroll">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Day (UTC)</th>
@@ -323,8 +323,8 @@ export function ByToolTable({ rows, styles, cost }: { rows: ToolRow[]; styles: M
   const total = rows.reduce((sum, row) => sum + row.totalTokens, 0);
   return (
     <Portlet label="Usage by tool" title="By tool" note={`Tool-reported token counters. ${NOT_AVAILABLE} means the tool does not report that counter.`}>
-      <div className="table-wrap">
-        <table>
+      <div className="table-scroll">
+        <table className="data-table">
           <thead>
             <tr>
               <th>Tool</th>
@@ -374,8 +374,8 @@ export function ByModelTable({ grouped, styles }: { grouped: GroupedModels; styl
   const total = grouped.models.reduce((sum, m) => sum + m.totalTokens, 0) + (grouped.other?.totalTokens ?? 0);
   return (
     <Portlet label="Usage by model" title="By model" note="A model used through more than one tool is listed once, with each tool named.">
-      <div className="table-wrap">
-        <table>
+      <div className="table-scroll">
+        <table className="data-table">
           <thead>
             <tr>
               <th>Model</th>
@@ -429,8 +429,8 @@ export function RecentSessions({ rows, styles }: { rows: SessionRow[]; styles: M
           No sessions started in this period.
         </p>
       ) : (
-        <div className="table-wrap">
-          <table>
+        <div className="table-scroll">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Tool</th>
