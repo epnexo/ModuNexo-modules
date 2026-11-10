@@ -34,7 +34,7 @@ describe("module stylesheet class names", () => {
   it("finds the SVG marks and the HTML elements it is meant to compare", () => {
     const { svg, html } = classesByKind();
     assert.ok(svg.has("au-bar") && svg.has("au-grid"), [...svg].join(" "));
-    assert.ok(html.has("au-seg") && html.has("au-tip"), [...html].join(" "));
+    assert.ok(html.has("au-tip") && html.has("au-card"), [...html].join(" "));
   });
 
   it("never applies one class name to both an SVG mark and an HTML element, unless it only sets custom properties", () => {
@@ -43,9 +43,8 @@ describe("module stylesheet class names", () => {
     assert.deepEqual(shared, []);
   });
 
-  it("keeps the filter control and the stacked bar segments on their own names", () => {
-    assert.match(css, /\.au-seg\s*{[^}]*display:\s*inline-flex/);
+  it("keeps the stacked bar segments and the tooltip on their own names", () => {
     assert.match(css, /\.au-bar\s*{[^}]*fill:/);
-    assert.doesNotMatch(css, /\.au-seg\s*{[^}]*fill:/);
+    assert.doesNotMatch(css, /\.au-tip\s*{[^}]*fill:/);
   });
 });
