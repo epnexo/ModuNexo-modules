@@ -185,7 +185,7 @@ export function StackedBars({ days, tools, grain = "day" }: { days: { day: strin
                   <rect x={bar.x} y={top} width={bar.width} height={plot.height - top + m.radius * 2} rx={m.radius} />
                 </clipPath>
                 {bar.segments.map((segment) => (
-                  <rect key={segment.index} className={`au-bar ${tools[segment.index]?.className ?? "au-t0"}`} x={bar.x} y={segment.y} width={bar.width} height={segment.height} />
+                  <rect key={segment.index} className={`au-bar ${tools[segment.index]?.className ?? "au-t0"}`} style={{ animationDelay: `${Math.min(i * 35, 800)}ms` }} x={bar.x} y={segment.y} width={bar.width} height={segment.height} />
                 ))}
               </g>
             );

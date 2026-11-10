@@ -25,4 +25,16 @@ describe("ai-usage styles", () => {
     assert.match(css, /\.au-seg a\[aria-current="true"\],\s*\.au-seg a\[aria-current="page"\]\s*\{/);
     assert.match(css, /\.au-seg a\[aria-current="page"\]::before/);
   });
+
+  it("turns the bar animation off for anyone who asked for less motion", () => {
+    assert.match(css, /\.au-bar\s*\{[^}]*animation:\s*au-grow/);
+    const reduced = css.match(/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.au-bar\s*\{[^}]*animation:\s*none/);
+    assert.ok(reduced, "a reduced-motion rule sets .au-bar animation to none");
+  });
+
+  it("takes spacing from the platform variables, with a fallback for an older platform", () => {
+    for (const [own, platform] of [["--grid-gap", "--layout-gap"], ["--portlet-pad", "--card-pad"], ["--au-radius", "--card-radius"]] as const) {
+      assert.match(css, new RegExp(`${own}:\\s*var\\(${platform},\\s*[^)]+\\)`), `${own} reads ${platform}`);
+    }
+  });
 });
