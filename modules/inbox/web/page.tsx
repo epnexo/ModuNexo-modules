@@ -45,7 +45,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
           )}
         </nav>
 
-        <section aria-label="Conversation" className="flex min-h-64 flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+        <section aria-label="Conversation" className="flex min-h-64 flex-col gap-4 card">
           {thread === null ? (
             <p className="text-sm text-muted">{asked === null ? "Select a conversation." : "That conversation does not exist."}</p>
           ) : (

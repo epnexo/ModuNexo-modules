@@ -25,7 +25,7 @@ export default async function Page() {
           Back to the assistant
         </a>
       </div>
-      <form method="post" action="/assistant/settings/save" className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-4">
+      <form method="post" action="/assistant/settings/save" className="flex flex-col gap-5 card">
         <div className="flex flex-col gap-1">
           <label className="flex items-center gap-2 text-sm font-medium">
             <input type="checkbox" name="enabled" defaultChecked={config.enabled} />

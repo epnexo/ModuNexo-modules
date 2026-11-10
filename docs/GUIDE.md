@@ -32,6 +32,36 @@ below is a reading of the code, so treat it as a proposal to adjust.
   the platform raises that one itself. Adding a dashboard to a module without a migration is a patch version, so the
   `dependsOn` ranges of the modules that need it keep holding.
 
+### Styling a module
+
+A module looks like the platform because it reads the platform's design tokens, never because it copies values. Four
+layers, from the one every module uses to the one a module owns:
+
+1. **Token utilities (Tailwind).** Colors, borders and text come from the tokens: `bg-surface`, `bg-panel`,
+   `border-border`, `border-border-strong`, `text-muted`, `text-accent`, `bg-accent-soft`, `bg-danger-soft`,
+   `bg-success-soft`, `bg-warning-soft`. Never write a color value, and never use `dark:` for a color: the tokens
+   switch with the theme by themselves, and the platform's palette can change without touching a module.
+2. **Global component classes** (shipped with the platform, one look everywhere):
+   - `card`: a box with the surface, border, radius, padding and the thin accent line along its top edge. Put layout on
+     it with utilities (`card flex flex-col gap-3`). A utility such as `p-3` overrides the padding for a dense card.
+   - `badge` plus one tone, `badge-info`, `badge-success`, `badge-warning` or `badge-danger`: a state in one word,
+     with a dot (`<span className="badge badge-success">Active</span>`). No tone gives the neutral one.
+   - `icon-tile`: a small square that holds one icon (`<span className="icon-tile"><Icon /></span>`).
+3. **Spacing and shape variables**, with the platform's value as the default: `--layout-gap` (between the parts of a
+   page), `--card-pad`, `--card-gap`, `--card-radius`, and `--card-line-opacity` (`0` removes the accent line). A module
+   that wants something else sets them once on its page's root element, so only its own page changes:
+   `<div style={{ "--card-pad": "1rem" } as React.CSSProperties}>`.
+4. **The module's own CSS**, for what the platform does not offer (charts, a tool's colors, a special layout). Import it
+   from the page (`import "./<id>.css"`), prefix every class with the module's short name (`au-` for ai-usage), scope the
+   rules under one root class, and build them from the tokens above (`var(--border)`, `var(--accent)`), so the page
+   still follows the theme. Do not restyle `card`, `badge` or `icon-tile` globally from a module; change the variables.
+
+The global classes arrive with the platform release that carries them. A module is packed against that platform's SDK
+and takes its `platform` range from it (`^${SDK_VERSION}`), so a platform that does not have the classes refuses to
+install it instead of drawing borderless boxes. A new pattern that two modules need (for example a segmented
+control, a figure with its label, a notice, a data table) belongs in the platform, not copied between modules: raise it
+before writing it a second time.
+
 ## 2. The loop for each module
 
 1. Write the feature document in the platform repo style (`S#` specs quoting the request, `T#` tasks, `L#` log), or

@@ -28,7 +28,7 @@ export default async function Page() {
           Back to the agenda
         </a>
       </div>
-      <form method="post" action="/agenda/settings/save" className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-4">
+      <form method="post" action="/agenda/settings/save" className="flex flex-col gap-5 card">
         <div className="flex flex-col gap-1">
           <label htmlFor="s-timezone" className="text-sm font-medium">
             Time zone

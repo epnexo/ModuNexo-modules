@@ -23,7 +23,7 @@ function SlotOptions({ slots, timeZone }: { slots: Slot[]; timeZone: string }) {
 function Booking({ booking, slots, timeZone }: { booking: BookingRow; slots: Slot[]; timeZone: string }) {
   const cancelled = booking.status === "cancelled";
   return (
-    <li className={`flex flex-col gap-2 rounded-md border border-border bg-surface p-3 text-sm ${cancelled ? "opacity-60" : ""}`}>
+    <li className={`flex flex-col gap-2 card p-3 text-sm ${cancelled ? "opacity-60" : ""}`}>
       <span className="flex flex-wrap items-center justify-between gap-2">
         <span className={`font-medium ${cancelled ? "line-through" : ""}`}>{booking.attendeeName}</span>
         <span className="text-muted">
@@ -89,7 +89,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
         </a>
       </div>
 
-      <section aria-label="Book a slot" className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
+      <section aria-label="Book a slot" className="flex flex-col gap-3 card">
         <h2 className="text-lg font-semibold tracking-tight">Book a slot</h2>
         {slots.length === 0 ? (
           <p className="text-sm text-muted">No free slot this week.</p>

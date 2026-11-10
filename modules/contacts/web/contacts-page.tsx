@@ -100,7 +100,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
               Search
             </button>
           </form>
-          <details className="rounded-lg border border-border bg-surface p-3">
+          <details className="card p-3">
             <summary className="cursor-pointer text-sm font-medium">Add a contact</summary>
             <div className="pt-3">
               <ContactForm />
@@ -120,7 +120,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </nav>
         </div>
 
-        <section aria-label="Contact" className="flex min-h-64 flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+        <section aria-label="Contact" className="flex min-h-64 flex-col gap-4 card">
           {selected === null ? (
             <p className="text-sm text-muted">{asked === null ? "Select a contact." : "That contact does not exist."}</p>
           ) : (

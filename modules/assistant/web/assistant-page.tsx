@@ -50,7 +50,7 @@ export default async function Page() {
         </a>
       </div>
 
-      <section aria-label="State" className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4 text-sm">
+      <section aria-label="State" className="flex flex-col gap-2 card text-sm">
         <p className="font-medium">{config.enabled ? "Switched on" : "Switched off"}</p>
         <p className="text-muted">
           {config.enabled
@@ -111,7 +111,7 @@ export default async function Page() {
         ) : (
           <ul className="flex flex-col gap-2">
             {replies.map((r) => (
-              <li key={r.id} className="flex flex-col gap-1 rounded-md border border-border bg-surface p-3 text-sm">
+              <li key={r.id} className="flex flex-col gap-1 card p-3 text-sm">
                 <span className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
                   <span>{names.get(r.conversationId) ?? `Conversation ${r.conversationId}`}</span>
                   <span>

@@ -6,7 +6,7 @@ export const metadata = { title: "Pipeline" };
 
 function Lead({ lead, stages, stageId }: { lead: LeadRow; stages: StageRow[]; stageId: number }) {
   return (
-    <li className="flex flex-col gap-2 rounded-md border border-border bg-surface p-3 text-sm">
+    <li className="flex flex-col gap-2 card p-3 text-sm">
       <span className="font-medium">{lead.title}</span>
       <a href={`/contacts?c=${lead.contactId}`} className="text-muted underline-offset-4 hover:underline">
         {lead.contactName}
