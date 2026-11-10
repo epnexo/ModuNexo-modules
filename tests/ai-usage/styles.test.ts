@@ -10,6 +10,7 @@ const PLATFORM_TOKENS = new Set([
   "--accent", "--accent-hover", "--accent-foreground", "--accent-soft", "--accent-soft-foreground", "--danger", "--danger-soft",
   "--danger-soft-foreground", "--success", "--success-soft", "--warning", "--warning-soft", "--ring", "--shadow-raised",
   "--radius", "--font-sans", "--font-mono", "--duration-fast", "--duration", "--duration-slow", "--ease-out",
+  "--layout-gap", "--card-pad", "--card-gap", "--card-radius",
 ]);
 
 describe("ai-usage styles", () => {

@@ -82,14 +82,14 @@
   --weight-label: 600;
   --weight-bold: 700;
   --border-width: 1px;
-  --portlet-pad: 14px;
-  --grid-gap: 12px;
+  --portlet-pad: var(--card-pad, 18px);
+  --grid-gap: var(--layout-gap, 20px);
   --row-pad: 8px 12px;
   --control-height: 30px;
   --space-2: 8px;
   --space-3: 12px;
   --content-max: 1680px;
-  --au-radius: 8px;
+  --au-radius: var(--card-radius, 8px);
 
   color: var(--ink);
 }
@@ -147,7 +147,7 @@
 }
 
 .au .portlet-head {
-  padding: 8px var(--portlet-pad);
+  padding: 10px var(--portlet-pad);
   background: var(--portlet-head);
   color: var(--portlet-head-ink);
   border-bottom: var(--border-width) solid var(--portlet-border);
