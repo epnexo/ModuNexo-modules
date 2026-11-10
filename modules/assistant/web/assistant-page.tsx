@@ -58,7 +58,7 @@ export default async function Page() {
             : "It answers nothing, and no message leaves the platform, until you switch it on in the settings."}
         </p>
         {warnings.map((warning) => (
-          <p key={warning} role="note" className="rounded-md bg-warning-soft px-3 py-2">
+          <p key={warning} role="note" className="notice">
             {warning} Set it in the platform&apos;s Settings screen.
           </p>
         ))}

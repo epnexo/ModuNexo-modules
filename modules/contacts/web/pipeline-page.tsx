@@ -42,7 +42,7 @@ export default async function Page() {
 
       <div className="flex flex-wrap gap-4">
         {contacts.length === 0 ? (
-          <p role="note" className="rounded-md bg-warning-soft px-3 py-2 text-sm">
+          <p role="note" className="notice text-sm">
             Add a contact first: a lead belongs to a contact.
           </p>
         ) : (

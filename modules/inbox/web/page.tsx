@@ -64,7 +64,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
                 ))}
               </ol>
               {canSend ? null : (
-                <p role="note" className="rounded-md bg-warning-soft px-3 py-2 text-sm">
+                <p role="note" className="notice text-sm">
                   No outbound URL is set in this module&apos;s settings, so a reply stays queued.
                 </p>
               )}

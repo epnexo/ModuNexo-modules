@@ -120,7 +120,7 @@ export function TopTools({ rows, styles, showCli }: { rows: ToolUseRow[]; styles
         <p className="muted">No tool call was recorded in this period. Names appear after the module is on version 0.6.0 and the logs are sent again.</p>
       ) : (
         <div className="table-scroll">
-          <table className="data-table">
+          <table className="data-table au-strong-first">
             <thead>
               <tr>
                 <th>Tool</th>
@@ -165,7 +165,7 @@ export function Projects({ rows, styles, showCli }: { rows: ProjectRow[]; styles
         <p className="muted">No project was recorded in this period.</p>
       ) : (
         <div className="table-scroll">
-          <table className="data-table">
+          <table className="data-table au-strong-first">
             <thead>
               <tr>
                 <th>Project</th>

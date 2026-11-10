@@ -139,7 +139,7 @@ export function DailyChartsView({
         <details>
           <summary>Show as table</summary>
           <div className="au-scroll table-scroll">
-            <table className="data-table">
+            <table className="data-table au-strong-first">
               <thead>
                 <tr>
                   <th>{grain === "day" ? "Day (UTC)" : grain === "week" ? "Week starting (UTC)" : "Month (UTC)"}</th>

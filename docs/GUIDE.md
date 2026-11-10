@@ -47,6 +47,13 @@ layers, from the one every module uses to the one a module owns:
    - `badge` plus one tone, `badge-info`, `badge-success`, `badge-warning` or `badge-danger`: a state in one word,
      with a dot (`<span className="badge badge-success">Active</span>`). No tone gives the neutral one.
    - `icon-tile`: a small square that holds one icon (`<span className="icon-tile"><Icon /></span>`).
+   - `seg`: a segmented control of links or buttons; the current one is marked with `aria-current` (or `aria-pressed`)
+     and a tick (`<nav className="seg" aria-label="Period"><a aria-current="page">...</a></nav>`).
+   - `stats` and `stat`: a figure with its label: `<dl className="stats"><div className="stat"><dt className="stat-label">`
+     `<dd className="stat-value"><dd className="stat-sub">`. Tone one figure with `--stat-tone` (its number and the line
+     along its top); `--stat-line` sets that line's thickness.
+   - `notice`: a banner, a warning by default, `notice-info` or `notice-error`; give it `role="status"` (`"alert"` for an error).
+   - `data-table` inside `table-scroll`: a table of records; a column of numbers takes `right`, figures that line up take `num`.
 3. **Spacing and shape variables**, with the platform's value as the default: `--layout-gap` (between the parts of a
    page), `--card-pad`, `--card-gap`, `--card-radius`, and `--card-line-opacity` (`0` removes the accent line). A module
    that wants something else sets them once on its page's root element, so only its own page changes:
@@ -58,9 +65,10 @@ layers, from the one every module uses to the one a module owns:
 
 The global classes arrive with the platform release that carries them. A module is packed against that platform's SDK
 and takes its `platform` range from it (`^${SDK_VERSION}`), so a platform that does not have the classes refuses to
-install it instead of drawing borderless boxes. A new pattern that two modules need (for example a segmented
-control, a figure with its label, a notice, a data table) belongs in the platform, not copied between modules: raise it
-before writing it a second time.
+install it instead of drawing borderless boxes. A new pattern that two modules need (a form field, a dialog, a tab strip, an empty state) belongs in the platform, not
+copied between modules: raise it before writing it a second time. The boundary is enforced: `tests/styles` fails when a
+module's stylesheet has a selector outside its own root class or prefix, names a platform class, or writes a colour
+value anywhere but in a custom property.
 
 ## 2. The loop for each module
 

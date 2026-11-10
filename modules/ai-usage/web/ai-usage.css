@@ -175,7 +175,7 @@
 .au .kpi-3 { --stat-tone: var(--kpi-3); }
 .au .kpi-4 { --stat-tone: var(--kpi-4); }
 
-.au .data-table tbody td:first-child {
+.au .au-strong-first tbody td:first-child {
   font-weight: var(--weight-bold);
   color: var(--td-first-ink);
 }

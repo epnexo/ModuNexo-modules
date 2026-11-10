@@ -283,7 +283,7 @@ export function CumulativeTokens({ daily, from, to }: { daily: DailyRow[]; from:
       <details>
         <summary>Show as table</summary>
         <div className="au-scroll table-scroll">
-          <table className="data-table">
+          <table className="data-table au-strong-first">
             <thead>
               <tr>
                 <th>Day (UTC)</th>
@@ -324,7 +324,7 @@ export function ByToolTable({ rows, styles, cost }: { rows: ToolRow[]; styles: M
   return (
     <Portlet label="Usage by tool" title="By tool" note={`Tool-reported token counters. ${NOT_AVAILABLE} means the tool does not report that counter.`}>
       <div className="table-scroll">
-        <table className="data-table">
+        <table className="data-table au-strong-first">
           <thead>
             <tr>
               <th>Tool</th>
@@ -375,7 +375,7 @@ export function ByModelTable({ grouped, styles }: { grouped: GroupedModels; styl
   return (
     <Portlet label="Usage by model" title="By model" note="A model used through more than one tool is listed once, with each tool named.">
       <div className="table-scroll">
-        <table className="data-table">
+        <table className="data-table au-strong-first">
           <thead>
             <tr>
               <th>Model</th>
@@ -430,7 +430,7 @@ export function RecentSessions({ rows, styles }: { rows: SessionRow[]; styles: M
         </p>
       ) : (
         <div className="table-scroll">
-          <table className="data-table">
+          <table className="data-table au-strong-first">
             <thead>
               <tr>
                 <th>Tool</th>
