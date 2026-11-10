@@ -54,6 +54,11 @@ layers, from the one every module uses to the one a module owns:
      along its top); `--stat-line` sets that line's thickness.
    - `notice`: a banner, a warning by default, `notice-info` or `notice-error`; give it `role="status"` (`"alert"` for an error).
    - `data-table` inside `table-scroll`: a table of records; a column of numbers takes `right`, figures that line up take `num`.
+   - The forms kit: `btn` (add `btn-primary` for the main action, `btn-sm` for a small one), `input` (on every `input`,
+     `select` and `textarea`), `field` (a label, a control, `field-help` and `field-error`; the control gets
+     `aria-invalid="true"` when it is wrong), `form` (a stack of fields), `form-grid` (fields side by side) and `form-actions`
+     (the buttons at the end). `notice-success` joins `notice-info` and `notice-error`.
+   - `detail-list`: label and value pairs (`<dl className="detail-list"><div><dt>..</dt><dd>..</dd></div></dl>`).
 3. **Spacing and shape variables**, with the platform's value as the default: `--layout-gap` (between the parts of a
    page), `--card-pad`, `--card-gap`, `--card-radius`, and `--card-line-opacity` (`0` removes the accent line). A module
    that wants something else sets them once on its page's root element, so only its own page changes:

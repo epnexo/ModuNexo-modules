@@ -35,12 +35,12 @@ describe("shared styles", () => {
   });
 
   it("documents every component a module can use", () => {
-    for (const name of ["seg", "stats", "stat-value", "notice-error", "data-table", "table-scroll", "--stat-tone", "--stat-line"]) assert.ok(GUIDE.includes(name), `the guide explains ${name}`);
+    for (const name of ["seg", "stats", "stat-value", "notice-error", "notice-success", "data-table", "table-scroll", "--stat-tone", "--stat-line", "btn-primary", "field-error", "form-grid", "form-actions", "detail-list"]) assert.ok(GUIDE.includes(name), `the guide explains ${name}`);
   });
 });
 
 /** The platform's own classes. A module uses them in its markup and never names them in its own stylesheet. */
-const PLATFORM_CLASS = /\.(card|badge(-[\w]+)?|icon-tile|seg|stats?|stat-(label|value|sub)|notice(-[\w]+)?|table-scroll|data-table)(?![\w-])/;
+const PLATFORM_CLASS = /\.(card|badge(-[\w]+)?|icon-tile|seg|stats?|stat-(label|value|sub)|notice(-[\w]+)?|table-scroll|data-table|btn(-[\w]+)?|input|field(-[\w]+)?|form(-[\w]+)?|detail-list)(?![\w-])/;
 
 /** The stylesheets modules own: `modules/<id>/web/*.css`. */
 function stylesheets(): { id: string; file: string; css: string }[] {
@@ -74,7 +74,7 @@ describe("a module's own stylesheet stays inside the module", () => {
   for (const { file, css } of sheets) {
     const selectors = selectorsOf(css);
     // The module's root class is the one its first rule names, for example `.au`; every other class starts with it and a dash.
-    const root = selectors[0]?.match(/^\.([a-z][a-z0-9]*)(?![\w-])/)?.[1];
+    const root = selectors[0]?.match(/^\.([a-z][a-z0-9]*)(?:-|(?![\w-]))/)?.[1];
 
     it(`${file}: every selector sits under the module's root class or prefix`, () => {
       assert.ok(root, "the first rule names the module's root class, for example `.au`");
