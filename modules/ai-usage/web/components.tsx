@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
-import { type ChartTool, CumulativeLine, StackedBars } from "./chart-client.tsx";
-import { bucketDaily, bucketSeries, bucketTitle, GRAINS, GRAIN_LABELS, type Grain } from "./buckets.ts";
+import { type ChartTool, CumulativeLine } from "./chart-client.tsx";
+import { DailyChartsView } from "./daily-charts.tsx";
+import { GRAINS, type Grain } from "./buckets.ts";
 import { barFractions, cumulative, fillDays, stackShares, topWithOther } from "./chart.ts";
 import { PERIODS, PERIOD_LABELS, type Filters, toolColorSlot, withFilters } from "./filters.ts";
 import { NOT_AVAILABLE, formatCompact, formatCount, formatPercent, formatUtcMinute } from "./format.ts";
@@ -237,13 +238,6 @@ export function ModelShare({ grouped }: { grouped: GroupedModels }) {
   );
 }
 
-/** Per-tool token series over every bucket (day, week or month) of the period, null where the tool recorded nothing. */
-function perToolBuckets(daily: DailyRow[], tools: ToolInfo[], from: string, to: string, grain: Grain) {
-  const sums = new Map(bucketDaily(daily, grain).map((row) => [`${row.day}|${row.tool}`, row.totalTokens]));
-  const series = bucketSeries(from, to, grain);
-  return tools.map((tool) => series.map((day) => ({ day, value: sums.get(`${day}|${tool.slug}`) ?? null })));
-}
-
 export function DailyCharts({
   daily,
   tools,
@@ -259,80 +253,14 @@ export function DailyCharts({
   /** First and last UTC day shown, inclusive. */
   from: string;
   to: string;
-  /** What one bar covers. */
+  /** What one bar covers when the page loads. */
   grain: Grain;
   /** The page address that shows the chart at another interval, keeping the other filters. */
   grainHref: (grain: Grain) => string;
 }) {
-  const perTool = perToolBuckets(daily, tools, from, to, grain);
-  const days = (perTool[0] ?? []).map((entry, i) => ({ day: entry.day, parts: perTool.map((series) => series[i]!.value) }));
   const chartTools: ChartTool[] = tools.map((tool) => ({ slug: tool.slug, name: tool.name, className: styleOf(styles, tool.slug).className }));
-  const totals = perTool.map((series) => series.reduce((sum, d) => sum + (d.value ?? 0), 0));
-
-  const bucketed = bucketDaily(daily, grain);
-  const activeDays = [...new Set(bucketed.map((row) => row.day))].sort().reverse();
-  const cell = new Map(bucketed.map((row) => [`${row.day}|${row.tool}`, row.totalTokens]));
-  const unit = grain;
-
-  return (
-    <Portlet
-      label={`Tokens per ${unit}`}
-      title={`Tokens per ${unit}`}
-      className="au-chart"
-      note={`Days are UTC${grain === "week" ? ", weeks start on Monday" : ""}. Gaps are ${unit}s with no recorded usage${grain === "day" ? "" : "; the first and last bar can cover only part of a " + unit}. Hover a bar, or use the arrow keys, to read it.`}
-    >
-      <nav className="au-seg au-grain" aria-label="Chart interval">
-        {GRAINS.map((option) => (
-          <Link key={option} href={grainHref(option)} aria-current={grain === option}>
-            {GRAIN_LABELS[option]}
-          </Link>
-        ))}
-      </nav>
-      <ul className="au-legend" aria-label="Tools">
-        {tools.map((tool, i) => (
-          <li key={tool.slug} className={chartTools[i]!.className}>
-            <span className="au-key" aria-hidden="true" />
-            {tool.name}
-            <span className="muted num">{formatCompact(totals[i] ?? 0)}</span>
-          </li>
-        ))}
-      </ul>
-      <StackedBars days={days} tools={chartTools} grain={grain} />
-
-      <details>
-        <summary>Show as table</summary>
-        <div className="au-scroll table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>{grain === "day" ? "Day (UTC)" : grain === "week" ? "Week starting (UTC)" : "Month (UTC)"}</th>
-                {tools.map((tool) => (
-                  <th key={tool.slug} className="right">
-                    {tool.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {activeDays.map((day) => (
-                <tr key={day}>
-                  <td className="num">{grain === "month" ? bucketTitle(day, grain) : day}</td>
-                  {tools.map((tool) => {
-                    const amount = cell.get(`${day}|${tool.slug}`);
-                    return (
-                      <td key={tool.slug} className="right num">
-                        {amount === undefined ? <span className="au-na">-</span> : formatCompact(amount)}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
-    </Portlet>
-  );
+  const hrefs = Object.fromEntries(GRAINS.map((option) => [option, grainHref(option)])) as Record<Grain, string>;
+  return <DailyChartsView daily={daily} tools={chartTools} from={from} to={to} initialGrain={grain} hrefs={hrefs} />;
 }
 
 export function CumulativeTokens({ daily, from, to }: { daily: DailyRow[]; from: string; to: string }) {
