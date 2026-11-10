@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { PAGE_PATH, PERIOD_LABELS, withFilters } from "./filters.ts";
+import { PAGE_PATH, PERIOD_LABELS } from "./filters.ts";
 import { estimateCost } from "./metrics.ts";
 import { loadOverview, type OverviewData } from "./data.ts";
 import { ByToolTable, CumulativeTokens, DailyCharts, EmptyState, Headline, Notice, RecentSessions, UsageHours, toolStyles, type CostView } from "./components.tsx";
@@ -74,7 +74,7 @@ export default async function AiUsagePage({ searchParams }: { searchParams: Sear
           <>
             <Headline summary={summary} cost={cost} />
             <ToolCards cards={cards} period={filters.period} styles={styles} />
-            <DailyCharts daily={daily} tools={withData.length > 0 ? withData : tools} styles={styles} from={from} to={today} grain={data.grain} grainHref={(grain) => withFilters(filters, { grain }, PAGE_PATH)} />
+            <DailyCharts daily={daily} tools={withData.length > 0 ? withData : tools} styles={styles} from={from} to={today} grain={data.grain} filters={filters} path={PAGE_PATH} />
             <div className="au-pair">
               <TopSkills skills={mergeSkills(skills, 10)} />
               <TopTools rows={toolUse} styles={styles} showCli />

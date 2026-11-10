@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { DEFAULT_PERIOD, parseFilters, periodStart, toolColorSlot, withFilters } from "../../modules/ai-usage/web/filters.ts";
+import { DEFAULT_PERIOD, chartFrom, parseChartQuery, parseFilters, periodStart, toolColorSlot, withFilters } from "../../modules/ai-usage/web/filters.ts";
 
 const TOOLS = ["claude-code", "codex", "pi", "opencode"];
 
@@ -65,5 +65,35 @@ describe("toolColorSlot", () => {
     assert.equal(toolColorSlot("gemini", all), 5);
     assert.equal(toolColorSlot("aider", all), 6);
     assert.equal(toolColorSlot("x3", all), 0);
+  });
+});
+
+describe("parseChartQuery", () => {
+  const query = (text: string) => parseChartQuery(new URLSearchParams(text), TOOLS);
+
+  it("takes the default period and all tools when nothing is given", () => {
+    assert.deepEqual(query(""), { ok: true, period: DEFAULT_PERIOD, tool: null });
+  });
+
+  it("accepts a known period and tool, and reads an empty tool as none", () => {
+    assert.deepEqual(query("period=90d&tool=codex"), { ok: true, period: "90d", tool: "codex" });
+    assert.deepEqual(query("period=all&tool="), { ok: true, period: "all", tool: null });
+  });
+
+  it("refuses an unknown period or tool instead of falling back to another one", () => {
+    const period = query("period=1y");
+    assert.equal(period.ok, false);
+    assert.match(period.ok ? "" : period.error, /1y/);
+    const tool = query("tool=emacs");
+    assert.equal(tool.ok, false);
+    assert.match(tool.ok ? "" : tool.error, /emacs/);
+  });
+});
+
+describe("chartFrom", () => {
+  it("starts at the period's first day, else at the first day with data, else today", () => {
+    assert.equal(chartFrom("2026-11-01", "2026-11-03", "2026-11-10"), "2026-11-01");
+    assert.equal(chartFrom(null, "2026-08-14", "2026-11-10"), "2026-08-14");
+    assert.equal(chartFrom(null, undefined, "2026-11-10"), "2026-11-10");
   });
 });

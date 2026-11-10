@@ -1021,3 +1021,21 @@
   align-self: flex-start;
   margin-bottom: 0.75rem;
 }
+
+/* The chart's own period and interval controls, and the line that says a period is loading or could not load. */
+.au .au-chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+.au .au-chart-status {
+  min-height: 1.25rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground, inherit);
+}
+.au [data-loading="true"] {
+  opacity: 0.55;
+  transition: opacity 120ms ease-out;
+}

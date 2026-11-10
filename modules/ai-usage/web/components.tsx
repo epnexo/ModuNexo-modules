@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { type ChartTool, CumulativeLine } from "./chart-client.tsx";
 import { DailyChartsView } from "./daily-charts.tsx";
-import { GRAINS, type Grain } from "./buckets.ts";
+import { type Grain } from "./buckets.ts";
 import { barFractions, cumulative, fillDays, stackShares, topWithOther } from "./chart.ts";
 import { PERIODS, PERIOD_LABELS, type Filters, toolColorSlot, withFilters } from "./filters.ts";
 import { NOT_AVAILABLE, formatCompact, formatCount, formatPercent, formatUtcMinute } from "./format.ts";
@@ -245,7 +245,8 @@ export function DailyCharts({
   from,
   to,
   grain,
-  grainHref,
+  filters,
+  path,
 }: {
   daily: DailyRow[];
   tools: ToolInfo[];
@@ -255,12 +256,13 @@ export function DailyCharts({
   to: string;
   /** What one bar covers when the page loads. */
   grain: Grain;
-  /** The page address that shows the chart at another interval, keeping the other filters. */
-  grainHref: (grain: Grain) => string;
+  /** The filters this page was drawn with. */
+  filters: Filters;
+  /** The page's own address. */
+  path: string;
 }) {
   const chartTools: ChartTool[] = tools.map((tool) => ({ slug: tool.slug, name: tool.name, className: styleOf(styles, tool.slug).className }));
-  const hrefs = Object.fromEntries(GRAINS.map((option) => [option, grainHref(option)])) as Record<Grain, string>;
-  return <DailyChartsView daily={daily} tools={chartTools} from={from} to={to} initialGrain={grain} hrefs={hrefs} />;
+  return <DailyChartsView daily={daily} tools={chartTools} from={from} to={to} initialGrain={grain} filters={filters} path={path} />;
 }
 
 export function CumulativeTokens({ daily, from, to }: { daily: DailyRow[]; from: string; to: string }) {

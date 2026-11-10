@@ -1,7 +1,7 @@
 import { getDb, getSetting } from "@modunexo/sdk";
 import { cleanAddress, sendCommand } from "../lib/connect.ts";
 import { parseGrain, type Grain } from "./buckets.ts";
-import { parseFilters, periodStart, type Filters } from "./filters.ts";
+import { chartFrom, parseChartQuery, parseFilters, periodStart, type Filters, type Period } from "./filters.ts";
 import {
   type DailyRow,
   type HourRow,
@@ -155,4 +155,25 @@ export async function loadToolPage(slug: string, raw: RawParams, now: Date): Pro
   const { base, db } = await common(raw, now, slug);
   const byModel = await getByModel(db, { since: base.since, tool: slug });
   return { ...base, tool, byModel };
+}
+
+export interface ChartData {
+  period: Period;
+  tool: string | null;
+  /** First and last UTC day the chart draws, inclusive. */
+  from: string;
+  to: string;
+  daily: DailyRow[];
+}
+
+/** The daily rows for one period (and optionally one tool), or the reason the request was refused. */
+export async function loadChartData(params: URLSearchParams, now: Date): Promise<{ ok: true; data: ChartData } | { ok: false; error: string }> {
+  const db = getDb("ai-usage");
+  const known = overviewTools(await getTools(db)).map((t) => t.slug);
+  const query = parseChartQuery(params, known);
+  if (!query.ok) return query;
+  const since = periodStart(query.period, now);
+  const daily = await getDaily(db, { since, tool: query.tool });
+  const today = now.toISOString().slice(0, 10);
+  return { ok: true, data: { period: query.period, tool: query.tool, from: chartFrom(since, daily[0]?.day, today), to: today, daily } };
 }

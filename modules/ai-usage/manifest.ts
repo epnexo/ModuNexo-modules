@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "ai-usage",
-  version: "0.6.5", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.6.6", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "AI usage",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -48,6 +48,7 @@ export default defineModule({
   pages: [
     { path: "/ai-usage", entry: "./web/page.tsx", kind: "page", dynamic: "force-dynamic", permission: "ai_usage.read" },
     { path: "/ai-usage/[tool]", entry: "./web/tool-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "ai_usage.read" },
+    { path: "/ai-usage/data/daily", entry: "./web/chart-data.ts", kind: "route", methods: ["GET"], dynamic: "force-dynamic", permission: "ai_usage.read" },
     { path: "/svc/ai-usage/ingest", entry: "./web/svc-ingest.ts", kind: "route", methods: ["POST"], scope: "ai_usage.write" },
   ],
 });

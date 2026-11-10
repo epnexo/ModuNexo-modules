@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PAGE_PATH, PERIOD_LABELS, withFilters } from "./filters.ts";
+import { PAGE_PATH, PERIOD_LABELS } from "./filters.ts";
 import { loadToolPage, type ToolPageData } from "./data.ts";
 import { ByModelTable, CumulativeTokens, DailyCharts, EmptyState, Headline, ModelShare, Notice, RecentSessions, TokenSplit, UsageHours, toolStyles, type CostView } from "./components.tsx";
 import { formatCount } from "./format.ts";
@@ -72,7 +72,7 @@ export default async function ToolUsagePage({ params, searchParams }: { params: 
         ) : (
           <>
             <Headline summary={summary} cost={cost} />
-            <DailyCharts daily={daily} tools={[tool]} styles={styles} from={from} to={today} grain={data.grain} grainHref={(grain) => withFilters(filters, { grain }, path)} />
+            <DailyCharts daily={daily} tools={[tool]} styles={styles} from={from} to={today} grain={data.grain} filters={filters} path={path} />
             <div className="au-pair">
               <CumulativeTokens daily={daily} from={from} to={today} />
               <div className="au-stack">

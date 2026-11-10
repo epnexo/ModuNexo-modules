@@ -12,6 +12,8 @@ export const PERIOD_LABELS: Record<Period, string> = {
 };
 
 export const PAGE_PATH = "/ai-usage";
+/** The route that answers the chart's daily rows for one period, so the chart can change period without the page reloading. */
+export const CHART_DATA_PATH = "/ai-usage/data/daily";
 
 export interface Filters {
   period: Period;
@@ -91,4 +93,21 @@ export function toolColorSlot(slug: string, allTools: string[]): number {
   const later = allTools.filter((tool) => KNOWN_TOOL_SLOTS[tool] === undefined);
   const slot = Object.keys(KNOWN_TOOL_SLOTS).length + 1 + later.indexOf(slug);
   return slot > LAST_SLOT || later.indexOf(slug) === -1 ? 0 : slot;
+}
+
+/**
+ * The query of the chart's data route. Unlike a page, which falls back to the default and tells the viewer, a call
+ * that names an unknown period or tool is refused: whoever asked wants those rows, not other ones.
+ */
+export function parseChartQuery(params: URLSearchParams, knownTools: string[]): { ok: true; period: Period; tool: string | null } | { ok: false; error: string } {
+  const period = params.get("period") ?? DEFAULT_PERIOD;
+  if (!(PERIODS as readonly string[]).includes(period)) return { ok: false, error: `Unknown period "${shown(period)}".` };
+  const tool = params.get("tool");
+  if (tool !== null && tool !== "" && !knownTools.includes(tool)) return { ok: false, error: `Unknown tool "${shown(tool)}".` };
+  return { ok: true, period: period as Period, tool: tool === null || tool === "" ? null : tool };
+}
+
+/** The first day the chart draws: the period's start, or for all time the first day with data, or today when there is none. */
+export function chartFrom(since: string | null, firstDay: string | undefined, today: string): string {
+  return since ?? firstDay ?? today;
 }

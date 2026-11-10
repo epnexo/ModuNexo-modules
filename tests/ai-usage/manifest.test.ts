@@ -14,10 +14,20 @@ describe("ai-usage manifest", () => {
     assert.equal(aiUsage.id, "ai-usage");
     assert.equal(aiUsage.schema, "ai_usage");
     assert.deepEqual(aiUsage.nav?.map((n) => n.href), ["/ai-usage"]);
-    assert.deepEqual(aiUsage.pages?.map((p) => p.path), ["/ai-usage", "/ai-usage/[tool]", "/svc/ai-usage/ingest"]);
+    assert.deepEqual(aiUsage.pages?.map((p) => p.path), ["/ai-usage", "/ai-usage/[tool]", "/ai-usage/data/daily", "/svc/ai-usage/ingest"]);
     assert.equal(aiUsage.pages?.[0]?.entry, "./web/page.tsx");
     assert.equal(aiUsage.pages?.[1]?.entry, "./web/tool-page.tsx");
     assert.equal(aiUsage.pages?.[1]?.permission, "ai_usage.read", "a tool page needs the same permission as the overview");
+  });
+
+  it("serves the chart's rows from a read-only route guarded by the same permission as the pages", () => {
+    const route = aiUsage.pages?.find((p) => p.path === "/ai-usage/data/daily");
+    assert.ok(route);
+    assert.equal(route.kind, "route");
+    assert.deepEqual(route.methods, ["GET"]);
+    assert.equal(route.permission, "ai_usage.read");
+    assert.equal(route.scope, undefined, "a session route, not a token one");
+    assert.equal(route.public, undefined);
   });
 
   it("explains how to connect a machine in its settings, which only an administrator can open", () => {
