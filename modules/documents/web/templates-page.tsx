@@ -25,8 +25,8 @@ export function askedPerDocument(template: Template, profile: Profile): number {
 
 function TemplatesTable({ data }: { data: TemplatesPageData }) {
   return (
-    <div className="table-wrap">
-      <table>
+    <div className="table-scroll">
+      <table className="data-table">
         <thead>
           <tr>
             <th>Name</th>
@@ -44,9 +44,9 @@ function TemplatesTable({ data }: { data: TemplatesPageData }) {
                 <Link href={`/documents/templates/${template.id}`}>{template.name}</Link>
               </td>
               <td>{KIND_LABELS[template.kind] ?? template.kind}</td>
-              <td className="num">{template.refPrefix}</td>
-              <td className="num right">{askedPerDocument(template, data.profile)}</td>
-              <td className="num" style={{ whiteSpace: "nowrap" }}>
+              <td className="tabular-nums">{template.refPrefix}</td>
+              <td className="tabular-nums right">{askedPerDocument(template, data.profile)}</td>
+              <td className="tabular-nums" style={{ whiteSpace: "nowrap" }}>
                 {formatCreated(template.updatedAt)}
               </td>
               <td>
@@ -72,7 +72,7 @@ export async function renderTemplatesPage(load: () => Promise<TemplatesPageData>
     return (
       <div>
         <PageBar title="Templates" description={DESCRIPTION} current="templates" />
-        <div className="page-body">
+        <div className="dc-page">
           <Unavailable title="Templates are unavailable" error={error} />
         </div>
       </div>
@@ -82,17 +82,17 @@ export async function renderTemplatesPage(load: () => Promise<TemplatesPageData>
   return (
     <div>
       <PageBar title="Templates" description={DESCRIPTION} current="templates" />
-      <div className="page-body">
+      <div className="dc-page">
         {importNotice(result)}
         <Portlet title="Templates">
           <div style={{ display: "grid", gap: "var(--portlet-pad)" }}>
             <div className="form-actions">
-              <Link className="btn primary" href="/documents/templates/new">
+              <Link className="btn btn-primary" href="/documents/templates/new">
                 New template
               </Link>
             </div>
             {data.templates.length === 0 ? (
-              <p className="muted" style={{ margin: 0 }}>
+              <p className="text-muted" style={{ margin: 0 }}>
                 No templates yet.
               </p>
             ) : (

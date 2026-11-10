@@ -19,13 +19,13 @@ function Values({ values, settings }: { values: Record<string, string>; settings
   const entries = Object.entries(values);
   if (entries.length === 0) {
     return (
-      <p className="muted" style={{ margin: 0 }}>
+      <p className="text-muted" style={{ margin: 0 }}>
         None.
       </p>
     );
   }
   return (
-    <dl className="details">
+    <dl className="detail-list">
       {entries.map(([name, value]) => (
         <div key={name}>
           <dt>
@@ -80,7 +80,7 @@ export async function renderDocumentPage({
     return (
       <div>
         <PageBar title="Document" current="documents" />
-        <div className="page-body">
+        <div className="dc-page">
           <Unavailable title="The document is unavailable" error={error} />
         </div>
       </div>
@@ -101,13 +101,13 @@ export async function renderDocumentPage({
   return (
     <div>
       <PageBar title={document.ref} description={document.title} current="documents" />
-      <div className="page-body">
+      <div className="dc-page">
         {created ? <Notice tone="ok" title="Document created." /> : null}
         <Portlet title="Document">
-          <dl className="details">
+          <dl className="detail-list">
             <div>
               <dt>Reference</dt>
-              <dd className="num">{document.ref}</dd>
+              <dd className="tabular-nums">{document.ref}</dd>
             </div>
             <div>
               <dt>Title</dt>
@@ -129,25 +129,25 @@ export async function renderDocumentPage({
             </div>
             <div>
               <dt>Created (UTC)</dt>
-              <dd className="num">{formatCreated(document.createdAt)}</dd>
+              <dd className="tabular-nums">{formatCreated(document.createdAt)}</dd>
             </div>
             {document.completedAt !== null ? (
               <div>
                 <dt>Completed (UTC)</dt>
-                <dd className="num">{formatCreated(document.completedAt)}</dd>
+                <dd className="tabular-nums">{formatCreated(document.completedAt)}</dd>
               </div>
             ) : null}
             {document.pages !== null ? (
               <div>
                 <dt>Pages</dt>
-                <dd className="num">{document.pages}</dd>
+                <dd className="tabular-nums">{document.pages}</dd>
               </div>
             ) : null}
           </dl>
           <div className="form-actions" style={{ marginTop: "var(--portlet-pad)" }}>
             {document.hasPdf ? (
               <>
-                <a className="btn primary" href={`/documents/${document.id}/pdf`}>
+                <a className="btn btn-primary" href={`/documents/${document.id}/pdf`}>
                   Download PDF
                 </a>
                 <a className="btn" href={`/documents/${document.id}/pdf?inline=1`} target="_blank" rel="noopener noreferrer" aria-label={`Preview ${document.ref} PDF (opens in a new tab)`}>
@@ -155,7 +155,7 @@ export async function renderDocumentPage({
                 </a>
               </>
             ) : (
-              <span className="muted">This document has no PDF.</span>
+              <span className="text-muted">This document has no PDF.</span>
             )}
             <Link className="btn" href="/documents">
               Back to documents

@@ -1,0 +1,91 @@
+/*
+ * What the documents module adds to the platform's style. The buttons, forms, cards, tables, badges, notices and
+ * figures are the platform's classes; only the page bar, the page layout and a few small parts live here, every class
+ * prefixed with `dc-` so nothing leaks to another page.
+ */
+.dc-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.dc-bar h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.dc-bar p {
+  margin: 0.25rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+}
+.dc-bar-text {
+  min-width: 0;
+}
+.dc-bar-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+.dc-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-gap);
+  max-width: 72rem;
+  padding: 1.25rem 1.5rem 2rem;
+}
+.dc-page a:not([class]) {
+  color: var(--accent);
+  text-underline-offset: 2px;
+}
+.dc-page code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+.dc-page textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+.dc-wide {
+  grid-column: 1 / -1;
+}
+.dc-section-title {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.dc-details {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.dc-details summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+.dc-variables {
+  margin: 0.5rem 0 0;
+}
+.dc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dc-chip {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-soft-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}

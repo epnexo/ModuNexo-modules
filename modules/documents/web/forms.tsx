@@ -55,10 +55,10 @@ function Field({
   const id = `f-${name}`;
   const describedBy = [help ? `${id}-help` : "", note ? `${id}-uses` : "", error ? `${id}-error` : ""].filter(Boolean).join(" ");
   return (
-    <div className={wide ? "field wide" : "field"}>
+    <div className={wide ? "field dc-wide" : "field"}>
       <label className="field-label" htmlFor={id}>
         {label}
-        {required ? <span className="required"> (required)</span> : null}
+        {required ? <span className="ml-1 text-danger"> (required)</span> : null}
       </label>
       {children({
         id,
@@ -153,20 +153,20 @@ function VariablesSection({ rows, errors }: { rows: VariableRow[]; errors: Recor
   };
 
   return (
-    <section className="variables" aria-labelledby="variables-heading">
-      <h3 id="variables-heading" className="form-section-title">
+    <section className="dc-variables" aria-labelledby="variables-heading">
+      <h3 id="variables-heading" className="dc-section-title">
         Variables
       </h3>
       <p className="field-help">
         The label, help line and starting value shown on the new-document form for each value asked per document. Leave an input blank to keep the default behavior. A default can use other fields: write their marker, such as {"{{B_NOMBRE}}"}, and it is filled in when the document is created. The list comes from the saved body: a marker you add to the body appears here after you save.
       </p>
       {rows.length === 0 ? (
-        <p className="muted" style={{ margin: 0 }}>
+        <p className="text-muted" style={{ margin: 0 }}>
           The saved body asks for no values for each document.
         </p>
       ) : (
-        <div className="table-wrap">
-          <table className="variables-table">
+        <div className="table-scroll">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Marker</th>
@@ -256,7 +256,7 @@ function LoadFromFile({ form }: { form: React.RefObject<HTMLFormElement | null> 
     setMessage({ tone: "ok", text: `Loaded ${file.name}. Review the fields below and create the template.` });
   }
   return (
-    <div className="field wide">
+    <div className="field dc-wide">
       <label className="field-label" htmlFor="load-html">
         Load the body from an HTML file
       </label>
@@ -343,12 +343,12 @@ export function TemplateForm({
           )}
         </Field>
         <Field name="bodyHtml" label="Body (HTML)" error={error("bodyHtml")} help="Write the document as HTML. Put each value to fill in a marker such as {{NAME}}." required wide>
-          {(aria) => <textarea {...aria} className="input code" defaultValue={state.values.bodyHtml} rows={24} spellCheck={false} autoComplete="off" />}
+          {(aria) => <textarea {...aria} className="input font-mono text-sm" defaultValue={state.values.bodyHtml} rows={24} spellCheck={false} autoComplete="off" />}
         </Field>
       </div>
       {mode === "edit" && state.variables ? <VariablesSection rows={state.variables} errors={state.variableErrors ?? {}} /> : null}
       <div className="form-actions">
-        <button type="submit" className="btn primary" disabled={pending}>
+        <button type="submit" className="btn btn-primary" disabled={pending}>
           {pending ? "Saving…" : mode === "create" ? "Create template" : "Save changes"}
         </button>
         <Link className="btn" href="/documents/templates">
@@ -396,7 +396,7 @@ export function ProfileForm({ endpoint, initial }: { endpoint: string; initial: 
       <FormNotices errors={state.errors} message={state.message} saved={state.saved} savedTitle="Profile saved." />
       {PROFILE_SECTIONS.map((section) => (
         <Portlet key={section.id} title={section.title}>
-          {"note" in section ? <p className="portlet-note">{section.note}</p> : null}
+          {"note" in section ? <p className="mb-3 text-sm text-muted">{section.note}</p> : null}
           <div className="form-grid">
             {PROFILE_FIELDS.filter((field) => field.section === section.id).map((field) => (
               <Field key={field.key} name={field.key} label={field.label} error={state.errors[field.key]} help={field.help ?? `Marker {{${field.key}}}`} required={field.required} wide={field.kind === "textarea"}>
@@ -407,7 +407,7 @@ export function ProfileForm({ endpoint, initial }: { endpoint: string; initial: 
         </Portlet>
       ))}
       <div className="form-actions">
-        <button type="submit" className="btn primary" disabled={pending}>
+        <button type="submit" className="btn btn-primary" disabled={pending}>
           {pending ? "Saving…" : "Save profile"}
         </button>
       </div>
@@ -427,7 +427,7 @@ export function ArchiveForm({ endpoint, initial, id }: { endpoint: string; initi
       }}
     >
       {state.message ? <Notice tone="error" title={state.message} /> : null}
-      <p className="portlet-note" style={{ margin: 0 }}>
+      <p className="mb-3 text-sm text-muted" style={{ margin: 0 }}>
         An archived template is hidden from the list and cannot be edited. Documents already created keep their own copy of the body.
       </p>
       <input type="hidden" name="id" value={id} />
@@ -493,7 +493,7 @@ export function DocumentForm({
         })}
       </div>
       <div className="form-actions">
-        <button type="submit" className="btn primary" disabled={pending}>
+        <button type="submit" className="btn btn-primary" disabled={pending}>
           {pending ? "Creating…" : "Create document"}
         </button>
         <Link className="btn" href="/documents/new">
@@ -536,11 +536,11 @@ export function SignatureForm({ endpoint, initial, documentId }: { endpoint: str
           )}
         </Field>
       </div>
-      <p className="portlet-note" style={{ margin: 0 }}>
+      <p className="mb-3 text-sm text-muted" style={{ margin: 0 }}>
         The platform sends no email. You get a signing link for each signer and share it yourself.
       </p>
       <div className="form-actions">
-        <button type="submit" className="btn primary" disabled={pending}>
+        <button type="submit" className="btn btn-primary" disabled={pending}>
           {pending ? "Sending…" : "Send for signature"}
         </button>
       </div>

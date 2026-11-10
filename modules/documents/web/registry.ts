@@ -22,10 +22,10 @@ export function documentKpis(rows: DocumentRow[]): KpiCard[] {
 const BADGES: Record<DocumentStatus, { label: string; className: string }> = {
   draft: { label: "Draft", className: "badge" },
   generated: { label: "Generated", className: "badge" },
-  sent: { label: "Sent", className: "badge warn" },
-  completed: { label: "Completed", className: "badge ok" },
-  declined: { label: "Declined", className: "badge error" },
-  expired: { label: "Expired", className: "badge error" },
+  sent: { label: "Sent", className: "badge badge-warning" },
+  completed: { label: "Completed", className: "badge badge-success" },
+  declined: { label: "Declined", className: "badge badge-danger" },
+  expired: { label: "Expired", className: "badge badge-danger" },
 };
 
 const UNKNOWN_BADGE = { label: "Unknown", className: "badge" };

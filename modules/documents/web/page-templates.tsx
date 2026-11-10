@@ -2,6 +2,7 @@ import { getDb } from "@modunexo/sdk";
 import type { Metadata } from "next";
 import { loadTemplatesData } from "./loaders.ts";
 import { renderTemplatesPage } from "./templates-page.tsx";
+import "./documents.css";
 
 export const metadata: Metadata = { title: "Templates" };
 

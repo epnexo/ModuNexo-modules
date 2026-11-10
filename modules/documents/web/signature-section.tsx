@@ -42,7 +42,7 @@ function UnfinishedSend({ document }: { document: DocumentDetail }) {
     <Portlet title="Signature">
       <div style={{ display: "grid", gap: "var(--portlet-pad)" }}>
         <Notice title="A send did not finish">
-          Sending this document for signature started on <span className="num">{document.sendStartedAt === null ? "" : formatCreated(document.sendStartedAt)}</span> UTC and has not been recorded. DocuSeal may already have a signature request for it, and sending again could create a second signature request.
+          Sending this document for signature started on <span className="tabular-nums">{document.sendStartedAt === null ? "" : formatCreated(document.sendStartedAt)}</span> UTC and has not been recorded. DocuSeal may already have a signature request for it, and sending again could create a second signature request.
         </Notice>
         <ol style={{ margin: 0, paddingLeft: "1.25rem" }}>
           <li>The send may still be running: it can take several minutes, and it cannot be cleared until the longest possible send has passed. Reload this page first.</li>
@@ -61,14 +61,14 @@ function UnfinishedSend({ document }: { document: DocumentDetail }) {
 function Signers({ signers }: { signers: SigningLink[] }) {
   if (signers.length === 0) {
     return (
-      <p className="muted" style={{ margin: 0 }}>
+      <p className="text-muted" style={{ margin: 0 }}>
         No signers are stored for this document.
       </p>
     );
   }
   return (
-    <div className="table-wrap">
-      <table>
+    <div className="table-scroll">
+      <table className="data-table">
         <thead>
           <tr>
             <th>Signer</th>
@@ -90,12 +90,12 @@ function Signers({ signers }: { signers: SigningLink[] }) {
                 </td>
                 <td>{signer.email}</td>
                 <td>{signer.status === undefined ? "Not refreshed yet" : (SIGNER_STATUS[signer.status] ?? signer.status)}</td>
-                <td className="num" style={{ whiteSpace: "nowrap" }}>
+                <td className="tabular-nums" style={{ whiteSpace: "nowrap" }}>
                   {signerTime(signer.at)}
                 </td>
                 <td>
                   {href === null ? (
-                    <span className="muted">Link unavailable</span>
+                    <span className="text-muted">Link unavailable</span>
                   ) : (
                     <>
                       <a href={href} target="_blank" rel="noopener noreferrer">
@@ -165,12 +165,12 @@ export function SignatureSection({ document, configured, owner, sent, refreshed 
         {sent === "already" ? <Notice title="This document was already sent for signature." /> : null}
         {refreshed !== undefined && REFRESHED_TO.has(refreshed) && refreshed === document.status ? <Notice tone="ok" title={refreshedMessage(refreshed)} /> : null}
         <Signers signers={document.signers} />
-        <p className="portlet-note" style={{ margin: 0 }}>
+        <p className="mb-3 text-sm text-muted" style={{ margin: 0 }}>
           Anyone with a link can sign for that signer. Share each link only with its signer.
         </p>
         {document.status === "completed" ? (
           <div className="form-actions">
-            <a className="btn primary" href={`/documents/${document.id}/signed-pdf`}>
+            <a className="btn btn-primary" href={`/documents/${document.id}/signed-pdf`}>
               Download signed PDF
             </a>
           </div>

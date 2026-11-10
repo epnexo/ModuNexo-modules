@@ -175,7 +175,7 @@ describe("document page: a sent document", () => {
   it("lists each signer with their status and time, a plain link that opens in a new tab, and a readable copy of the URL", async () => {
     const { markup, calls } = await page({ document: sent() });
     assert.equal(calls.owner, 0);
-    assert.match(markup, /<span class="badge warn">Sent<\/span>/);
+    assert.match(markup, /<span class="badge badge-warning">Sent<\/span>/);
     for (const text of ["Acme", "Beta Ltd", "ana@acme.test", "ben@beta.test", "Signed", "2026-10-12 10:00", "Opened", "2026-10-12 09:30"]) assert.ok(markup.includes(text), text);
     assert.match(markup, /<a [^>]*href="https:\/\/sign\.example\.test\/s\/AAA-link"[^>]*target="_blank"[^>]*rel="noopener noreferrer"[^>]*>/);
     assert.match(markup, /<code[^>]*>https:\/\/sign\.example\.test\/s\/AAA-link<\/code>/);
@@ -221,7 +221,7 @@ describe("document page: a sent document", () => {
 describe("document page: a signed or closed document", () => {
   it("offers the signed PDF for a completed document, with the completion time, and no refresh", async () => {
     const { markup } = await page({ document: detail({ status: "completed", hasSubmission: true, signers: SIGNERS, completedAt: new Date("2026-10-12T11:00:00Z") }) });
-    assert.match(markup, /<span class="badge ok">Completed<\/span>/);
+    assert.match(markup, /<span class="badge badge-success">Completed<\/span>/);
     assert.match(markup, /<a [^>]*href="\/documents\/9\/signed-pdf"[^>]*>Download signed PDF<\/a>/);
     assert.match(markup, /Completed \(UTC\)/);
     assert.match(markup, /2026-10-12 11:00/);
@@ -232,7 +232,7 @@ describe("document page: a signed or closed document", () => {
   it("keeps the confirmation of the refresh that moved the document out of sent visible, whichever status it reached", async () => {
     for (const status of ["completed", "declined", "expired"]) {
       const { markup } = await page({ document: detail({ status, hasSubmission: true, signers: SIGNERS }), refreshed: status });
-      assert.match(markup, new RegExp(`class="notice ok"[\\s\\S]*Status updated: the document is ${status}\\.`), status);
+      assert.match(markup, new RegExp(`class="notice notice-success"[\\s\\S]*Status updated: the document is ${status}\\.`), status);
     }
   });
 
@@ -287,9 +287,9 @@ describe("RefreshForm", () => {
 
   it("shows an error as an alert, a confirmation as ok, and the note about an unknown status as a warning", () => {
     assert.match(render({ message: "DocuSeal refused the API token." }), /role="alert"[\s\S]*refused the API token/);
-    assert.match(render({ done: "Still waiting for signatures." }), /class="notice ok"[\s\S]*Still waiting/);
+    assert.match(render({ done: "Still waiting for signatures." }), /class="notice notice-success"[\s\S]*Still waiting/);
     const note = render({ note: 'DocuSeal reported the status "archived".' });
-    assert.match(note, /class="notice "[\s\S]*archived/);
+    assert.match(note, /class="notice"[\s\S]*archived/);
     assert.doesNotMatch(note, /role="alert"/);
   });
 });

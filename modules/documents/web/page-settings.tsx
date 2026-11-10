@@ -2,6 +2,7 @@ import { getDb } from "@modunexo/sdk";
 import type { Metadata } from "next";
 import { loadProfileValues } from "./loaders.ts";
 import { renderSettingsPage } from "./settings-page.tsx";
+import "./documents.css";
 
 export const metadata: Metadata = { title: "Owner profile" };
 

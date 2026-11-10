@@ -26,10 +26,10 @@ export function importNotice(result: ImportResult) {
 /** The skill's own files are uploaded: the platform has no skill folder, and they hold the owner's details, so they never live in the module. */
 export function ImportNda() {
   return (
-    <details className="details">
+    <details className="dc-details">
       <summary>Import a ready-made template bundle (also fills your profile)</summary>
       <form method="post" action="/documents/templates/import-nda" encType="multipart/form-data" className="form" style={{ marginTop: "0.75rem" }}>
-        <p className="portlet-note">
+        <p className="mb-3 text-sm text-muted">
           Pick the three files of a template bundle, for example the <code>/nda</code> skill: the template (<code>.html</code>), <code>config.json</code> and the script (<code>.py</code>). They create the template and fill your profile. Nothing that already exists is overwritten.
         </p>
         <div className="form-grid">

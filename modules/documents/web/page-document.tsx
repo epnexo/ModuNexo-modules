@@ -6,6 +6,7 @@ import { getDocument } from "../src/document-store.ts";
 import { getProfile } from "../src/profile-store.ts";
 import { ownerSignerDefaults } from "../src/signature-rules.ts";
 import { renderDocumentPage } from "./document-page.tsx";
+import "./documents.css";
 
 export const metadata: Metadata = { title: "Document" };
 

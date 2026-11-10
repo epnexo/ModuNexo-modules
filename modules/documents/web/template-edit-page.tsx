@@ -40,7 +40,7 @@ export async function renderTemplateEditPage({
     return (
       <div>
         <PageBar title="New template" description="Write the document as HTML and mark each value to fill with {{NAME}}." current="templates" />
-        <div className="page-body">
+        <div className="dc-page">
           {importNotice({ error: importError })}
           <Portlet title="Template">
             <TemplateForm endpoint={ENDPOINTS.createTemplate} initial={{ values: EMPTY_TEMPLATE_VALUES, errors: {} }} mode="create" counterpartyOptions={[]} />
@@ -64,7 +64,7 @@ export async function renderTemplateEditPage({
     return (
       <div>
         <PageBar title="Template" current="templates" />
-        <div className="page-body">
+        <div className="dc-page">
           <Unavailable title="The template is unavailable" error={error} />
         </div>
       </div>
@@ -77,7 +77,7 @@ export async function renderTemplateEditPage({
     return (
       <div>
         <PageBar title={template.name} description="Archived template." current="templates" />
-        <div className="page-body">
+        <div className="dc-page">
           <Notice title="This template is archived">
             It is hidden from the list and cannot be edited. <Link href="/documents/templates">Back to templates</Link>
           </Notice>
@@ -90,7 +90,7 @@ export async function renderTemplateEditPage({
   return (
     <div>
       <PageBar title={template.name} description={`Slug ${template.slug}. Numbered ${template.refPrefix}-YYYY-NNN.`} current="templates" />
-      <div className="page-body">
+      <div className="dc-page">
         <Portlet title="Template">
           <TemplateForm
             endpoint={ENDPOINTS.updateTemplate}
@@ -108,7 +108,7 @@ export async function renderTemplateEditPage({
             <a className="btn" href={`/documents/templates/${template.id}/preview`} target="_blank" rel="noopener noreferrer" aria-label={`Preview ${template.name} (opens in a new tab)`}>
               Preview
             </a>
-            <span className="portlet-note">Shows the saved body, not unsaved changes.</span>
+            <span className="mb-3 text-sm text-muted">Shows the saved body, not unsaved changes.</span>
           </div>
         </Portlet>
         <Portlet title="Archive">

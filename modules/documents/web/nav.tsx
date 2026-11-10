@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { DOCUMENTS_CSS } from "./styles.ts";
 
 export type Section = "documents" | "templates" | "profile";
 
@@ -14,14 +13,13 @@ const SECTIONS: { id: Section; label: string; href: string }[] = [
 export function PageBar({ title, description, current, actions }: { title: string; description?: ReactNode; current: Section; actions?: ReactNode }) {
   return (
     <>
-    <style>{DOCUMENTS_CSS}</style>
-    <header className="page-bar">
-      <div className="page-bar-text">
+    <header className="dc-bar">
+      <div className="dc-bar-text">
         <h1>{title}</h1>
         {description ? <p>{description}</p> : null}
       </div>
-      <nav className="page-bar-tools" aria-label="Documents sections">
-        <div className="page-tabs">
+      <nav className="dc-bar-tools" aria-label="Documents sections">
+        <div className="seg">
           {SECTIONS.map((section) => (
             <Link key={section.id} href={section.href} aria-current={section.id === current ? "page" : undefined}>
               {section.label}

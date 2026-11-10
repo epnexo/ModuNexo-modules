@@ -34,7 +34,7 @@ describe("registry page", () => {
 
   it("puts New document in the page bar, linking to the form", async () => {
     const markup = html(await renderRegistryPage(async () => []));
-    assert.match(markup, /<a [^>]*class="btn primary"[^>]*href="\/documents\/new"[^>]*>New document<\/a>|<a [^>]*href="\/documents\/new"[^>]*class="btn primary"[^>]*>New document<\/a>/);
+    assert.match(markup, /<a [^>]*class="btn btn-primary"[^>]*href="\/documents\/new"[^>]*>New document<\/a>|<a [^>]*href="\/documents\/new"[^>]*class="btn btn-primary"[^>]*>New document<\/a>/);
   });
 
   it("renders the empty state for an empty registry", async () => {

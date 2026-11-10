@@ -16,7 +16,7 @@ export async function renderSettingsPage(load: () => Promise<Record<string, stri
     return (
       <div>
         <PageBar title="Owner profile" description={DESCRIPTION} current="profile" />
-        <div className="page-body">
+        <div className="dc-page">
           <Unavailable title="The profile is unavailable" error={error} />
         </div>
       </div>
@@ -26,7 +26,7 @@ export async function renderSettingsPage(load: () => Promise<Record<string, stri
   return (
     <div>
       <PageBar title="Owner profile" description={DESCRIPTION} current="profile" />
-      <div className="page-body">
+      <div className="dc-page">
         <ProfileForm endpoint={ENDPOINTS.saveProfile} initial={{ values, errors: {} }} />
       </div>
     </div>

@@ -37,8 +37,8 @@ describe("templates page", () => {
     );
     assert.match(markup, /<a [^>]*href="\/documents\/templates\/7"[^>]*>Mutual NDA<\/a>/);
     assert.match(markup, /<th[^>]*>Asked per document<\/th>/);
-    assert.match(markup, /<td class="num right">1<\/td>/);
-    assert.match(markup, /<td class="num right">0<\/td>/);
+    assert.match(markup, /<td class="tabular-nums right">1<\/td>/);
+    assert.match(markup, /<td class="tabular-nums right">0<\/td>/);
     assert.match(markup, /Contract/);
     assert.match(markup, /2026-10-02 09:30/);
     assert.match(markup, /<a [^>]*aria-current="page"[^>]*>Templates<\/a>/);
@@ -100,7 +100,7 @@ describe("template edit page", () => {
     assert.match(markup, /Save changes/);
     assert.match(markup, /Filled from the profile \(1\)/);
     assert.match(markup, /Asked for each document \(1\)/);
-    assert.match(markup, /<li class="chip">A_NOMBRE<\/li>/);
+    assert.match(markup, /<li class="dc-chip">A_NOMBRE<\/li>/);
     assert.match(markup, /not valid markers/);
     assert.match(markup, /Archive template/);
     assert.match(markup, /name="id" value="7"/);

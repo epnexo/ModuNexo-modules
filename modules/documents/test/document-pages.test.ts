@@ -273,7 +273,7 @@ describe("document page", () => {
     assert.match(markup, /<h1>NDA-2026-001<\/h1>/);
     for (const text of ["Mutual NDA — Beta &lt;Ltd&gt;", "Beta &lt;Ltd&gt;", "Mutual NDA", "2026-10-09 12:34", "9 de octubre", "Acme", "B_DATOS"]) assert.ok(markup.includes(text), text);
     assert.match(markup, /<span class="badge">Generated<\/span>/);
-    assert.match(markup, /<dt>Pages<\/dt><dd class="num">3<\/dd>/);
+    assert.match(markup, /<dt>Pages<\/dt><dd class="tabular-nums">3<\/dd>/);
     assert.match(markup, /<a [^>]*aria-current="page"[^>]*>Documents<\/a>/);
   });
 

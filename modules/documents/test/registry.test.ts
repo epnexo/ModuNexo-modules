@@ -57,10 +57,10 @@ describe("statusBadge", () => {
       [
         ["draft", "badge"],
         ["generated", "badge"],
-        ["sent", "badge warn"],
-        ["completed", "badge ok"],
-        ["declined", "badge error"],
-        ["expired", "badge error"],
+        ["sent", "badge badge-warning"],
+        ["completed", "badge badge-success"],
+        ["declined", "badge badge-danger"],
+        ["expired", "badge badge-danger"],
       ],
     );
   });

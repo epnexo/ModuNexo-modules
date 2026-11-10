@@ -2,6 +2,7 @@ import { getDb } from "@modunexo/sdk";
 import type { Metadata } from "next";
 import { loadNewDocumentData } from "./loaders.ts";
 import { renderNewDocumentPage } from "./new-document-page.tsx";
+import "./documents.css";
 
 export const metadata: Metadata = { title: "New document" };
 

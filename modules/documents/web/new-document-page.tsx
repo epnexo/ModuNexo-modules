@@ -24,14 +24,14 @@ const KIND_LABELS: Record<string, string> = { nda: "NDA", contract: "Contract", 
 function Picker({ templates }: { templates: Template[] }) {
   if (templates.length === 0) {
     return (
-      <p className="muted" style={{ margin: 0 }}>
+      <p className="text-muted" style={{ margin: 0 }}>
         There are no templates to create a document from. <Link href="/documents/templates/new">Create a template</Link> first.
       </p>
     );
   }
   return (
-    <div className="table-wrap">
-      <table>
+    <div className="table-scroll">
+      <table className="data-table">
         <thead>
           <tr>
             <th>Template</th>
@@ -46,7 +46,7 @@ function Picker({ templates }: { templates: Template[] }) {
                 <Link href={`/documents/new?template=${template.id}`}>{template.name}</Link>
               </td>
               <td>{KIND_LABELS[template.kind] ?? template.kind}</td>
-              <td className="num">{template.refPrefix}-YYYY-NNN</td>
+              <td className="tabular-nums">{template.refPrefix}-YYYY-NNN</td>
             </tr>
           ))}
         </tbody>
@@ -80,7 +80,7 @@ export async function renderNewDocumentPage({
     return (
       <div>
         <PageBar title="New document" current="documents" />
-        <div className="page-body">
+        <div className="dc-page">
           <Unavailable title="Templates are unavailable" error={error} />
         </div>
       </div>
@@ -91,7 +91,7 @@ export async function renderNewDocumentPage({
     return (
       <div>
         <PageBar title="New document" description="Choose the template the document is made from." current="documents" />
-        <div className="page-body">
+        <div className="dc-page">
           <Portlet title="Templates">
             <Picker templates={data.templates} />
           </Portlet>
@@ -106,7 +106,7 @@ export async function renderNewDocumentPage({
     return (
       <div>
         <PageBar title="New document" current="documents" />
-        <div className="page-body">
+        <div className="dc-page">
           <Notice title="This template is archived">
             Documents cannot be made from it. <Link href="/documents/new">Choose another template</Link>
           </Notice>
@@ -119,7 +119,7 @@ export async function renderNewDocumentPage({
   return (
     <div>
       <PageBar title="New document" description={`${template.name}. Numbered ${template.refPrefix}-YYYY-NNN when created.`} current="documents" />
-      <div className="page-body">
+      <div className="dc-page">
         <Portlet title={template.name}>
           <DocumentForm endpoint={ENDPOINTS.createDocument} initial={{ values: {}, errors: {} }} templateId={template.id} fields={fields} profileKeys={Object.keys(data.profile)} />
         </Portlet>

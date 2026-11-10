@@ -6,33 +6,31 @@ import { documentKpis, formatCreated, statusBadge } from "./registry.ts";
 
 export function Notice({ title, children, tone = "warn" }: { title: string; children?: ReactNode; tone?: "warn" | "error" | "ok" }) {
   return (
-    <div className={`notice ${tone === "warn" ? "" : tone}`} role={tone === "error" ? "alert" : "status"}>
+    <div className={tone === "error" ? "notice notice-error" : tone === "ok" ? "notice notice-success" : "notice"} role={tone === "error" ? "alert" : "status"}>
       <strong>{title}</strong>
       {children}
     </div>
   );
 }
 
-/** The shell's portlet pattern: a header band holding the heading, a body holding the content. */
+/** A titled box of the page: the platform's card with a heading above its content. */
 export function Portlet({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="portlet" aria-label={title}>
-      <header className="portlet-head">
-        <h2>{title}</h2>
-      </header>
-      <div className="portlet-body">{children}</div>
+    <section className="card flex flex-col gap-3" aria-label={title}>
+      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+      <div>{children}</div>
     </section>
   );
 }
 
 function Kpis({ rows }: { rows: DocumentRow[] }) {
   return (
-    <dl className="kpis" aria-label="Headline numbers">
-      {documentKpis(rows).map((card, i) => (
-        <div key={card.label} className={`kpi kpi-${i + 1}`}>
-          <dt>{card.label}</dt>
-          <dd className="kpi-value num">{card.value}</dd>
-          <dd className="kpi-sub">{card.sub}</dd>
+    <dl className="stats" aria-label="Headline numbers">
+      {documentKpis(rows).map((card) => (
+        <div key={card.label} className="stat">
+          <dt className="stat-label">{card.label}</dt>
+          <dd className="stat-value tabular-nums">{card.value}</dd>
+          <dd className="stat-sub">{card.sub}</dd>
         </div>
       ))}
     </dl>
@@ -41,8 +39,8 @@ function Kpis({ rows }: { rows: DocumentRow[] }) {
 
 function DocumentsTable({ rows }: { rows: DocumentRow[] }) {
   return (
-    <div className="table-wrap">
-      <table>
+    <div className="table-scroll">
+      <table className="data-table">
         <thead>
           <tr>
             <th>Reference</th>
@@ -59,7 +57,7 @@ function DocumentsTable({ rows }: { rows: DocumentRow[] }) {
             const badge = statusBadge(row.status);
             return (
               <tr key={row.ref}>
-                <td className="num">
+                <td className="tabular-nums">
                   <Link href={`/documents/${row.id}`}>{row.ref}</Link>
                 </td>
                 <td>{row.title}</td>
@@ -68,7 +66,7 @@ function DocumentsTable({ rows }: { rows: DocumentRow[] }) {
                 <td>
                   <span className={badge.className}>{badge.label}</span>
                 </td>
-                <td className="num" style={{ whiteSpace: "nowrap" }}>
+                <td className="tabular-nums" style={{ whiteSpace: "nowrap" }}>
                   {formatCreated(row.createdAt)}
                 </td>
                 <td>
@@ -94,7 +92,7 @@ export function RegistryBody({ rows }: { rows: DocumentRow[] }) {
       <Kpis rows={rows} />
       <Portlet title="Documents">
         {rows.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>
+          <p className="text-muted" style={{ margin: 0 }}>
             No documents yet. <Link href="/documents/new">Create the first one</Link>.
           </p>
         ) : (
@@ -107,13 +105,13 @@ export function RegistryBody({ rows }: { rows: DocumentRow[] }) {
 
 function ChipList({ names }: { names: string[] }) {
   return names.length === 0 ? (
-    <p className="muted" style={{ margin: 0 }}>
+    <p className="text-muted" style={{ margin: 0 }}>
       None.
     </p>
   ) : (
-    <ul className="chips">
+    <ul className="dc-chips">
       {names.map((name) => (
-        <li key={name} className="chip">
+        <li key={name} className="dc-chip">
           {name}
         </li>
       ))}
@@ -125,12 +123,12 @@ function ChipList({ names }: { names: string[] }) {
 export function MarkerPanel({ groups, malformed }: { groups: MarkerGroups; malformed: string[] }) {
   const none = groups.fromProfile.length === 0 && groups.perDocument.length === 0;
   return (
-    <div style={{ display: "grid", gap: "var(--portlet-pad)" }}>
-      <p className="portlet-note" style={{ margin: 0 }}>
+    <div style={{ display: "grid", gap: "var(--card-gap)" }}>
+      <p className="mb-3 text-sm text-muted" style={{ margin: 0 }}>
         Based on the saved body. A marker is written {"{{NAME}}"}, in capitals, digits and underscores. {"{{REF}}"} is filled by the platform with the document number.
       </p>
       {none ? (
-        <p className="muted" style={{ margin: 0 }}>
+        <p className="text-muted" style={{ margin: 0 }}>
           No markers in the saved body.
         </p>
       ) : (

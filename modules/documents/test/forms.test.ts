@@ -92,7 +92,7 @@ describe("TemplateForm", () => {
   });
 
   it("shows the saved state", () => {
-    assert.match(renderTemplate(templateState({ saved: true }), "edit"), /class="notice ok"[^>]*>\s*<strong>Template saved\./);
+    assert.match(renderTemplate(templateState({ saved: true }), "edit"), /class="notice notice-success"[^>]*>\s*<strong>Template saved\./);
   });
 
   it("carries the checked id in edit mode only, and names the submit button by mode", () => {
@@ -117,13 +117,13 @@ describe("ProfileForm", () => {
       assert.match(markup, new RegExp(`id="f-${field.key}"`), field.key);
     }
     assert.deepEqual(danglingReferences(markup), []);
-    for (const title of ["Company", "Representative", "Branding", "Default terms"]) assert.match(markup, new RegExp(`<h2>${title}</h2>`));
+    for (const title of ["Company", "Representative", "Branding", "Default terms"]) assert.match(markup, new RegExp(`<h2 class="text-lg font-semibold tracking-tight">${title}</h2>`));
   });
 
   it("marks the required fields and offers page sizes", () => {
     const markup = renderProfile(profileState());
     assert.match(markup, /<input[^>]*id="f-A_NOMBRE"[^>]*aria-required="true"|<input[^>]*aria-required="true"[^>]*id="f-A_NOMBRE"/);
-    assert.match(markup, /Company name<span class="required"> \(required\)<\/span>/);
+    assert.match(markup, /Company name<span class="ml-1 text-danger"> \(required\)<\/span>/);
     assert.match(markup, /<select[^>]*id="f-PAGINA"/);
     assert.match(markup, /<option value="A4"/);
     assert.match(markup, /<option value="letter"/);
@@ -138,7 +138,7 @@ describe("ProfileForm", () => {
     assert.match(markup, /value="Acme &amp; Co"/);
     assert.match(markup, /<p id="f-COLOR-error" class="field-error">Use a six-digit hex color starting with #\.<\/p>/);
     assert.deepEqual(danglingReferences(markup), []);
-    assert.match(renderProfile(profileState({ saved: true })), /class="notice ok"[^>]*>\s*<strong>Profile saved\./);
+    assert.match(renderProfile(profileState({ saved: true })), /class="notice notice-success"[^>]*>\s*<strong>Profile saved\./);
   });
 });
 
@@ -162,7 +162,7 @@ describe("MarkerPanel", () => {
     assert.match(markup, /Filled from the profile \(2\)/);
     assert.match(markup, /Asked for each document \(2\)/);
     assert.ok(markup.indexOf("A_NOMBRE") < markup.indexOf("COLOR") && markup.indexOf("COLOR") < markup.indexOf("B_NOMBRE"));
-    assert.match(markup, /<li class="chip">B_NOMBRE<\/li>/);
+    assert.match(markup, /<li class="dc-chip">B_NOMBRE<\/li>/);
   });
 
   it("says that the platform fills the reference", () => {

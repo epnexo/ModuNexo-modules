@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { renderTemplateEditPage } from "./template-edit-page.tsx";
+import "./documents.css";
 
 export const metadata: Metadata = { title: "New template" };
 

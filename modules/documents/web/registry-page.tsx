@@ -17,7 +17,7 @@ export async function renderRegistryPage(load: () => Promise<DocumentRow[]>) {
     return (
       <div>
         <PageBar title="Documents" description={DESCRIPTION} current="documents" />
-        <div className="page-body">
+        <div className="dc-page">
           <Unavailable title="Documents are unavailable" error={error} />
         </div>
       </div>
@@ -31,12 +31,12 @@ export async function renderRegistryPage(load: () => Promise<DocumentRow[]>) {
         description={DESCRIPTION}
         current="documents"
         actions={
-          <Link className="btn primary" href="/documents/new">
+          <Link className="btn btn-primary" href="/documents/new">
             New document
           </Link>
         }
       />
-      <div className="page-body">
+      <div className="dc-page">
         <RegistryBody rows={rows} />
       </div>
     </div>

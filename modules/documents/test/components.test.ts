@@ -42,7 +42,7 @@ describe("RegistryBody", () => {
 
   it("shows the KPI row and a short sentence instead of a table when there are no documents", () => {
     const html = render(RegistryBody, { rows: [] });
-    assert.match(html, /class="kpis"/);
+    assert.match(html, /class="stats"/);
     assert.match(html, /No documents yet\./);
     assert.doesNotMatch(html, /<table/);
   });
@@ -51,8 +51,8 @@ describe("RegistryBody", () => {
     const html = render(RegistryBody, { rows });
     assert.match(html, /<table/);
     assert.ok(html.indexOf("NDA-2026-002") < html.indexOf("CON-2026-001"));
-    assert.match(html, /<span class="badge warn">Sent<\/span>/);
-    assert.match(html, /<span class="badge ok">Completed<\/span>/);
+    assert.match(html, /<span class="badge badge-warning">Sent<\/span>/);
+    assert.match(html, /<span class="badge badge-success">Completed<\/span>/);
     assert.match(html, /2026-10-02 09:30/);
     assert.doesNotMatch(html, /No documents yet/);
   });
@@ -86,7 +86,7 @@ describe("RegistryBody: previews", () => {
 describe("Notice", () => {
   it("renders the error tone as an alert", () => {
     const html = render(Notice, { tone: "error", title: "Documents are unavailable", children: "The database is unreachable." });
-    assert.match(html, /class="notice error"/);
+    assert.match(html, /class="notice notice-error"/);
     assert.match(html, /role="alert"/);
     assert.match(html, /<strong>Documents are unavailable<\/strong>/);
   });
