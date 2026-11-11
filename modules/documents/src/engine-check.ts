@@ -8,10 +8,10 @@ const TEST_HTML = "<!doctype html><html><body><p>PDF engine connection test.</p>
 
 export type EngineCheck = { ok: true; pages: number } | { ok: false; reason: RenderFailure };
 
-/** What the settings page shows after the test. Never carries text from the engine, only fixed messages. */
-export interface EngineCheckState {
-  tone?: "ok" | "error";
-  message?: string;
+/** What the check route answers, the platform's `{ ok, message }` contract. Never carries text from the engine, only fixed messages. */
+export interface EngineCheckAnswer {
+  ok: boolean;
+  message: string;
 }
 
 export interface EngineCheckDeps {
@@ -35,8 +35,8 @@ export async function checkEngine(deps: EngineCheckDeps): Promise<EngineCheck> {
   }
 }
 
-/** The message for the page: the same wording the template preview uses for a failure. */
-export function describeEngineCheck(result: EngineCheck): Required<EngineCheckState> {
-  if (result.ok) return { tone: "ok", message: "Connected. The PDF engine accepted the token and rendered a test page." };
-  return { tone: "error", message: describeRenderFailure(result.reason) };
+/** The answer for the Settings screen: the same wording the template preview uses for a failure. */
+export function describeEngineCheck(result: EngineCheck): EngineCheckAnswer {
+  if (result.ok) return { ok: true, message: "Connected. The PDF engine accepted the token and rendered a test page." };
+  return { ok: false, message: describeRenderFailure(result.reason) };
 }

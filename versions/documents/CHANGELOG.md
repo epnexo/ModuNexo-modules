@@ -1,5 +1,11 @@
 # documents
 
+## 0.5.5 - 2026-11-11
+
+- The PDF engine test moves to the platform's Settings screen, where it belongs to the administrator: it is now a connection check of the manifest (`checks`), a "Test connection" button under the module's settings (Settings, Modules tab). It leaves the Profile page. Needs a platform with SDK 0.1.3 or later.
+- The route behind it, `POST /documents/settings/test-engine`, answers the platform's check contract `{ ok, message }`.
+- No migration.
+
 ## 0.5.4 - 2026-11-11
 
 - Test connection: the Profile page has a PDF engine panel whose button renders a one-line test page with the engine address and token saved in the module's settings, and says whether the engine answered, refused the token or could not be reached (the same messages as the template preview). It needs `documents.write`; nothing is stored.

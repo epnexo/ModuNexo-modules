@@ -17,6 +17,17 @@ describe("documents manifest", () => {
     for (const page of documents.pages ?? []) assert.ok(page.permission, `${page.path} has no permission`);
   });
 
+  it("offers the PDF engine test as a connection check on the platform's Settings screen", () => {
+    assert.deepEqual(
+      (documents.checks ?? []).map((check) => [check.key, check.path]),
+      [["engine", "/documents/settings/test-engine"]],
+    );
+    const route = documents.pages?.find((page) => page.path === "/documents/settings/test-engine");
+    assert.equal(route?.kind, "route");
+    assert.deepEqual(route?.methods, ["POST"]);
+    assert.equal(route?.permission, "documents.write");
+  });
+
   it("points every page and route at a file that exists, and every page exports its metadata", () => {
     for (const page of documents.pages ?? []) {
       const file = join(moduleDir, page.entry);

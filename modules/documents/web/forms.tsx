@@ -14,7 +14,6 @@ import type { ArchiveFormState, ClearSendFormState, DocumentFormState, ProfileFo
 import { TEMPLATE_KINDS } from "./queries.ts";
 
 import { postAction } from "./post-action.ts";
-import type { EngineCheckState } from "../src/engine-check.ts";
 
 /** The route a form posts to. The page passes the path; the permission of the route is checked by the platform. */
 const useRoute = <S extends object>(endpoint: string) => useMemo(() => postAction<S>(endpoint), [endpoint]);
@@ -586,25 +585,5 @@ export function ClearSendForm({ endpoint, initial, documentId }: { endpoint: str
         </button>
       </div>
     </form>
-  );
-}
-
-/** Tests the PDF engine with the address and token saved in the module's settings, and says what happened. */
-export function EngineCheckPanel({ endpoint }: { endpoint: string }) {
-  const [state, formAction, pending] = useActionState(useRoute<EngineCheckState>(endpoint), {});
-  return (
-    <Portlet title="PDF engine">
-      <form action={formAction} className="form" aria-label="Test the PDF engine">
-        <p className="mb-3 text-sm text-muted">
-          Renders a one-line test page with the engine address and token saved in this module's settings, to show whether the engine answers and accepts the token.
-        </p>
-        {state.message ? <Notice tone={state.tone === "ok" ? "ok" : "error"} title={state.message} /> : null}
-        <div className="form-actions">
-          <button type="submit" className="btn" disabled={pending}>
-            {pending ? "Testing…" : "Test connection"}
-          </button>
-        </div>
-      </form>
-    </Portlet>
   );
 }

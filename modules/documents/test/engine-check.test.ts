@@ -58,16 +58,16 @@ describe("checkEngine", () => {
 
 describe("describeEngineCheck", () => {
   it("says it is connected when the page rendered", () => {
-    const state = describeEngineCheck({ ok: true, pages: 1 });
-    assert.equal(state.tone, "ok");
-    assert.match(state.message, /^Connected\./);
+    const answer = describeEngineCheck({ ok: true, pages: 1 });
+    assert.equal(answer.ok, true);
+    assert.match(answer.message, /^Connected\./);
   });
 
   it("uses the same wording as the template preview for every failure, and names the setting to fix", () => {
     for (const reason of ["not-configured", "engine-unreachable", "engine-unauthorized", "timeout", "weasyprint-missing"] as const) {
-      const state = describeEngineCheck({ ok: false, reason });
-      assert.equal(state.tone, "error");
-      assert.equal(state.message, describeRenderFailure(reason));
+      const answer = describeEngineCheck({ ok: false, reason });
+      assert.equal(answer.ok, false);
+      assert.equal(answer.message, describeRenderFailure(reason));
     }
     assert.match(describeEngineCheck({ ok: false, reason: "engine-unauthorized" }).message, /token/);
     assert.match(describeEngineCheck({ ok: false, reason: "engine-unreachable" }).message, /address/);
@@ -75,8 +75,8 @@ describe("describeEngineCheck", () => {
 });
 
 describe("runEngineCheck", () => {
-  it("answers with the state the page shows", async () => {
-    assert.equal((await runEngineCheck(answering(1))).tone, "ok");
-    assert.deepEqual(await runEngineCheck(failing("engine-unauthorized")), { tone: "error", message: describeRenderFailure("engine-unauthorized") });
+  it("answers with the platform's check contract, { ok, message }", async () => {
+    assert.equal((await runEngineCheck(answering(1))).ok, true);
+    assert.deepEqual(await runEngineCheck(failing("engine-unauthorized")), { ok: false, message: describeRenderFailure("engine-unauthorized") });
   });
 });

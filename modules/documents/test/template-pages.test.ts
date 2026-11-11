@@ -177,11 +177,9 @@ describe("profile page", () => {
     assert.match(markup, /<a [^>]*aria-current="page"[^>]*>Profile<\/a>/);
   });
 
-  it("offers to test the PDF engine, posting to its own route, and shows no result before it is used", async () => {
+  it("no longer carries the PDF engine test: that is a connection check on the platform's Settings screen", async () => {
     const markup = html(await renderSettingsPage(async () => ({})));
-    assert.match(markup, /aria-label="Test the PDF engine"/);
-    assert.match(markup, /Test connection/);
-    assert.doesNotMatch(markup, /Connected\.|class="notice/);
+    assert.doesNotMatch(markup, /Test connection|Test the PDF engine/);
   });
 
   it("renders a safe notice when the query throws", async (t) => {

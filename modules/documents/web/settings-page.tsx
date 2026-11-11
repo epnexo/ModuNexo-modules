@@ -1,5 +1,5 @@
 import { ENDPOINTS } from "./endpoints.ts";
-import { EngineCheckPanel, ProfileForm } from "./forms.tsx";
+import { ProfileForm } from "./forms.tsx";
 import { logFailure } from "./log.ts";
 import { PageBar } from "./nav.tsx";
 import { Unavailable } from "./page-state.tsx";
@@ -28,7 +28,6 @@ export async function renderSettingsPage(load: () => Promise<Record<string, stri
       <PageBar title="Owner profile" description={DESCRIPTION} current="profile" />
       <div className="dc-page">
         <ProfileForm endpoint={ENDPOINTS.saveProfile} initial={{ values, errors: {} }} />
-        <EngineCheckPanel endpoint={ENDPOINTS.testEngine} />
       </div>
     </div>
   );
