@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "documents",
-  version: "0.5.3", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.5.4", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Documents",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -12,8 +12,8 @@ export default defineModule({
   settings: [
     { key: "docuseal.url", label: "DocuSeal address", type: "string", description: "The address of your DocuSeal server, for example http://127.0.0.1:3001. Leave empty to keep signing switched off." },
     { key: "docuseal.token", label: "DocuSeal API token", type: "secret", description: "The API token of your DocuSeal account." },
-    { key: "engine.url", label: "PDF engine address", type: "string", description: "The address of the PDF engine service, for example http://documents-engine:8080. When set, it is used instead of the Python setting." },
-    { key: "engine.token", label: "PDF engine token", type: "secret", description: "The token the PDF engine service was started with (ENGINE_TOKEN)." },
+    { key: "engine.url", label: "PDF engine address", type: "string", description: "The address of the PDF engine service, for example http://documents-engine:8080. When set, it is used instead of the Python setting. Test it in Documents, Profile, PDF engine." },
+    { key: "engine.token", label: "PDF engine token", type: "secret", description: "The token the PDF engine service was started with (ENGINE_TOKEN): the value of DOCUMENTS_ENGINE_TOKEN in the stack." },
     { key: "engine.python", label: "Python for the PDF engine", type: "string", description: "Path of a Python interpreter that has WeasyPrint installed, for example /usr/bin/python3. Used only when no engine address is set." },
     { key: "engine.assets_dir", label: "Assets folder", type: "string", description: "Folder with the fonts and images that templates may use. Optional." },
     { key: "engine.timeout_ms", label: "PDF time limit (ms)", type: "number", description: "How long one PDF may take to render. Optional." },
@@ -50,6 +50,7 @@ export default defineModule({
     { path: "/documents/templates/import-nda", entry: "./web/template-import-nda.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
     { path: "/documents/templates/archive", entry: "./web/template-archive.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
     { path: "/documents/settings/save", entry: "./web/profile-save.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
+    { path: "/documents/settings/test-engine", entry: "./web/engine-check-route.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
     { path: "/documents/create", entry: "./web/document-create.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
     { path: "/documents/refresh", entry: "./web/refresh.ts", kind: "route", methods: ["POST"], permission: "documents.write" },
     { path: "/documents/send", entry: "./web/send.ts", kind: "route", methods: ["POST"], permission: "documents.send" },

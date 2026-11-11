@@ -1,5 +1,11 @@
 # documents
 
+## 0.5.4 - 2026-11-11
+
+- Test connection: the Profile page has a PDF engine panel whose button renders a one-line test page with the engine address and token saved in the module's settings, and says whether the engine answered, refused the token or could not be reached (the same messages as the template preview). It needs `documents.write`; nothing is stored.
+- The descriptions of the engine address and token settings say where to test them and which value the token is.
+- No migration.
+
 ## 0.5.3 - 2026-11-09
 
 - Import a template bundle (the HTML, a `config.json` and the script) that is not only an NDA: the import form on the templates page is generic.
