@@ -1,0 +1,54 @@
+name: Documents engine image
+
+# Builds the PDF engine of the documents module once per engine tag and publishes it to GitHub Container Registry.
+# The platform's production stack runs that image next to web and worker; it never builds from source. Release with:
+#   git tag documents-engine-v0.1.0 && git push origin documents-engine-v0.1.0
+
+on:
+  push:
+    tags:
+      - "documents-engine-v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: documents-engine-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    # The arm64 build runs under emulation and is several times slower than a native one.
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/modunexo-documents-engine
+          # The tag is documents-engine-vX.Y.Z; the image tag is X.Y.Z.
+          tags: |
+            type=match,pattern=documents-engine-v(\d+\.\d+\.\d+),group=1
+            type=sha
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          # The Dockerfile copies from the module folder: `render/` and `engine/`.
+          context: modules/documents
+          file: modules/documents/engine/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
