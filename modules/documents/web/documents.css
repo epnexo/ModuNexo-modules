@@ -89,3 +89,32 @@
   font-family: var(--font-mono);
   font-size: 0.78rem;
 }
+
+/* A file field: the browser's own button restyled like the platform's secondary button, from the platform's tokens. */
+.dc-file {
+  padding: 0 0.5rem 0 0;
+  line-height: 2.25rem;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.dc-file::file-selector-button {
+  height: 100%;
+  margin: 0 0.75rem 0 0;
+  padding: 0 0.75rem;
+  border: 0;
+  border-right: 1px solid var(--border-strong);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--foreground);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--duration) var(--ease-out);
+}
+.dc-file:hover::file-selector-button {
+  background: var(--panel-hover);
+}
+.dc-file:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

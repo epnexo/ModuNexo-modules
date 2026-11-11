@@ -35,15 +35,15 @@ export function ImportNda() {
         <div className="form-grid">
           <div className="field">
             <label className="field-label" htmlFor="imp-template">Template (.html)</label>
-            <input id="imp-template" className="input" type="file" name="template" accept=".html,text/html" required />
+            <input id="imp-template" className="input dc-file" type="file" name="template" accept=".html,text/html" required />
           </div>
           <div className="field">
             <label className="field-label" htmlFor="imp-config">Config (.json)</label>
-            <input id="imp-config" className="input" type="file" name="config" accept=".json,application/json" required />
+            <input id="imp-config" className="input dc-file" type="file" name="config" accept=".json,application/json" required />
           </div>
           <div className="field">
             <label className="field-label" htmlFor="imp-script">Script (.py)</label>
-            <input id="imp-script" className="input" type="file" name="script" accept=".py,text/x-python" required />
+            <input id="imp-script" className="input dc-file" type="file" name="script" accept=".py,text/x-python" required />
           </div>
         </div>
         <div className="form-actions">

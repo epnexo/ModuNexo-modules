@@ -260,7 +260,7 @@ function LoadFromFile({ form }: { form: React.RefObject<HTMLFormElement | null> 
       <label className="field-label" htmlFor="load-html">
         Load the body from an HTML file
       </label>
-      <input id="load-html" className="input" type="file" accept=".html,.htm,text/html" onChange={(event) => void load(event.target.files?.[0])} />
+      <input id="load-html" className="input dc-file" type="file" accept=".html,.htm,text/html" onChange={(event) => void load(event.target.files?.[0])} />
       <span className="field-help">Works for any document: a contract, a proposal, an NDA. Mark each value to fill with {"{{NAME}}"}.</span>
       {message ? (
         <span className={message.tone === "error" ? "field-error" : "field-help"} role={message.tone === "error" ? "alert" : "status"}>
