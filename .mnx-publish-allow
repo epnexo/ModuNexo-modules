@@ -1,0 +1,2 @@
+"(engine|docuseal)\.token": "[A-Z_]+"
+token: "secret-token"
