@@ -15,15 +15,23 @@ export default defineModule({
   scopes: [{ key: "collectors.write", label: "Send collector telemetry" }],
   settings: [
     { key: "collector_ca", label: "Collector CA certificate", type: "secret", description: "CA certificate trusted by outbound collectors." },
+    { key: "alert_webhook_url", label: "Alert webhook address", type: "string", description: "Where alerts are posted as JSON (for example an n8n webhook). Leave empty to send none." },
+    { key: "alert_webhook_secret", label: "Alert webhook secret", type: "secret", description: "Sent as a bearer token with every alert. Optional." },
   ],
+  events: [{ name: "alert" }],
+  subscriptions: [{ event: "observability.alert", job: "notify" }],
   nav: [{ label: "Observability", href: "/observability", icon: "activity", permission: "observability.read" }],
   dashboard: {
     stats: [{ key: "collectors", label: "Collectors", href: "/observability", permission: "observability.read", sql: "select count(*) from collectors" }],
-    alerts: [{ key: "offline_collectors", label: "Collectors offline", href: "/observability", severity: "warning", permission: "observability.read", sql: "select count(*) from collectors where last_seen_at is null or last_seen_at < now() - interval '10 minutes'" }],
+    alerts: [{ key: "offline_collectors", label: "Collectors offline", href: "/observability", severity: "warning", permission: "observability.read", sql: "select count(*) from collectors where last_seen_at is null or last_seen_at < now() - interval '10 minutes'" },
+      { key: "firing_alerts", label: "Alerts firing", href: "/observability", severity: "warning", permission: "observability.read", sql: "select count(*) from alerts where state = 'firing'" },
+    ],
   },
   jobs: [
     { name: "rollup", entry: "./jobs/rollup.ts", every: "1h" },
     { name: "retention", entry: "./jobs/retention.ts", every: "1d" },
+    { name: "evaluate", entry: "./jobs/evaluate.ts", every: "1m", timeoutSeconds: 50 },
+    { name: "notify", entry: "./jobs/notify.ts", timeoutSeconds: 30, maxAttempts: 5 },
   ],
   pages: [
     { path: "/observability", entry: "./web/observability-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "observability.read" },

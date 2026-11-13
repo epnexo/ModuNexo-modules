@@ -17,4 +17,11 @@ describe("the observability manifest", () => {
       scope: "collectors.write",
     });
   });
+  it("evaluates alerts every minute and delivers its own alert event through a retried job", () => {
+    assert.deepEqual(manifest.events, [{ name: "alert" }]);
+    assert.deepEqual(manifest.subscriptions, [{ event: "observability.alert", job: "notify" }]);
+    assert.equal(manifest.jobs?.find((job) => job.name === "evaluate")?.every, "1m");
+    assert.equal(manifest.jobs?.find((job) => job.name === "notify")?.every, undefined);
+    assert.deepEqual(manifest.settings?.filter((setting) => setting.key.startsWith("alert_webhook")).map((setting) => setting.type), ["string", "secret"]);
+  });
 });
