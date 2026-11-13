@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "observability",
-  version: "0.1.12",
+  version: "0.2.0",
   name: "Observability",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
