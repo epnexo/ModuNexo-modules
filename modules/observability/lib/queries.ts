@@ -128,3 +128,16 @@ export async function loadRules(): Promise<RuleRow[]> {
   );
   return rows.map((row) => ({ id: row.id, name: row.name, kind: row.kind, metric: row.metric, operator: row.operator, threshold: row.threshold, forMinutes: row.for_minutes, severity: row.severity, host: row.host_name, enabled: row.enabled }));
 }
+
+export interface EventRow {
+  occurredAt: Date;
+  level: "warning" | "error";
+  unit: string;
+  message: string;
+}
+
+/** The latest warnings and errors a collector reported about its own host (empty for collectors that send none). */
+export async function loadEvents(collectorId: number, limit = 20): Promise<EventRow[]> {
+  const { rows } = await getDb("observability").query<{ occurred_at: Date; level: "warning" | "error"; unit: string; message: string }>("select occurred_at, level, unit, message from collector_events where collector_id = $1 order by occurred_at desc limit $2", [collectorId, limit]);
+  return rows.map((row) => ({ occurredAt: row.occurred_at, level: row.level, unit: row.unit, message: row.message }));
+}
