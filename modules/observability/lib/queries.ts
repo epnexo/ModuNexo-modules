@@ -48,8 +48,14 @@ export async function loadHost(hostName: string): Promise<HostRow | null> {
   return row === undefined ? null : { id: row.id, hostName: row.host_name, version: row.version, capabilities: row.capabilities };
 }
 
-/** One metric of one host over a range, as time-ordered points (epoch ms) with the average, minimum and maximum of each bucket. */
-export async function loadSeries(collectorId: number, metric: string, range: Range, now = new Date()): Promise<SeriesPoint[]> {
+const SERIES_SCOPES = {
+  host: { id: "collector_id", raw: "samples", hourly: "samples_hourly", daily: "samples_daily" },
+  guest: { id: "guest_id", raw: "guest_samples", hourly: "guest_samples_hourly", daily: "guest_samples_daily" },
+} as const;
+
+/** One metric of one host or guest over a range, as time-ordered points (epoch ms) with the average, minimum and maximum of each bucket. The table names come from the constant map above. */
+async function seriesOf(scope: keyof typeof SERIES_SCOPES, id: number, metric: string, range: Range, now: Date): Promise<SeriesPoint[]> {
+  const tables = SERIES_SCOPES[scope];
   const spec = RANGES[range];
   const since = new Date(now.getTime() - spec.ms);
   const db = getDb("observability");
@@ -57,25 +63,94 @@ export async function loadSeries(collectorId: number, metric: string, range: Ran
     ? spec.bucketSeconds === 0
       ? await db.query<SeriesRow>(
           `select (extract(epoch from collected_at) * 1000)::float8 as t, v as avg, v as min, v as max
-             from (select collected_at, (metrics ->> $2)::float8 as v from samples where collector_id = $1 and collected_at >= $3 and metrics ? $2) raw
+             from (select collected_at, (metrics ->> $2)::float8 as v from ${tables.raw} where ${tables.id} = $1 and collected_at >= $3 and metrics ? $2) raw
             order by collected_at`,
-          [collectorId, metric, since],
+          [id, metric, since],
         )
       : await db.query<SeriesRow>(
           `select (floor(extract(epoch from collected_at) / $4) * $4 * 1000)::float8 as t, avg(v)::float8 as avg, min(v)::float8 as min, max(v)::float8 as max
-             from (select collected_at, (metrics ->> $2)::float8 as v from samples where collector_id = $1 and collected_at >= $3 and metrics ? $2) raw
+             from (select collected_at, (metrics ->> $2)::float8 as v from ${tables.raw} where ${tables.id} = $1 and collected_at >= $3 and metrics ? $2) raw
             group by 1 order by 1`,
-          [collectorId, metric, since, spec.bucketSeconds],
+          [id, metric, since, spec.bucketSeconds],
         )
     : await db.query<SeriesRow>(
         `select (floor(extract(epoch from bucket) / $4) * $4 * 1000)::float8 as t,
                 (sum(avg_value * sample_count) / sum(sample_count))::float8 as avg, min(min_value) as min, max(max_value) as max
-           from ${spec.source === "hourly" ? "samples_hourly" : "samples_daily"}
-          where collector_id = $1 and metric = $2 and bucket >= $3
+           from ${spec.source === "hourly" ? tables.hourly : tables.daily}
+          where ${tables.id} = $1 and metric = $2 and bucket >= $3
           group by 1 order by 1`,
-        [collectorId, metric, since, spec.bucketSeconds],
+        [id, metric, since, spec.bucketSeconds],
       );
   return result.rows;
+}
+
+export const loadSeries = (collectorId: number, metric: string, range: Range, now = new Date()): Promise<SeriesPoint[]> => seriesOf("host", collectorId, metric, range, now);
+export const loadGuestSeries = (guestId: number, metric: string, range: Range, now = new Date()): Promise<SeriesPoint[]> => seriesOf("guest", guestId, metric, range, now);
+
+export type GuestWindow = "7d" | "30d" | "90d";
+const GUEST_WINDOWS: GuestWindow[] = ["7d", "30d", "90d"];
+
+export interface GuestRow {
+  id: number;
+  collectorId: number;
+  hostName: string;
+  vmid: number;
+  name: string;
+  kind: "qemu" | "lxc";
+  node: string;
+  running: boolean;
+  backedUp: boolean | null;
+  firstSeenAt: Date;
+  lastSeenAt: Date;
+  lastUpAt: Date | null;
+  /** Seconds the guest was up in each window, counted from when it was first seen. */
+  upSeconds: Record<GuestWindow, number>;
+  /** Percent of the observed part of each window the guest was up; null before anything was observed. */
+  availability: Record<GuestWindow, number | null>;
+}
+
+type GuestDbRow = { id: number; collector_id: number; host_name: string; vmid: number; name: string; kind: "qemu" | "lxc"; node: string; running: boolean; backed_up: boolean | null; first_seen_at: Date; last_seen_at: Date; last_up_at: Date | null; up_7: number; up_30: number; up_90: number; obs_7: number; obs_30: number; obs_90: number };
+
+/** Seconds of overlap between the guest's sessions and the last N days (clipped to when it was first seen), and the seconds of that window it has been observed. */
+const windowSql = (days: number): string => `
+  coalesce((select sum(greatest(0, extract(epoch from least(coalesce(s.ended_at, $1::timestamptz), $1::timestamptz) - greatest(s.started_at, $1::timestamptz - interval '${days} days', g.first_seen_at))))
+              from guest_sessions s where s.guest_id = g.id), 0)::float8 as up_${days},
+  greatest(0, extract(epoch from $1::timestamptz - greatest($1::timestamptz - interval '${days} days', g.first_seen_at)))::float8 as obs_${days}`;
+
+const GUEST_SELECT = `select g.id, g.collector_id, c.host_name, g.vmid, g.name, g.kind, g.node, g.running, g.backed_up, g.first_seen_at, g.last_seen_at, g.last_up_at,
+  ${windowSql(7)}, ${windowSql(30)}, ${windowSql(90)}
+  from guests g join collectors c on c.id = g.collector_id`;
+
+const toGuest = (row: GuestDbRow): GuestRow => {
+  const up = { "7d": row.up_7, "30d": row.up_30, "90d": row.up_90 };
+  const observed = { "7d": row.obs_7, "30d": row.obs_30, "90d": row.obs_90 };
+  return {
+    id: row.id, collectorId: row.collector_id, hostName: row.host_name, vmid: row.vmid, name: row.name, kind: row.kind, node: row.node, running: row.running, backedUp: row.backed_up,
+    firstSeenAt: row.first_seen_at, lastSeenAt: row.last_seen_at, lastUpAt: row.last_up_at, upSeconds: up,
+    availability: Object.fromEntries(GUEST_WINDOWS.map((w) => [w, observed[w] > 0 ? Math.min(100, (up[w] * 100) / observed[w]) : null])) as Record<GuestWindow, number | null>,
+  };
+};
+
+/** The guests of one collector (running first, then by name) with their time up. */
+export async function loadGuests(collectorId: number, now = new Date()): Promise<GuestRow[]> {
+  const { rows } = await getDb("observability").query<GuestDbRow>(`${GUEST_SELECT} where g.collector_id = $2 order by g.running desc, g.name, g.vmid`, [now, collectorId]);
+  return rows.map(toGuest);
+}
+
+export async function loadGuest(id: number, now = new Date()): Promise<GuestRow | null> {
+  const { rows } = await getDb("observability").query<GuestDbRow>(`${GUEST_SELECT} where g.id = $2`, [now, id]);
+  return rows[0] === undefined ? null : toGuest(rows[0]);
+}
+
+export interface GuestSession {
+  startedAt: Date;
+  endedAt: Date | null;
+}
+
+/** The latest sessions of a guest, newest first; an open one has no end. */
+export async function loadGuestSessions(guestId: number, limit = 20): Promise<GuestSession[]> {
+  const { rows } = await getDb("observability").query<{ started_at: Date; ended_at: Date | null }>("select started_at, ended_at from guest_sessions where guest_id = $1 order by started_at desc limit $2", [guestId, limit]);
+  return rows.map((row) => ({ startedAt: row.started_at, endedAt: row.ended_at }));
 }
 
 export interface AlertRow {

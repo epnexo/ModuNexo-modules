@@ -2,7 +2,7 @@ import { SDK_VERSION, defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "observability",
-  version: "0.2.0",
+  version: "0.3.0",
   name: "Observability",
   platform: `^${SDK_VERSION}`,
   dependsOn: {},
@@ -36,12 +36,14 @@ export default defineModule({
   pages: [
     { path: "/observability", entry: "./web/observability-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "observability.read" },
     { path: "/observability/collector/[host]", entry: "./web/collector-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "observability.read" },
+    { path: "/observability/guest/[id]", entry: "./web/guest-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "observability.read" },
     { path: "/observability/alerts", entry: "./web/alerts-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "observability.read" },
     { path: "/observability/rules", entry: "./web/rules-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "observability.admin" },
     { path: "/observability/rules/save", entry: "./web/rule-save.ts", kind: "route", methods: ["POST"], permission: "observability.admin" },
     { path: "/observability/settings", entry: "./web/settings-page.tsx", kind: "page", dynamic: "force-dynamic", permission: "observability.admin" },
     { path: "/svc/observability/heartbeat", entry: "./web/heartbeat.ts", kind: "route", methods: ["POST"], scope: "collectors.write" },
     { path: "/svc/observability/ingest", entry: "./web/ingest.ts", kind: "route", methods: ["POST"], scope: "collectors.write" },
+    { path: "/svc/observability/inventory", entry: "./web/inventory.ts", kind: "route", methods: ["POST"], scope: "collectors.write" },
     { path: "/svc/observability/events", entry: "./web/events.ts", kind: "route", methods: ["POST"], scope: "collectors.write" },
   ],
 });

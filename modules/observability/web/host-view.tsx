@@ -1,8 +1,9 @@
 import type { SeriesPoint } from "../lib/chart.ts";
 import { ago, formatMetric, formatTime, metricLabel, metricUnit } from "../lib/format.ts";
-import type { AlertRow, EventRow, FleetRow } from "../lib/queries.ts";
+import type { AlertRow, EventRow, FleetRow, GuestRow } from "../lib/queries.ts";
 import { RANGES, type Range } from "../lib/ranges.ts";
 import AlertsTable from "./alerts-table.tsx";
+import GuestsTable from "./guests-table.tsx";
 import { Bar, StatusBadge } from "./shell.tsx";
 import TrendChart from "./trend-chart.tsx";
 
@@ -18,11 +19,13 @@ export interface HostViewProps {
   firing: AlertRow[];
   history: AlertRow[];
   events: EventRow[];
+  /** Guests (VMs and containers) this host reports, when it is a hypervisor. */
+  guests?: GuestRow[];
   /** The instant the window ends, in epoch milliseconds. */
   now: number;
 }
 
-export default function HostView({ host, range, series, firing, history, events, now }: HostViewProps) {
+export default function HostView({ host, range, series, firing, history, events, guests = [], now }: HostViewProps) {
   const spec = RANGES[range];
   const age = host.lastSampleAt === null ? null : Math.max(0, (now - host.lastSampleAt.getTime()) / 60_000);
   const latest = Object.entries(host.metrics).filter(([key]) => key !== "up");
@@ -54,6 +57,12 @@ export default function HostView({ host, range, series, firing, history, events,
           );
         })}
       </section>
+      {guests.length > 0 ? (
+        <section className="obs-section" aria-labelledby="guests-heading">
+          <h2 id="guests-heading">Guests</h2>
+          <GuestsTable guests={guests} now={now} />
+        </section>
+      ) : null}
       <section className="obs-section" aria-labelledby="alerts-heading">
         <h2 id="alerts-heading">Alerts on this host</h2>
         <AlertsTable rows={history} showHost={false} empty="No alert has fired on this host." />

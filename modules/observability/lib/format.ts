@@ -1,6 +1,6 @@
 /** What each metric the collectors send is called, how its value reads, and where it starts to worry. Unknown keys still render. */
 
-export type Unit = "percent" | "celsius" | "bytes" | "seconds" | "number";
+export type Unit = "percent" | "celsius" | "bytes" | "rate" | "seconds" | "number";
 export type Tone = "ok" | "warning" | "danger";
 
 interface MetricInfo {
@@ -25,10 +25,17 @@ export const METRICS: Record<string, MetricInfo> = {
   guestsRunning: { label: "Guests running", unit: "number" },
   guestsNotBackedUp: { label: "Guests without backup", unit: "number", warn: 1 },
   up: { label: "Up", unit: "number" },
+  netInBytesPerSec: { label: "Network in", unit: "rate" },
+  netOutBytesPerSec: { label: "Network out", unit: "rate" },
+  diskReadBytesPerSec: { label: "Disk read", unit: "rate" },
+  diskWriteBytesPerSec: { label: "Disk write", unit: "rate" },
 };
 
 /** The metrics a host page draws a chart for, in this order, when the host reports them. */
 export const CHART_METRICS = ["cpuPercent", "memUsedPercent", "diskUsedPercent", "swapUsedPercent", "load1", "tempCelsius", "guestsRunning", "guestsNotBackedUp"] as const;
+
+/** The metrics a guest page draws a chart for, in this order, when the guest reports them. */
+export const GUEST_CHART_METRICS = ["cpuPercent", "memUsedPercent", "diskUsedPercent", "netInBytesPerSec", "netOutBytesPerSec", "diskReadBytesPerSec", "diskWriteBytesPerSec"] as const;
 
 export const metricLabel = (key: string): string => METRICS[key]?.label ?? key;
 export const metricUnit = (key: string): Unit => METRICS[key]?.unit ?? "number";
@@ -40,6 +47,7 @@ export function formatValue(unit: Unit, value: number): string {
     case "percent": return `${value < 10 ? value.toFixed(1) : Math.round(value)}%`;
     case "celsius": return `${value.toFixed(1)} °C`;
     case "bytes": return `${(value / GIB).toFixed(1)} GiB`;
+    case "rate": return value >= 1024 ** 2 ? `${(value / 1024 ** 2).toFixed(1)} MiB/s` : value >= 1024 ? `${(value / 1024).toFixed(1)} KiB/s` : `${Math.round(value)} B/s`;
     case "seconds": return value >= 86_400 ? `${(value / 86_400).toFixed(1)} days` : `${(value / 3600).toFixed(1)} hours`;
     case "number": return Number.isInteger(value) ? String(value) : value.toFixed(2);
   }
@@ -53,6 +61,14 @@ export function toneOf(key: string, value: number): Tone {
   if (info?.crit !== undefined && value >= info.crit) return "danger";
   if (info?.warn !== undefined && value >= info.warn) return "warning";
   return "ok";
+}
+
+/** A span of seconds as "2d 4h", "3h 5m" or "12m": the two largest units, so it stays short. */
+export function formatDuration(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  if (minutes >= 1440) return `${Math.floor(minutes / 1440)}d ${Math.floor((minutes % 1440) / 60)}h`;
+  if (minutes >= 60) return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  return `${minutes}m`;
 }
 
 /** "just now", "5 min ago", "3 h ago" or "2 d ago" from an age in minutes; "never" for none. */

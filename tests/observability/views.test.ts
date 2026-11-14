@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createElement, type ComponentType } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { AlertRow, FleetRow, RuleRow } from "../../modules/observability/lib/queries.ts";
+import { formatDuration, formatMetric } from "../../modules/observability/lib/format.ts";
+import type { AlertRow, FleetRow, GuestRow, GuestSession, RuleRow } from "../../modules/observability/lib/queries.ts";
 import AlertsView from "../../modules/observability/web/alerts-view.tsx";
 import FleetView from "../../modules/observability/web/fleet-view.tsx";
+import GuestView from "../../modules/observability/web/guest-view.tsx";
 import HostView from "../../modules/observability/web/host-view.tsx";
 import RulesView from "../../modules/observability/web/rules-view.tsx";
 
@@ -74,5 +76,67 @@ describe("the alerts and rules views", () => {
     assert.match(html, /name="id" value="2"/);
     assert.match(html, /Save High CPU/);
     assert.match(html, /Add rule/);
+  });
+});
+
+const guest = (fields: Partial<GuestRow> = {}): GuestRow => ({
+  id: 7, collectorId: 1, hostName: "proxmox", vmid: 101, name: "opnsense", kind: "qemu", node: "pve", running: true, backedUp: true,
+  firstSeenAt: new Date(now - 30 * 86_400_000), lastSeenAt: new Date(now - 60_000), lastUpAt: new Date(now - 60_000),
+  upSeconds: { "7d": 6 * 86_400, "30d": 25 * 86_400, "90d": 25 * 86_400 }, availability: { "7d": 85.7, "30d": 83.3, "90d": 83.3 }, ...fields,
+});
+
+describe("the guests on a host page", () => {
+  const props = { host: host({ hostName: "proxmox" }), range: "24h" as const, firing: [], history: [], events: [], series: [], now };
+
+  it("lists each guest with its state, availability and a link to its page", () => {
+    const html = render(HostView, { ...props, guests: [guest(), guest({ id: 8, vmid: 106, name: "adguard", kind: "lxc", running: false, backedUp: false, lastUpAt: new Date(now - 3 * 3_600_000) })] });
+    assert.match(html, /href="\/observability\/guest\/7"[^>]*>opnsense/);
+    assert.match(html, /href="\/observability\/guest\/8"[^>]*>adguard/);
+    assert.match(html, /badge badge-success">Running/);
+    assert.match(html, /class="badge">Stopped/);
+    assert.match(html, /83\.3%/);
+    assert.match(html, /Not backed up/);
+  });
+
+  it("shows no guest section when the host has none", () => {
+    assert.doesNotMatch(render(HostView, { ...props, guests: [] }), /Guests/);
+  });
+});
+
+describe("the guest view", () => {
+  const sessions: GuestSession[] = [{ startedAt: new Date(now - 2 * 86_400_000), endedAt: null }, { startedAt: new Date(now - 5 * 86_400_000), endedAt: new Date(now - 4 * 86_400_000) }];
+  const series = [{ metric: "cpuPercent", points: [{ t: now - 600_000, avg: 10, min: 8, max: 12 }, { t: now - 300_000, avg: 14, min: 12, max: 16 }] }];
+  const props = { guest: guest(), range: "24h" as const, series, sessions, now };
+
+  it("shows who the guest is, how long it has been up, its sessions and its trends", () => {
+    const html = render(GuestView, props);
+    assert.match(html, /<h1>opnsense<\/h1>/);
+    assert.match(html, /VM · 101/);
+    assert.match(html, /href="\/observability\/collector\/proxmox"/);
+    assert.match(html, /Time up/);
+    assert.match(html, /6d 0h/);
+    assert.match(html, /85\.7%/);
+    assert.match(html, /Still running/);
+    assert.match(html, /aria-label="CPU, latest 14%/);
+    assert.match(html, /<a href="\?range=7d">7 days<\/a>/);
+  });
+
+  it("says when a stopped guest was last up", () => {
+    const html = render(GuestView, { ...props, guest: guest({ running: false, lastUpAt: new Date(now - 3 * 3_600_000) }) });
+    assert.match(html, /Last up/);
+    assert.match(html, /3 h ago/);
+    assert.match(html, /class="badge">Stopped/);
+  });
+});
+
+describe("guest formatting", () => {
+  it("writes durations compactly and rates in binary units", () => {
+    assert.equal(formatDuration(0), "0m");
+    assert.equal(formatDuration(59 * 60), "59m");
+    assert.equal(formatDuration(3 * 3600 + 5 * 60), "3h 5m");
+    assert.equal(formatDuration(2 * 86_400 + 4 * 3600), "2d 4h");
+    assert.equal(formatMetric("netInBytesPerSec", 2048), "2.0 KiB/s");
+    assert.equal(formatMetric("netOutBytesPerSec", 5 * 1024 ** 2), "5.0 MiB/s");
+    assert.equal(formatMetric("netInBytesPerSec", 12), "12 B/s");
   });
 });
