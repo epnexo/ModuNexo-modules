@@ -3,6 +3,7 @@ import type { SeriesPoint } from "./chart.ts";
 import type { RuleKind } from "./rules.ts";
 import type { ContainerInput, ContainerState, Platform } from "./containers.ts";
 import { RANGES, type Range } from "./ranges.ts";
+import { buildTrends, SPIKE_METRICS, WEEK_METRICS, type DayPoint, type HostTrends, type HourPoint } from "./trends.ts";
 
 type SeriesRow = { t: number; avg: number; min: number; max: number };
 
@@ -95,6 +96,32 @@ async function seriesOf(scope: keyof typeof SERIES_SCOPES, id: number, metric: s
 
 export const loadSeries = (collectorId: number, metric: string, range: Range, now = new Date()): Promise<SeriesPoint[]> => seriesOf("host", collectorId, metric, range, now);
 export const loadGuestSeries = (guestId: number, metric: string, range: Range, now = new Date()): Promise<SeriesPoint[]> => seriesOf("guest", guestId, metric, range, now);
+
+/** What a host's daily and hourly rollups say about this week against the last, its disk and the hours that stood out. */
+export async function loadTrends(collectorId: number, now = new Date()): Promise<HostTrends> {
+  const db = getDb("observability");
+  const today = Math.floor(now.getTime() / 86_400_000) * 86_400_000;
+  const daily = await db.query<{ metric: string; t: number; avg: number }>(
+    `select metric, (extract(epoch from bucket) * 1000)::float8 as t, avg_value as avg
+       from samples_daily where collector_id = $1 and metric = any($2) and bucket >= $3 and bucket < $4 order by bucket`,
+    [collectorId, [...WEEK_METRICS], new Date(today - 14 * 86_400_000), new Date(today)],
+  );
+  const hourly = await db.query<{ metric: string; t: number; avg: number; max: number }>(
+    `select metric, (extract(epoch from bucket) * 1000)::float8 as t, avg_value as avg, max_value as max
+       from samples_hourly where collector_id = $1 and metric = any($2) and bucket >= $3 and bucket <= $4 order by bucket`,
+    [collectorId, Object.keys(SPIKE_METRICS), new Date(now.getTime() - 48 * 3_600_000), now],
+  );
+  const byMetric = <T extends { metric: string }, U>(rows: T[], pick: (row: T) => U): Record<string, U[]> => {
+    const grouped: Record<string, U[]> = {};
+    for (const row of rows) (grouped[row.metric] ??= []).push(pick(row));
+    return grouped;
+  };
+  return buildTrends(
+    byMetric<(typeof daily.rows)[number], DayPoint>(daily.rows, (row) => ({ t: row.t, avg: row.avg })),
+    byMetric<(typeof hourly.rows)[number], HourPoint>(hourly.rows, (row) => ({ t: row.t, avg: row.avg, max: row.max })),
+    now.getTime(),
+  );
+}
 
 export type GuestWindow = "7d" | "30d" | "90d";
 const GUEST_WINDOWS: GuestWindow[] = ["7d", "30d", "90d"];

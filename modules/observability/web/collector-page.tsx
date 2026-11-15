@@ -1,5 +1,5 @@
 import { CHART_METRICS } from "../lib/format.ts";
-import { loadAlerts, loadEvents, loadFleet, loadGuests, loadSeries } from "../lib/queries.ts";
+import { loadAlerts, loadEvents, loadFleet, loadGuests, loadSeries, loadTrends } from "../lib/queries.ts";
 import { parseRange } from "../lib/ranges.ts";
 import HostView from "./host-view.tsx";
 import "./observability.css";
@@ -17,11 +17,12 @@ export default async function CollectorPage({ params, searchParams }: { params: 
   }
   const now = Date.now();
   const metrics = CHART_METRICS.filter((metric) => host.metrics[metric] !== undefined);
-  const [series, alerts, events, guests] = await Promise.all([
+  const [series, alerts, events, guests, trends] = await Promise.all([
     Promise.all(metrics.map(async (metric) => ({ metric, points: await loadSeries(host.id, metric, range, new Date(now)) }))),
     loadAlerts({ hostName: host.hostName, historyLimit: 20 }),
     loadEvents(host.id),
     loadGuests(host.id, new Date(now)),
+    loadTrends(host.id, new Date(now)),
   ]);
-  return <div className="obs"><HostView host={host} range={range} series={series} firing={alerts.firing} history={alerts.history} events={events} guests={guests} now={now} /></div>;
+  return <div className="obs"><HostView host={host} range={range} series={series} firing={alerts.firing} history={alerts.history} events={events} guests={guests} trends={trends} now={now} /></div>;
 }

@@ -8,6 +8,8 @@ import LiveRefresh from "./live-refresh.tsx";
 import { Bar, StatusBadge } from "./shell.tsx";
 import ChartStats from "./chart-stats.tsx";
 import TrendChart from "./trend-chart.tsx";
+import TrendsPanel from "./trends-panel.tsx";
+import type { HostTrends } from "../lib/trends.ts";
 
 export interface HostSeries {
   metric: string;
@@ -23,11 +25,13 @@ export interface HostViewProps {
   events: EventRow[];
   /** Guests (VMs and containers) this host reports, when it is a hypervisor. */
   guests?: GuestRow[];
+  /** Week over week, the disk forecast and the spikes; left out when the host has none to show. */
+  trends?: HostTrends;
   /** The instant the window ends, in epoch milliseconds. */
   now: number;
 }
 
-export default function HostView({ host, range, series, firing, history, events, guests = [], now }: HostViewProps) {
+export default function HostView({ host, range, series, firing, history, events, guests = [], trends, now }: HostViewProps) {
   const spec = RANGES[range];
   const age = host.lastSampleAt === null ? null : Math.max(0, (now - host.lastSampleAt.getTime()) / 60_000);
   const latest = Object.entries(host.metrics).filter(([key]) => key !== "up");
@@ -61,6 +65,7 @@ export default function HostView({ host, range, series, firing, history, events,
           );
         })}
       </section>
+      {trends === undefined ? null : <TrendsPanel trends={trends} />}
       {guests.length > 0 ? (
         <section className="obs-section" aria-labelledby="guests-heading">
           <h2 id="guests-heading">Guests</h2>

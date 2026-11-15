@@ -10,6 +10,7 @@ import LiveRefresh from "../../modules/observability/web/live-refresh.tsx";
 import GuestView from "../../modules/observability/web/guest-view.tsx";
 import HostView from "../../modules/observability/web/host-view.tsx";
 import RulesView from "../../modules/observability/web/rules-view.tsx";
+import type { HostTrends } from "../../modules/observability/lib/trends.ts";
 
 const render = <P extends object>(component: ComponentType<P>, props: P): string => renderToStaticMarkup(createElement(component, props));
 const now = Date.UTC(2026, 10, 13, 12, 0);
@@ -59,6 +60,41 @@ describe("the host view", () => {
 
   it("says so when a chart has no data in the window", () => {
     assert.match(render(HostView, { ...props, series: [{ metric: "cpuPercent", points: [] }] }), /No data for cpu in this window/);
+  });
+});
+
+describe("the trends on a host page", () => {
+  const props = { host: host({ hostName: "pi" }), range: "24h" as const, series: [], firing: [], history: [], events: [], now };
+  const full: HostTrends = {
+    weeks: [{ metric: "cpuPercent", current: 20, previous: 10, change: 10, percent: 100 }, { metric: "tempCelsius", current: 48, previous: 50, change: -2, percent: -4 }],
+    disk: { state: "filling", perDay: 2, daysLeft: 20, fullOn: Date.UTC(2026, 11, 3, 12) },
+    spikes: [{ metric: "cpuPercent", t: now - 3_600_000, value: 80, usual: 10 }],
+  };
+
+  it("shows the disk forecast, the week comparison and the spikes", () => {
+    const html = render(HostView, { ...props, trends: full });
+    assert.match(html, /About 20 days/);
+    assert.match(html, /around 2026-12-03/);
+    assert.match(html, /grows 2\.0% a day/);
+    assert.match(html, /<th scope="row">CPU<\/th><td class="num">10%<\/td><td class="num">20%<\/td><td class="num">▲ 100%<\/td>/);
+    assert.match(html, /▼ 4%/);
+    assert.match(html, /CPU peaked at 80% in the hour of [^<]*UTC, usually 10%/);
+  });
+
+  it("says what history is missing instead of guessing", () => {
+    const html = render(HostView, { ...props, trends: { weeks: [], disk: { state: "unknown", daysOfData: 2, needed: 3 }, spikes: [] } });
+    assert.match(html, /Needs 3 days of disk history to forecast; 2 days so far/);
+    assert.match(html, /Needs four days of history in each of the two weeks/);
+    assert.match(html, /No hour stood out/);
+  });
+
+  it("calls a steady disk stable and a full one full", () => {
+    assert.match(render(HostView, { ...props, trends: { ...full, disk: { state: "stable" } } }), /Stable: the disk is not growing/);
+    assert.match(render(HostView, { ...props, trends: { ...full, disk: { state: "filling", perDay: 1, daysLeft: 0, fullOn: now } } }), /The disk is full/);
+  });
+
+  it("leaves the section out when the page gives no trends", () => {
+    assert.doesNotMatch(render(HostView, props), /Trends/);
   });
 });
 
