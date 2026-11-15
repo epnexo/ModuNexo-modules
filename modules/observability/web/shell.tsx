@@ -14,13 +14,14 @@ export function Bar({ title, subtitle, children }: { title: string; subtitle?: s
   );
 }
 
-export type Section = "fleet" | "alerts";
+export type Section = "fleet" | "containers" | "alerts";
 
-/** Fleet and Alerts as a segmented control; the open one is marked with aria-current. */
+/** Fleet, Containers and Alerts as a segmented control; the open one is marked with aria-current. */
 export function SubNav({ current, firing }: { current: Section; firing: number }) {
   return (
     <nav className="seg" aria-label="Observability sections">
       <a href="/observability" aria-current={current === "fleet" ? "page" : undefined}>Fleet</a>
+      <a href="/observability/containers" aria-current={current === "containers" ? "page" : undefined}>Containers</a>
       <a href="/observability/alerts" aria-current={current === "alerts" ? "page" : undefined}>Alerts{firing > 0 ? ` (${firing})` : ""}</a>
     </nav>
   );

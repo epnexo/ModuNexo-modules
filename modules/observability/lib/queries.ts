@@ -1,5 +1,6 @@
 import { getDb } from "@modunexo/sdk";
 import type { SeriesPoint } from "./chart.ts";
+import type { ContainerInput, ContainerState, Platform } from "./containers.ts";
 import { RANGES, type Range } from "./ranges.ts";
 
 type SeriesRow = { t: number; avg: number; min: number; max: number };
@@ -147,6 +148,22 @@ export async function loadGuests(collectorId: number, now = new Date()): Promise
 export async function loadGuest(id: number, now = new Date()): Promise<GuestRow | null> {
   const { rows } = await getDb("observability").query<GuestDbRow>(`${GUEST_SELECT} where g.id = $2`, [now, id]);
   return rows[0] === undefined ? null : toGuest(rows[0]);
+}
+
+export interface ContainerRow extends ContainerInput {
+  id: number;
+  hostName: string;
+  /** True when the platform stopped listing it. */
+  gone: boolean;
+}
+
+/** Every known container: live ones first, then by project and name. */
+export async function loadContainers(): Promise<ContainerRow[]> {
+  const { rows } = await getDb("observability").query<{ id: number; host_name: string; name: string; platform: Platform; project: string; environment: string; service: string; image: string; state: ContainerState; restarts: number; started_at: Date | null; domain: string; gone_at: Date | null }>(
+    `select b.id, c.host_name, b.name, b.platform, b.project, b.environment, b.service, b.image, b.state, b.restarts, b.started_at, b.domain, b.gone_at
+       from containers b join collectors c on c.id = b.collector_id order by (b.gone_at is not null), b.project, b.name`,
+  );
+  return rows.map((row) => ({ id: row.id, hostName: row.host_name, name: row.name, platform: row.platform, project: row.project, environment: row.environment, service: row.service, image: row.image, state: row.state, restarts: row.restarts, startedAt: row.started_at ?? undefined, domain: row.domain, gone: row.gone_at !== null }));
 }
 
 export interface GuestSession {
