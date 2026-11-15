@@ -93,6 +93,16 @@ describe("container alerts", { concurrency: false }, () => {
     assert.deepEqual(await alerts(), []);
   });
 
+  it("restarts the clock when a container is listed again after the platform dropped it", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    await rule("Container not running", "container_down", 30);
+    await applyContainers(hostId, ago(120), [box({ state: "exited" })]);
+    await applyContainers(hostId, ago(60), []);
+    await applyContainers(hostId, ago(2), [box({ state: "exited" })]);
+    await evaluate(ctx);
+    assert.deepEqual(await alerts(), []);
+  });
+
   it("raises one alert per container", async (t) => {
     if (skipReason) return t.skip(skipReason);
     await rule("Container not running", "container_down", 0);

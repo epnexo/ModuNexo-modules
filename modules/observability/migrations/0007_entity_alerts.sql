@@ -13,4 +13,5 @@ create unique index alerts_one_firing_idx on alerts (rule_id, collector_id, coal
 -- For these rules only for_minutes counts: how long the container or guest has been out of the running state.
 insert into alert_rules (name, kind, metric, operator, threshold, for_minutes, severity) values
   ('Container not running', 'container_down', null, '>', 0, 5, 'warning'),
-  ('Guest down', 'guest_down', null, '>', 0, 5, 'warning');
+  ('Guest down', 'guest_down', null, '>', 0, 5, 'warning')
+on conflict (name) do nothing;
