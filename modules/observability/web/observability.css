@@ -206,7 +206,65 @@
   fill-opacity: 0.18;
 }
 
+.obs-area {
+  fill: var(--chart-top);
+  fill-opacity: 0.1;
+  animation: obs-fade 0.9s ease-out both;
+}
+
+.obs-chart-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+}
+
+.obs-chart-stats div {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.obs-chart-stats dt {
+  color: var(--muted-foreground);
+}
+
+.obs-chart-stats dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.obs-chart-stats dd[data-direction="up"] {
+  color: var(--warning);
+}
+
+.obs-chart-stats dd[data-direction="down"] {
+  color: var(--success);
+}
+
+.obs-dot-now {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: obs-beat 2.4s ease-in-out infinite;
+}
+
+@keyframes obs-beat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+}
+
+@keyframes obs-fade {
+  from { opacity: 0; }
+}
+
+@keyframes obs-draw {
+  from { stroke-dashoffset: 1; }
+}
+
 .obs-line {
+  stroke-dasharray: 1;
+  animation: obs-draw 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   fill: none;
   stroke: var(--chart-top);
   stroke-width: 2;
@@ -337,6 +395,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .obs-line,
+  .obs-area,
+  .obs-dot-now {
+    animation: none;
+  }
+
   .obs-pulse,
   .obs-host-card,
   .obs-fill {

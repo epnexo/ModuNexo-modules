@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { axisTicks, nearestIndex, niceCeiling, plot, timeTicks } from "../../modules/observability/lib/chart.ts";
+import { axisTicks, nearestIndex, niceCeiling, plot, summarize, timeTicks } from "../../modules/observability/lib/chart.ts";
 import { RANGES, parseRange } from "../../modules/observability/lib/ranges.ts";
 
 const box = { width: 100, height: 50, from: 0, to: 20, max: 100 };
@@ -46,7 +46,7 @@ describe("plot", () => {
   });
 
   it("draws nothing for no points", () => {
-    assert.deepEqual(plot([], { ...box, gapMs: 10 }), { line: "", band: "", dots: [] });
+    assert.deepEqual(plot([], { ...box, gapMs: 10 }), { line: "", band: "", area: "", dots: [] });
   });
 });
 
@@ -68,5 +68,30 @@ describe("ranges", () => {
 
   it("falls back to 24h for anything it does not know", () => {
     assert.deepEqual([parseRange("7d"), parseRange("bogus"), parseRange(undefined), parseRange(["1h"])], ["7d", "24h", "24h", "24h"]);
+  });
+});
+
+const point = (t: number, value: number, min = value, max = value) => ({ t, avg: value, min, max });
+
+describe("the area under the line", () => {
+  it("closes each run of two or more points down to the baseline", () => {
+    const drawn = plot([point(0, 20), point(10, 60)], { ...box, gapMs: 15 });
+    assert.equal(drawn.area, "M0 40L50 20L50 50L0 50Z");
+  });
+
+  it("draws nothing for a lone point or an empty series", () => {
+    assert.equal(plot([point(0, 20)], { ...box, gapMs: 15 }).area, "");
+    assert.equal(plot([], { ...box, gapMs: 15 }).area, "");
+  });
+});
+
+describe("summarising a series", () => {
+  it("reports the average, the highest and lowest values and the change from the first to the last point", () => {
+    const summary = summarize([point(0, 10, 8, 12), point(10, 30, 20, 40), point(20, 20, 15, 25)]);
+    assert.deepEqual(summary, { avg: 20, peak: 40, low: 8, change: 10 });
+  });
+
+  it("has nothing to say about an empty series", () => {
+    assert.equal(summarize([]), null);
   });
 });

@@ -5,6 +5,7 @@ import { GuestState, guestKind } from "./guests-table.tsx";
 import type { HostSeries } from "./host-view.tsx";
 import LiveRefresh from "./live-refresh.tsx";
 import { Bar } from "./shell.tsx";
+import ChartStats from "./chart-stats.tsx";
 import TrendChart from "./trend-chart.tsx";
 
 export interface GuestViewProps {
@@ -59,6 +60,7 @@ export default function GuestView({ guest, range, series, sessions, now }: Guest
                 <h3>{metricLabel(metric)}</h3>
                 <span className="obs-chart-now">{last === undefined ? "—" : formatMetric(metric, last.avg)}</span>
               </div>
+              <ChartStats unit={unit} points={points} />
               <TrendChart label={metricLabel(metric)} unit={unit} points={points} from={now - spec.ms} to={now} gapMs={spec.stepMs * 3} max={unit === "percent" ? 100 : undefined} />
             </section>
           );

@@ -62,6 +62,8 @@ export interface Plotted {
   line: string;
   /** The min-max band of every run of two or more points, empty when nothing in it spreads. */
   band: string;
+  /** The area between the average line and the baseline, for every run of two or more points. */
+  area: string;
   dots: { x: number; y: number; point: SeriesPoint }[];
 }
 
@@ -81,7 +83,11 @@ export function plot(points: SeriesPoint[], box: PlotBox): Plotted {
     .filter((run) => run.length >= 2 && run.some((point) => point.max > point.min))
     .map((run) => `${run.map((point, index) => `${index === 0 ? "M" : "L"}${x(point.t)} ${y(point.max)}`).join("")}${[...run].reverse().map((point) => `L${x(point.t)} ${y(point.min)}`).join("")}Z`)
     .join("");
-  return { line, band, dots: points.map((point) => ({ x: x(point.t), y: y(point.avg), point })) };
+  const area = runs
+    .filter((run) => run.length >= 2)
+    .map((run) => `${run.map((point, index) => `${index === 0 ? "M" : "L"}${x(point.t)} ${y(point.avg)}`).join("")}L${x(run.at(-1)!.t)} ${box.height}L${x(run[0]!.t)} ${box.height}Z`)
+    .join("");
+  return { line, band, area, dots: points.map((point) => ({ x: x(point.t), y: y(point.avg), point })) };
 }
 
 /** The index of the position closest to a pointer x, or -1 when there are none. */
@@ -91,4 +97,28 @@ export function nearestIndex(xs: number[], x: number): number {
     if (best === -1 || Math.abs(candidate - x) < Math.abs((xs[best] ?? 0) - x)) best = index;
   });
   return best;
+}
+
+export interface SeriesSummary {
+  /** The mean of the bucket averages. */
+  avg: number;
+  /** The highest value reached in any bucket. */
+  peak: number;
+  /** The lowest value reached in any bucket. */
+  low: number;
+  /** The last average minus the first one: positive when the value rose over the window. */
+  change: number;
+}
+
+/** What a series says at a glance, or null when it has no points. */
+export function summarize(points: SeriesPoint[]): SeriesSummary | null {
+  const first = points[0];
+  const last = points.at(-1);
+  if (first === undefined || last === undefined) return null;
+  return {
+    avg: points.reduce((total, point) => total + point.avg, 0) / points.length,
+    peak: Math.max(...points.map((point) => point.max)),
+    low: Math.min(...points.map((point) => point.min)),
+    change: last.avg - first.avg,
+  };
 }

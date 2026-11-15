@@ -46,6 +46,11 @@ describe("the host view", () => {
   it("draws one chart per metric, marks the open range and lists the host's alerts", () => {
     const series = [{ metric: "cpuPercent", points: [{ t: now - 600_000, avg: 10, min: 8, max: 12 }, { t: now - 300_000, avg: 14, min: 12, max: 16 }] }];
     const html = render(HostView, { ...props, series });
+    assert.match(html, /Avg<\/dt><dd[^>]*>12%/);
+    assert.match(html, /Peak<\/dt><dd[^>]*>16%/);
+    assert.match(html, /Low<\/dt><dd[^>]*>8.0%/);
+    assert.match(html, /Change<\/dt><dd[^>]*>▲ 4.0%/);
+    assert.match(html, /obs-area/);
     assert.match(html, /aria-label="CPU, latest 14%/);
     assert.match(html, /<a href="\?range=24h" aria-current="page">24 hours<\/a>/);
     assert.match(html, /<a href="\?range=7d">7 days<\/a>/);

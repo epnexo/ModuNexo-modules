@@ -6,6 +6,7 @@ import AlertsTable from "./alerts-table.tsx";
 import GuestsTable from "./guests-table.tsx";
 import LiveRefresh from "./live-refresh.tsx";
 import { Bar, StatusBadge } from "./shell.tsx";
+import ChartStats from "./chart-stats.tsx";
 import TrendChart from "./trend-chart.tsx";
 
 export interface HostSeries {
@@ -54,6 +55,7 @@ export default function HostView({ host, range, series, firing, history, events,
                 <h3>{metricLabel(metric)}</h3>
                 <span className="obs-chart-now">{last === undefined ? "—" : formatMetric(metric, last.avg)}</span>
               </div>
+              <ChartStats unit={unit} points={points} />
               <TrendChart label={metricLabel(metric)} unit={unit} points={points} from={now - spec.ms} to={now} gapMs={spec.stepMs * 3} max={unit === "percent" ? 100 : undefined} />
             </section>
           );

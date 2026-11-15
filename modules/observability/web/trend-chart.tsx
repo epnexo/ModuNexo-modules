@@ -78,9 +78,11 @@ export default function TrendChart({ label, unit, points, from, to, gapMs, max }
           <text key={tick} className="obs-axis-text" x={MARGIN.left + ((tick - from) / Math.max(span, 1)) * PLOT.width} y={H - 6} textAnchor={index === 0 ? "start" : index === all.length - 1 ? "end" : "middle"}>{axisTime(tick, span)}</text>
         ))}
         <g transform={`translate(${MARGIN.left} ${MARGIN.top})`}>
+          {drawn.area === "" ? null : <path className="obs-area" d={drawn.area} />}
           {drawn.band === "" ? null : <path className="obs-band" d={drawn.band} />}
-          <path className="obs-line" d={drawn.line} />
+          <path className="obs-line" d={drawn.line} pathLength={1} />
           {drawn.dots.length <= 1 ? drawn.dots.map((dot) => <circle key={dot.point.t} className="obs-dot" cx={dot.x} cy={dot.y} r={4} />) : null}
+          {drawn.dots.length > 1 ? <circle className="obs-dot obs-dot-now" cx={drawn.dots.at(-1)!.x} cy={drawn.dots.at(-1)!.y} r={4} /> : null}
         </g>
         {at === undefined ? null : (
           <g>
