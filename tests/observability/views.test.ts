@@ -78,7 +78,7 @@ describe("the trends on a host page", () => {
     assert.match(html, /grows 2\.0% a day/);
     assert.match(html, /<th scope="row">CPU<\/th><td class="num">10%<\/td><td class="num">20%<\/td><td class="num">▲ 100%<\/td>/);
     assert.match(html, /▼ 4%/);
-    assert.match(html, /CPU peaked at 80% in the hour of [^<]*UTC, usually 10%/);
+    assert.match(html, /<ul class="obs-spikes"><li><strong class="obs-spike-metric">CPU<\/strong><span class="obs-spike-value">80%<\/span><span class="obs-spike-when">[^<]*UTC · usually 10%<\/span><\/li><\/ul>/);
   });
 
   it("says what history is missing instead of guessing", () => {

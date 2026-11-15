@@ -423,3 +423,43 @@
 .obs-tree-project { border-top: 1px solid var(--border); }
 .obs-tree-sub { padding: 0.6rem 1rem 0.6rem 1.75rem; }
 @media (prefers-reduced-motion: reduce) { .obs-tree-head::before, .obs-tree-sub::before { transition: none; } }
+
+.obs-spikes {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.obs-spikes li {
+  display: grid;
+  grid-template-columns: 7rem auto 1fr;
+  align-items: baseline;
+  gap: 0.15rem 0.75rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+.obs-spikes li:first-child {
+  border-top: 0;
+}
+.obs-spike-metric {
+  font-weight: 600;
+}
+.obs-spike-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--warning);
+}
+.obs-spike-when {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  text-align: right;
+}
+@media (max-width: 30rem) {
+  .obs-spikes li {
+    grid-template-columns: 1fr auto;
+  }
+  .obs-spike-when {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+}

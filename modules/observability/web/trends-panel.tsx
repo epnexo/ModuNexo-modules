@@ -53,8 +53,14 @@ export default function TrendsPanel({ trends }: { trends: HostTrends }) {
         <section className="card" aria-label="Spikes in the last day">
           <div className="obs-chart-head"><h3>Spikes in the last 24 hours</h3></div>
           {trends.spikes.length === 0 ? <p className="obs-empty">No hour stood out from the day before it.</p> : (
-            <ul>
-              {trends.spikes.map((spike) => <li key={`${spike.metric}-${spike.t}`}>{metricLabel(spike.metric)} peaked at {formatMetric(spike.metric, spike.value)} in the hour of {formatTime(new Date(spike.t))}, usually {formatMetric(spike.metric, spike.usual)}.</li>)}
+            <ul className="obs-spikes">
+              {trends.spikes.map((spike) => (
+                <li key={`${spike.metric}-${spike.t}`}>
+                  <strong className="obs-spike-metric">{metricLabel(spike.metric)}</strong>
+                  <span className="obs-spike-value">{formatMetric(spike.metric, spike.value)}</span>
+                  <span className="obs-spike-when">{formatTime(new Date(spike.t))} · usually {formatMetric(spike.metric, spike.usual)}</span>
+                </li>
+              ))}
             </ul>
           )}
         </section>
