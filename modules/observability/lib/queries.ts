@@ -21,6 +21,8 @@ export interface FleetRow {
   status: HostStatus;
   metrics: Record<string, number>;
   firing: number;
+  /** CPU percent of the last hour, oldest first, for the sparkline; empty when the host sent none. */
+  trend: number[];
 }
 
 export async function loadFleet(): Promise<FleetRow[]> {
@@ -32,7 +34,12 @@ export async function loadFleet(): Promise<FleetRow[]> {
        left join lateral (select metrics, collected_at from samples where collector_id = c.id order by collected_at desc limit 1) s on true
       order by c.host_name`,
   );
-  return rows.map((row) => ({ id: row.id, hostName: row.host_name, version: row.version, lastSampleAt: row.collected_at, status: statusOf(row.age_minutes), metrics: row.metrics ?? {}, firing: row.firing }));
+  const trends = await getDb("observability").query<{ collector_id: number; trend: number[] }>(
+    `select collector_id, array_agg((metrics ->> 'cpuPercent')::float8 order by collected_at) as trend
+       from samples where collected_at >= now() - interval '1 hour' and metrics ? 'cpuPercent' group by collector_id`,
+  );
+  const byHost = new Map(trends.rows.map((row) => [row.collector_id, row.trend]));
+  return rows.map((row) => ({ id: row.id, hostName: row.host_name, version: row.version, lastSampleAt: row.collected_at, status: statusOf(row.age_minutes), metrics: row.metrics ?? {}, firing: row.firing, trend: byHost.get(row.id) ?? [] }));
 }
 
 export interface HostRow {

@@ -1,5 +1,7 @@
 import { ago, formatMetric, metricLabel, toneOf } from "../lib/format.ts";
 import type { FleetRow } from "../lib/queries.ts";
+import { sparkPoints } from "../lib/spark.ts";
+import LiveRefresh from "./live-refresh.tsx";
 import { Bar, StatusBadge, SubNav, withVar } from "./shell.tsx";
 
 const GAUGES = ["cpuPercent", "memUsedPercent", "diskUsedPercent"] as const;
@@ -20,7 +22,7 @@ function HostCard({ host, now }: { host: FleetRow; now: number }) {
   const facts = FACTS.filter((metric) => host.metrics[metric] !== undefined);
   const age = host.lastSampleAt === null ? null : Math.max(0, (now - host.lastSampleAt.getTime()) / 60_000);
   return (
-    <section className="card" aria-label={host.hostName}>
+    <section className="card obs-host-card" aria-label={host.hostName}>
       <div className="obs-host-head">
         <a className="obs-host-name" href={`/observability/collector/${encodeURIComponent(host.hostName)}`}>{host.hostName}</a>
         <span className="obs-badges">
@@ -30,6 +32,7 @@ function HostCard({ host, now }: { host: FleetRow; now: number }) {
       </div>
       {gauges.length === 0 && facts.length === 0 ? <p className="obs-empty">No samples yet.</p> : null}
       {gauges.length > 0 ? <dl className="obs-gauges">{gauges.map((metric) => <Gauge key={metric} metric={metric} value={host.metrics[metric]!} />)}</dl> : null}
+      {host.trend.length >= 2 ? <svg className="obs-spark" viewBox="0 0 120 28" role="img" aria-label="CPU, last hour" preserveAspectRatio="none"><polyline points={sparkPoints(host.trend, 120, 28, 100)} fill="none" /></svg> : null}
       {facts.length > 0 ? <dl className="obs-facts">{facts.map((metric) => <div key={metric}><dt>{metricLabel(metric)}</dt><dd>{formatMetric(metric, host.metrics[metric]!)}</dd></div>)}</dl> : null}
       <p className="obs-foot">Last sample {ago(age)}</p>
     </section>
@@ -46,6 +49,7 @@ export default function FleetView({ fleet, now }: { fleet: FleetRow[]; now: numb
   return (
     <>
       <Bar title="Observability" subtitle="Where the fleet stands now and what went wrong. The live detail is in Grafana; this page keeps the history and the alerts.">
+        <LiveRefresh />
         <SubNav current="fleet" firing={firing} />
       </Bar>
       {firing > 0 ? <div className="notice notice-error" role="alert"><strong>{firing} {firing === 1 ? "alert is" : "alerts are"} firing.</strong> <a href="/observability/alerts">See which hosts and why.</a></div> : null}

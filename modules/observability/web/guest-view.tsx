@@ -3,6 +3,7 @@ import type { GuestRow, GuestSession } from "../lib/queries.ts";
 import { RANGES, type Range } from "../lib/ranges.ts";
 import { GuestState, guestKind } from "./guests-table.tsx";
 import type { HostSeries } from "./host-view.tsx";
+import LiveRefresh from "./live-refresh.tsx";
 import { Bar } from "./shell.tsx";
 import TrendChart from "./trend-chart.tsx";
 
@@ -25,6 +26,7 @@ export default function GuestView({ guest, range, series, sessions, now }: Guest
     <>
       <Bar title={guest.name} subtitle={`${guestKind(guest.kind)} · ${guest.vmid} on ${guest.node || guest.hostName}. Times are UTC.`}>
         <GuestState running={guest.running} />
+        <LiveRefresh />
         <nav className="seg" aria-label="Time range">
           {(Object.keys(RANGES) as Range[]).map((key) => (
             <a key={key} href={`?range=${key}`} aria-current={key === range ? "page" : undefined}>{RANGES[key].label}</a>

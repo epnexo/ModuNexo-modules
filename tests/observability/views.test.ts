@@ -6,13 +6,14 @@ import { formatDuration, formatMetric } from "../../modules/observability/lib/fo
 import type { AlertRow, FleetRow, GuestRow, GuestSession, RuleRow } from "../../modules/observability/lib/queries.ts";
 import AlertsView from "../../modules/observability/web/alerts-view.tsx";
 import FleetView from "../../modules/observability/web/fleet-view.tsx";
+import LiveRefresh from "../../modules/observability/web/live-refresh.tsx";
 import GuestView from "../../modules/observability/web/guest-view.tsx";
 import HostView from "../../modules/observability/web/host-view.tsx";
 import RulesView from "../../modules/observability/web/rules-view.tsx";
 
 const render = <P extends object>(component: ComponentType<P>, props: P): string => renderToStaticMarkup(createElement(component, props));
 const now = Date.UTC(2026, 10, 13, 12, 0);
-const host = (fields: Partial<FleetRow> & { hostName: string }): FleetRow => ({ id: 1, version: "1.0.0", lastSampleAt: new Date(now - 60_000), status: "online", metrics: {}, firing: 0, ...fields });
+const host = (fields: Partial<FleetRow> & { hostName: string }): FleetRow => ({ id: 1, version: "1.0.0", lastSampleAt: new Date(now - 60_000), status: "online", metrics: {}, firing: 0, trend: [], ...fields });
 const alert = (fields: Partial<AlertRow> = {}): AlertRow => ({ id: 1, state: "firing", severity: "critical", startedAt: new Date(now - 600_000), resolvedAt: null, value: 91, rule: "Low disk space", kind: "metric", metric: "diskUsedPercent", operator: ">", threshold: 85, host: "pi", ...fields });
 const rule = (fields: Partial<RuleRow> = {}): RuleRow => ({ id: 1, name: "Low disk space", kind: "metric", metric: "diskUsedPercent", operator: ">", threshold: 85, forMinutes: 15, severity: "warning", host: null, enabled: true, ...fields });
 
@@ -138,5 +139,28 @@ describe("guest formatting", () => {
     assert.equal(formatMetric("netInBytesPerSec", 2048), "2.0 KiB/s");
     assert.equal(formatMetric("netOutBytesPerSec", 5 * 1024 ** 2), "5.0 MiB/s");
     assert.equal(formatMetric("netInBytesPerSec", 12), "12 B/s");
+  });
+});
+
+describe("the live page", () => {
+  it("shows a live indicator with a switch to pause the refresh", () => {
+    const html = render(LiveRefresh, { intervalSeconds: 30 });
+    assert.match(html, /obs-live/);
+    assert.match(html, /Live/);
+    assert.match(html, /aria-pressed="true"/);
+    assert.match(html, /Refreshes every 30 s/);
+  });
+
+  it("is on the fleet, host and guest pages", () => {
+    assert.match(render(FleetView, { fleet: [host({ hostName: "pi" })], now }), /obs-live/);
+    assert.match(render(HostView, { host: host({ hostName: "pi" }), range: "24h", series: [], firing: [], history: [], events: [], now }), /obs-live/);
+    assert.match(render(GuestView, { guest: guest(), range: "24h", series: [], sessions: [], now }), /obs-live/);
+  });
+
+  it("draws a sparkline on a host card only when it has a trend", () => {
+    const withTrend = render(FleetView, { fleet: [host({ hostName: "pi", metrics: { cpuPercent: 12 }, trend: [10, 20, 30] })], now });
+    assert.match(withTrend, /<svg class="obs-spark"[^>]*role="img"[^>]*aria-label="CPU, last hour"/);
+    assert.match(withTrend, /<polyline points="0,/);
+    assert.doesNotMatch(render(FleetView, { fleet: [host({ hostName: "pi", metrics: { cpuPercent: 12 }, trend: [] })], now }), /obs-spark/);
   });
 });

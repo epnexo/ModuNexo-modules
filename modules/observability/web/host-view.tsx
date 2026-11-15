@@ -4,6 +4,7 @@ import type { AlertRow, EventRow, FleetRow, GuestRow } from "../lib/queries.ts";
 import { RANGES, type Range } from "../lib/ranges.ts";
 import AlertsTable from "./alerts-table.tsx";
 import GuestsTable from "./guests-table.tsx";
+import LiveRefresh from "./live-refresh.tsx";
 import { Bar, StatusBadge } from "./shell.tsx";
 import TrendChart from "./trend-chart.tsx";
 
@@ -33,6 +34,7 @@ export default function HostView({ host, range, series, firing, history, events,
     <>
       <Bar title={host.hostName} subtitle={`Collector ${host.version} · last sample ${ago(age)}. Times are UTC.`}>
         <StatusBadge status={host.status} />
+        <LiveRefresh />
         <nav className="seg" aria-label="Time range">
           {(Object.keys(RANGES) as Range[]).map((key) => (
             <a key={key} href={`?range=${key}`} aria-current={key === range ? "page" : undefined}>{RANGES[key].label}</a>

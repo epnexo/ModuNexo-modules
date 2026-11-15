@@ -60,6 +60,18 @@ describe("loadFleet", { concurrency: false }, () => {
     assert.deepEqual(fleet[2]?.metrics, {});
   });
 
+  it("gives each host its CPU of the last hour, oldest first, for the fleet sparklines", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    await collector("host-c");
+    await sample(hostId, minutesAgo(130), { cpuPercent: 99 });
+    await sample(hostId, minutesAgo(10), { cpuPercent: 30 });
+    await sample(hostId, minutesAgo(50), { cpuPercent: 10 });
+    await sample(hostId, minutesAgo(30), { cpuPercent: 20, load1: 1 });
+    const fleet = await loadFleet();
+    assert.deepEqual(fleet[0]?.trend, [10, 20, 30]);
+    assert.deepEqual(fleet[1]?.trend, []);
+  });
+
   it("counts the alerts firing on each host", async (t) => {
     if (skipReason) return t.skip(skipReason);
     const rule = (await pool!.query("insert into observability.alert_rules (name, metric, threshold) values ('r', 'cpuPercent', 90) returning id")).rows[0].id;
