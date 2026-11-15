@@ -14,7 +14,7 @@ import RulesView from "../../modules/observability/web/rules-view.tsx";
 const render = <P extends object>(component: ComponentType<P>, props: P): string => renderToStaticMarkup(createElement(component, props));
 const now = Date.UTC(2026, 10, 13, 12, 0);
 const host = (fields: Partial<FleetRow> & { hostName: string }): FleetRow => ({ id: 1, version: "1.0.0", lastSampleAt: new Date(now - 60_000), status: "online", metrics: {}, firing: 0, trend: [], ...fields });
-const alert = (fields: Partial<AlertRow> = {}): AlertRow => ({ id: 1, state: "firing", severity: "critical", startedAt: new Date(now - 600_000), resolvedAt: null, value: 91, rule: "Low disk space", kind: "metric", metric: "diskUsedPercent", operator: ">", threshold: 85, host: "pi", ...fields });
+const alert = (fields: Partial<AlertRow> = {}): AlertRow => ({ subject: null, project: null, id: 1, state: "firing", severity: "critical", startedAt: new Date(now - 600_000), resolvedAt: null, value: 91, rule: "Low disk space", kind: "metric", metric: "diskUsedPercent", operator: ">", threshold: 85, host: "pi", ...fields });
 const rule = (fields: Partial<RuleRow> = {}): RuleRow => ({ id: 1, name: "Low disk space", kind: "metric", metric: "diskUsedPercent", operator: ">", threshold: 85, forMinutes: 15, severity: "warning", host: null, enabled: true, ...fields });
 
 describe("the fleet view", () => {
@@ -59,6 +59,29 @@ describe("the host view", () => {
 
   it("says so when a chart has no data in the window", () => {
     assert.match(render(HostView, { ...props, series: [{ metric: "cpuPercent", points: [] }] }), /No data for cpu in this window/);
+  });
+});
+
+describe("alerts about a container or a guest", () => {
+  const entity = alert({ id: 5, rule: "Container not running", kind: "container_down", metric: null, threshold: 0, value: 12, subject: "web-1", project: "modunexo" });
+
+  it("names the container, its project and how long it has been down", () => {
+    const html = render(AlertsView, { firing: [entity], history: [entity], rules: [] });
+    assert.match(html, /web-1 · modunexo/);
+    assert.match(html, /12 min/);
+    assert.match(html, /Container not running/);
+  });
+
+  it("keeps the host alert as it was", () => {
+    const html = render(AlertsView, { firing: [alert()], history: [], rules: [] });
+    assert.doesNotMatch(html, / · /);
+    assert.match(html, /91%/);
+  });
+
+  it("offers the container and guest kinds in the rule form", () => {
+    const html = render(RulesView, { rules: [rule({ id: 3, name: "Container not running", kind: "container_down", metric: null, threshold: 0, forMinutes: 5 })] });
+    assert.match(html, /<option value="container_down" selected/);
+    assert.match(html, /<option value="guest_down"/);
   });
 });
 

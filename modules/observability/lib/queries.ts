@@ -1,5 +1,6 @@
 import { getDb } from "@modunexo/sdk";
 import type { SeriesPoint } from "./chart.ts";
+import type { RuleKind } from "./rules.ts";
 import type { ContainerInput, ContainerState, Platform } from "./containers.ts";
 import { RANGES, type Range } from "./ranges.ts";
 
@@ -185,19 +186,22 @@ export interface AlertRow {
   resolvedAt: Date | null;
   value: number | null;
   rule: string;
-  kind: "metric" | "offline";
+  kind: RuleKind;
   metric: string | null;
   operator: ">" | "<";
   threshold: number;
   host: string;
+  /** The container or guest an entity alert is about; null for a host alert. */
+  subject: string | null;
+  project: string | null;
 }
 
-type AlertDbRow = { id: number; state: "firing" | "resolved"; severity: "warning" | "critical"; started_at: Date; resolved_at: Date | null; last_value: number | null; rule: string; kind: "metric" | "offline"; metric: string | null; operator: ">" | "<"; threshold: number; host: string };
+type AlertDbRow = { id: number; state: "firing" | "resolved"; severity: "warning" | "critical"; started_at: Date; resolved_at: Date | null; last_value: number | null; rule: string; kind: RuleKind; metric: string | null; operator: ">" | "<"; threshold: number; host: string; subject: string | null; project: string | null };
 
-const ALERT_SELECT = `select a.id, a.state, a.severity, a.started_at, a.resolved_at, a.last_value, r.name as rule, r.kind, r.metric, r.operator, r.threshold, c.host_name as host
+const ALERT_SELECT = `select a.id, a.state, a.severity, a.started_at, a.resolved_at, a.last_value, r.name as rule, r.kind, r.metric, r.operator, r.threshold, c.host_name as host, a.subject, a.project
   from alerts a join alert_rules r on r.id = a.rule_id join collectors c on c.id = a.collector_id`;
 
-const toAlert = (row: AlertDbRow): AlertRow => ({ id: row.id, state: row.state, severity: row.severity, startedAt: row.started_at, resolvedAt: row.resolved_at, value: row.last_value, rule: row.rule, kind: row.kind, metric: row.metric, operator: row.operator, threshold: row.threshold, host: row.host });
+const toAlert = (row: AlertDbRow): AlertRow => ({ id: row.id, state: row.state, severity: row.severity, startedAt: row.started_at, resolvedAt: row.resolved_at, value: row.last_value, rule: row.rule, kind: row.kind, metric: row.metric, operator: row.operator, threshold: row.threshold, host: row.host, subject: row.subject, project: row.project });
 
 /** The alerts firing now (critical first) and the most recent ones of any state. `hostName` limits both to one host. */
 export async function loadAlerts(options: { hostName?: string; historyLimit?: number } = {}): Promise<{ firing: AlertRow[]; history: AlertRow[] }> {
@@ -211,7 +215,7 @@ export async function loadAlerts(options: { hostName?: string; historyLimit?: nu
 export interface RuleRow {
   id: number;
   name: string;
-  kind: "metric" | "offline";
+  kind: RuleKind;
   metric: string | null;
   operator: ">" | "<";
   threshold: number;
@@ -222,7 +226,7 @@ export interface RuleRow {
 }
 
 export async function loadRules(): Promise<RuleRow[]> {
-  const { rows } = await getDb("observability").query<{ id: number; name: string; kind: "metric" | "offline"; metric: string | null; operator: ">" | "<"; threshold: number; for_minutes: number; severity: "warning" | "critical"; host_name: string | null; enabled: boolean }>(
+  const { rows } = await getDb("observability").query<{ id: number; name: string; kind: RuleKind; metric: string | null; operator: ">" | "<"; threshold: number; for_minutes: number; severity: "warning" | "critical"; host_name: string | null; enabled: boolean }>(
     "select id, name, kind, metric, operator, threshold, for_minutes, severity, host_name, enabled from alert_rules order by name",
   );
   return rows.map((row) => ({ id: row.id, name: row.name, kind: row.kind, metric: row.metric, operator: row.operator, threshold: row.threshold, forMinutes: row.for_minutes, severity: row.severity, host: row.host_name, enabled: row.enabled }));

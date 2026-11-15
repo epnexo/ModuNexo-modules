@@ -71,9 +71,10 @@ export async function applyContainers(collectorId: number, collectedAt: Date, co
   const db = getDb("observability");
   for (const box of containers) {
     await db.query(
-      `insert into containers (collector_id, name, platform, project, environment, service, image, state, restarts, started_at, domain, first_seen_at, last_seen_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
+      `insert into containers (collector_id, name, platform, project, environment, service, image, state, restarts, started_at, domain, first_seen_at, last_seen_at, state_since)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12, $12)
        on conflict (collector_id, name) do update set
+         state_since = case when containers.state = excluded.state then containers.state_since else excluded.last_seen_at end,
          platform = excluded.platform, project = excluded.project, environment = excluded.environment, service = excluded.service, image = excluded.image,
          state = excluded.state, restarts = excluded.restarts, started_at = excluded.started_at, domain = excluded.domain,
          last_seen_at = greatest(containers.last_seen_at, excluded.last_seen_at), gone_at = null`,

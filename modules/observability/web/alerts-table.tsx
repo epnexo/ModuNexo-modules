@@ -3,6 +3,8 @@ import type { AlertRow } from "../lib/queries.ts";
 import { SeverityBadge } from "./shell.tsx";
 
 const condition = (alert: AlertRow): string => describeRule({ kind: alert.kind, metric: alert.metric, operator: alert.operator, threshold: alert.threshold, forMinutes: 0 });
+const isEntity = (alert: AlertRow): boolean => alert.subject !== null;
+const valueOf = (alert: AlertRow): string => alert.value === null ? "—" : isEntity(alert) ? `${Math.round(alert.value)} min` : alert.kind === "offline" ? `${Math.round(alert.value)} min` : formatMetric(alert.metric ?? "", alert.value);
 
 /** Alerts as a table: firing ones show since when, history ones also when they resolved. `showHost` is off on a host page. */
 export default function AlertsTable({ rows, showHost = true, empty }: { rows: AlertRow[]; showHost?: boolean; empty: string }) {
@@ -25,11 +27,11 @@ export default function AlertsTable({ rows, showHost = true, empty }: { rows: Al
           <tbody>
             {rows.map((alert) => (
               <tr key={alert.id}>
-                {showHost ? <th scope="row"><a href={`/observability/collector/${encodeURIComponent(alert.host)}`}>{alert.host}</a></th> : null}
-                <td>{alert.rule}<br /><span className="obs-foot">{condition(alert)}</span></td>
+                {showHost ? <th scope="row"><a href={`/observability/collector/${encodeURIComponent(alert.host)}`}>{alert.host}</a>{isEntity(alert) ? <><br /><span className="obs-foot">{alert.subject}{alert.project ? ` · ${alert.project}` : ""}</span></> : null}</th> : null}
+                <td>{alert.rule}<br /><span className="obs-foot">{isEntity(alert) && !showHost ? `${alert.subject} · ` : ""}{condition(alert)}</span></td>
                 <td><SeverityBadge severity={alert.severity} /></td>
                 <td><span className={alert.state === "firing" ? "badge badge-danger" : "badge badge-success"}>{alert.state === "firing" ? "Firing" : "Resolved"}</span></td>
-                <td className="right num">{alert.value === null ? "—" : alert.kind === "offline" ? `${Math.round(alert.value)} min` : formatMetric(alert.metric ?? "", alert.value)}</td>
+                <td className="right num">{valueOf(alert)}</td>
                 <td className="num">{formatTime(alert.startedAt)}</td>
                 <td className="num">{alert.resolvedAt === null ? "—" : formatTime(alert.resolvedAt)}</td>
               </tr>

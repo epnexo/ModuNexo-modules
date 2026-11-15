@@ -142,7 +142,7 @@ describe("the alert evaluator", { concurrency: false }, () => {
       registry.register(observability);
       await migrate(seeded, registry, { moduleDirs: { observability: MODULE_DIR } });
       const names = (await seeded.query("select name, kind from observability.alert_rules order by name")).rows;
-      assert.deepEqual(names.map((r) => r.name), ["High CPU", "High temperature", "Host offline", "Low disk space"]);
+      assert.deepEqual(names.map((r) => r.name), ["Container not running", "Guest down", "High CPU", "High temperature", "Host offline", "Low disk space"]);
       assert.equal(names.find((r) => r.name === "Host offline")?.kind, "offline");
     } finally {
       await seeded.end();

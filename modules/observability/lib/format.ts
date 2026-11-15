@@ -1,5 +1,7 @@
 /** What each metric the collectors send is called, how its value reads, and where it starts to worry. Unknown keys still render. */
 
+import type { RuleKind } from "./rules.ts";
+
 export type Unit = "percent" | "celsius" | "bytes" | "rate" | "seconds" | "number";
 export type Tone = "ok" | "warning" | "danger";
 
@@ -90,8 +92,10 @@ export const axisTime = (epochMs: number, spanMs: number): string => {
 };
 
 /** The condition of an alert rule in words, for example "Disk > 85% for 15 min" or "no data for 5 min". */
-export function describeRule(rule: { kind: "metric" | "offline"; metric: string | null; operator: ">" | "<"; threshold: number; forMinutes: number }): string {
+export function describeRule(rule: { kind: RuleKind; metric: string | null; operator: ">" | "<"; threshold: number; forMinutes: number }): string {
   if (rule.kind === "offline") return `No data for more than ${rule.threshold} min`;
+  if (rule.kind === "container_down") return `Container not running${rule.forMinutes > 0 ? ` for ${rule.forMinutes} min` : ""}`;
+  if (rule.kind === "guest_down") return `Guest stopped${rule.forMinutes > 0 ? ` for ${rule.forMinutes} min` : ""}`;
   const key = rule.metric ?? "";
   const duration = rule.forMinutes > 0 ? ` for ${rule.forMinutes} min` : "";
   return `${metricLabel(key)} ${rule.operator} ${formatMetric(key, rule.threshold)}${duration}`;

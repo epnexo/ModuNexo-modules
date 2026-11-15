@@ -8,13 +8,13 @@ function Fields({ rule }: { rule?: RuleRow }) {
     <div className="obs-form-grid">
       <label className="field"><span className="field-label">Name</span><input className="input" name="name" required maxLength={80} defaultValue={rule?.name ?? ""} /></label>
       <label className="field"><span className="field-label">Kind</span>
-        <select className="input" name="kind" defaultValue={rule?.kind ?? "metric"}><option value="metric">Metric threshold</option><option value="offline">No data</option></select>
+        <select className="input" name="kind" defaultValue={rule?.kind ?? "metric"}><option value="metric">Metric threshold</option><option value="offline">No data</option><option value="container_down">Container not running</option><option value="guest_down">Guest stopped</option></select>
       </label>
       <label className="field"><span className="field-label">Metric</span><input className="input" name="metric" placeholder="diskUsedPercent" defaultValue={rule?.metric ?? ""} /></label>
       <label className="field"><span className="field-label">Operator</span>
         <select className="input" name="operator" defaultValue={rule?.operator ?? ">"}><option value=">">above</option><option value="<">below</option></select>
       </label>
-      <label className="field"><span className="field-label">Threshold</span><input className="input" name="threshold" type="number" step="any" required defaultValue={rule?.threshold ?? ""} /></label>
+      <label className="field"><span className="field-label">Threshold</span><input className="input" name="threshold" type="number" step="any" defaultValue={rule?.threshold ?? ""} /></label>
       <label className="field"><span className="field-label">For (minutes)</span><input className="input" name="forMinutes" type="number" min={0} max={1440} step={1} defaultValue={rule?.forMinutes ?? 0} /></label>
       <label className="field"><span className="field-label">Severity</span>
         <select className="input" name="severity" defaultValue={rule?.severity ?? "warning"}><option value="warning">Warning</option><option value="critical">Critical</option></select>
@@ -27,7 +27,7 @@ function Fields({ rule }: { rule?: RuleRow }) {
 export default function RulesView({ rules }: { rules: RuleRow[] }) {
   return (
     <>
-      <Bar title="Alert rules" subtitle="A metric rule fires when every sample of its window crosses the threshold. A no-data rule fires when a host sends nothing for the given minutes. Changes apply on the next evaluation, within a minute.">
+      <Bar title="Alert rules" subtitle="A metric rule fires when every sample of its window crosses the threshold. A no-data rule fires when a host sends nothing for the given minutes. A container or guest rule fires once for each one that has been out of the running state for the given minutes; leave the metric and threshold empty. Changes apply on the next evaluation, within a minute.">
         <a className="btn btn-sm" href="/observability/alerts">Back to alerts</a>
       </Bar>
       <section className="obs-section" aria-labelledby="rules-heading">
