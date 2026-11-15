@@ -121,7 +121,7 @@ describe("loading and showing containers", { concurrency: false }, () => {
       { id: 1, hostName: "pi", ...box(), gone: false },
       { id: 2, hostName: "vps-home", ...box({ name: "app-1", platform: "coolify", project: "shop", state: "restarting", restarts: 7, domain: "" }), gone: false },
     ];
-    const html = renderToStaticMarkup(createElement(ContainersView, { containers: rows, now: t0.getTime() }));
+    const html = renderToStaticMarkup(createElement(ContainersView, { containers: rows, filters: { host: null, state: "live", q: "" }, now: t0.getTime() }));
     assert.match(html, /Running<\/dt><dd class="stat-value">1/);
     assert.match(html, /Restarting<\/dt><dd class="stat-value">1/);
     assert.match(html, />modunexo</);
@@ -133,6 +133,6 @@ describe("loading and showing containers", { concurrency: false }, () => {
   });
 
   it("says so when no container has been reported", () => {
-    assert.match(renderToStaticMarkup(createElement(ContainersView, { containers: [], now: t0.getTime() })), /No containers reported yet/);
+    assert.match(renderToStaticMarkup(createElement(ContainersView, { containers: [], filters: { host: null, state: "live", q: "" }, now: t0.getTime() })), /No containers reported yet/);
   });
 });
