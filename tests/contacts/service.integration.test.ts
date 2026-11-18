@@ -3,7 +3,7 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { validateManifest } from "@modunexo/sdk";
-import { GET as contactRoute } from "../../modules/contacts/web/svc-contact.ts";
+import { GET as lookupContactRoute } from "../../modules/contacts/web/svc-contact-lookup.ts";
 import { POST as createContactRoute } from "../../modules/contacts/web/svc-contact-create.ts";
 import { GET as contactsRoute } from "../../modules/contacts/web/svc-contacts.ts";
 import { POST as updateContactRoute } from "../../modules/contacts/web/svc-contact-update.ts";
@@ -68,7 +68,7 @@ describe("the contacts manifest declares the service API", () => {
     assert.deepEqual(checked.scopes?.map((s) => s.key), ["contacts.read", "contacts.write", "leads.read", "leads.write"]);
     const byPath = new Map(checked.pages?.map((page) => [page.path, page]));
     const routes: [string, string, string][] = [
-      ["/svc/contacts/contact", "GET", "contacts.read"],
+      ["/svc/contacts/contacts/lookup", "GET", "contacts.read"],
       ["/svc/contacts/contacts", "GET", "contacts.read"],
       ["/svc/contacts/contacts/create", "POST", "contacts.write"],
       ["/svc/contacts/contacts/update", "POST", "contacts.write"],
@@ -83,13 +83,17 @@ describe("the contacts manifest declares the service API", () => {
     }
     assert.equal(checked.pages?.some((page) => page.public !== undefined), false);
   });
+
+  it("no longer serves the singular route that looked a contact up before 0.3.0", () => {
+    assert.equal(validateManifest(contacts).pages?.some((page) => page.path === "/svc/contacts/contact"), false);
+  });
 });
 
-describe("GET /svc/contacts/contact", { concurrency: false }, () => {
+describe("GET /svc/contacts/contacts/lookup", { concurrency: false }, () => {
   it("answers the contact found by id, with all its fields", async (t) => {
     if (skipReason) return t.skip(skipReason);
     const id = await person("Ada Lovelace", { phone: "300", email: "ada@example.com", identity: "wa:1", notes: "hi" });
-    const response = await contactRoute(get(`/contact?id=${id}`));
+    const response = await lookupContactRoute(get(`/contacts/lookup?id=${id}`));
     assert.equal(response.status, 200);
     const out = await body(response);
     assert.deepEqual({ ...out, createdAt: typeof out.createdAt, updatedAt: typeof out.updatedAt }, { id, name: "Ada Lovelace", phone: "300", email: "ada@example.com", identity: "wa:1", notes: "hi", createdAt: "string", updatedAt: "string" });
@@ -99,15 +103,15 @@ describe("GET /svc/contacts/contact", { concurrency: false }, () => {
   it("finds it by channel identity too", async (t) => {
     if (skipReason) return t.skip(skipReason);
     const id = await person("Ada", { identity: "wa:+573001112233" });
-    const out = await body(await contactRoute(get(`/contact?identity=${encodeURIComponent("wa:+573001112233")}`)));
+    const out = await body(await lookupContactRoute(get(`/contacts/lookup?identity=${encodeURIComponent("wa:+573001112233")}`)));
     assert.equal(out.id, id);
   });
 
   it("answers 404 for an unknown contact and 400 unless exactly one of id and identity is given", async (t) => {
     if (skipReason) return t.skip(skipReason);
-    assert.equal((await contactRoute(get("/contact?id=424242"))).status, 404);
-    assert.equal((await contactRoute(get("/contact?identity=nobody"))).status, 404);
-    for (const query of ["", "?id=abc", "?id=0", "?id=1&identity=wa:1", "?identity="]) assert.equal((await contactRoute(get(`/contact${query}`))).status, 400, query);
+    assert.equal((await lookupContactRoute(get("/contacts/lookup?id=424242"))).status, 404);
+    assert.equal((await lookupContactRoute(get("/contacts/lookup?identity=nobody"))).status, 404);
+    for (const query of ["", "?id=abc", "?id=0", "?id=1&identity=wa:1", "?identity="]) assert.equal((await lookupContactRoute(get(`/contact${query}`))).status, 400, query);
   });
 });
 

@@ -6,7 +6,7 @@ Objective: a service-token API in `contacts` (v0.2.0) so other modules, agents a
 
 - S1. "empieza por la ruta de servicio de contacts": routes under `/svc/contacts/`, each guarded by a service-token scope; no change to the pages, the forms, the events or the data.
 - S2. Scopes: `contacts.read`, `contacts.write`, `leads.read`, `leads.write`. [assumption: same words as the permissions; the platform keeps scopes and permissions apart]
-- S3. `GET /svc/contacts/contact` with exactly one of `id` or `identity` answers the contact: `{ id, name, phone, email, identity, notes, createdAt, updatedAt }`; 404 `not_found`; 400 when neither or both, or the id is not a number. Scope `contacts.read`.
+- S3. `GET /svc/contacts/contacts/lookup` with exactly one of `id` or `identity` answers the contact: `{ id, name, phone, email, identity, notes, createdAt, updatedAt }`; 404 `not_found`; 400 when neither or both, or the id is not a number. Scope `contacts.read`.
 - S4. `GET /svc/contacts/contacts` answers `{ contacts: [...] }` newest first, filtered by `q` (name, phone, email, identity, ignoring case) and cut at `limit` (1 to 100, default 50; anything else is 400). Scope `contacts.read`.
 - S5. `POST /svc/contacts/contacts/create` takes the same fields as the form and answers 201 with the contact and announces `contact.created`; an identity another contact holds answers 409 `{ error: "identity_taken", id }` with that contact's id. Scope `contacts.write`.
 - S6. `POST /svc/contacts/contacts/update` takes `id` and any of the fields; a field that is absent keeps its value, an empty or null optional field clears it; 404 `not_found`; 409 `identity_taken`; 400 naming the field. Scope `contacts.write`.

@@ -2,7 +2,7 @@ import { defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "contacts",
-  version: "0.2.1", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.3.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Contacts",
   platform: "^0.1.3", // the SDK range this module needs, as plain text: raise it only when the module needs a newer SDK
   dependsOn: {},
@@ -45,7 +45,7 @@ export default defineModule({
     { path: "/pipeline/lead", entry: "./web/lead-create.ts", kind: "route", methods: ["POST"], permission: "contacts.write" },
     { path: "/pipeline/move", entry: "./web/lead-move.ts", kind: "route", methods: ["POST"], permission: "contacts.write" },
     { path: "/pipeline/stage", entry: "./web/stage-save.ts", kind: "route", methods: ["POST"], permission: "contacts.write" },
-    { path: "/svc/contacts/contact", entry: "./web/svc-contact.ts", kind: "route", methods: ["GET"], scope: "contacts.read" },
+    { path: "/svc/contacts/contacts/lookup", entry: "./web/svc-contact-lookup.ts", kind: "route", methods: ["GET"], scope: "contacts.read" },
     { path: "/svc/contacts/contacts", entry: "./web/svc-contacts.ts", kind: "route", methods: ["GET"], scope: "contacts.read" },
     { path: "/svc/contacts/contacts/create", entry: "./web/svc-contact-create.ts", kind: "route", methods: ["POST"], scope: "contacts.write" },
     { path: "/svc/contacts/contacts/update", entry: "./web/svc-contact-update.ts", kind: "route", methods: ["POST"], scope: "contacts.write" },

@@ -22,16 +22,18 @@ anything (a page cannot ask who is looking, so the forms are shown to every read
 
 ```bash
 npm run modunexo -- tokens create contacts --name agent --scope contacts.read --scope leads.read --scope leads.write
-curl -H "Authorization: Bearer mdnx_..." "https://host/svc/contacts/contact?identity=wa:%2B573001112233"
+curl -H "Authorization: Bearer mdnx_..." "https://host/svc/contacts/contacts/lookup?identity=wa:%2B573001112233"
 curl -H "Authorization: Bearer mdnx_..." -X POST https://host/svc/contacts/leads/create -d '{"contactId":12,"title":"Website","amount":1500}'
 ```
 
   | Route | Scope | Does |
   | --- | --- | --- |
-  | `GET /svc/contacts/contact?id=` or `?identity=` | `contacts.read` | one contact; 404 `not_found` |
+  | `GET /svc/contacts/contacts/lookup?id=` or `?identity=` | `contacts.read` | one contact; 404 `not_found` |
   | `GET /svc/contacts/contacts?q=&limit=` | `contacts.read` | `{ contacts }`, newest first, `limit` 1 to 100 (default 50) |
   | `POST /svc/contacts/contacts/create` | `contacts.write` | 201 with the contact; 409 `{ error: "identity_taken", id }` |
   | `POST /svc/contacts/contacts/update` | `contacts.write` | `{ id, ...fields }`: absent fields stay, null or empty clears |
+
+  Since 0.3.0 the single-contact lookup is `GET /svc/contacts/contacts/lookup`; it was `GET /svc/contacts/contact` before, and that path no longer exists. Upgrade inbox (0.3.2 or later) together with contacts: the inbox link calls the new path.
   | `GET /svc/contacts/stages` | `leads.read` | `{ stages: [{ id, name, position, kind }] }` |
   | `GET /svc/contacts/leads?contactId=` | `leads.read` | `{ leads: [{ id, title, amount, priority, stage, closedAt }] }` |
   | `POST /svc/contacts/leads/create` | `leads.write` | `{ contactId, title, amount?, priority? }`: 201 `{ id }` |

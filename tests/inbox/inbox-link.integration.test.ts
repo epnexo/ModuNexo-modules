@@ -66,7 +66,7 @@ before(async () => {
         return res.end();
       }
       const url = new URL(req.url ?? "", "http://x");
-      if (req.method === "GET" && url.pathname === "/svc/contacts/contact") {
+      if (req.method === "GET" && url.pathname === "/svc/contacts/contacts/lookup") {
         const id = known.get(url.searchParams.get("identity") ?? "");
         return id === undefined ? json(404, { error: "not_found" }) : json(200, { id });
       }
@@ -165,7 +165,7 @@ describe("the link_contact job", { concurrency: false }, () => {
     await linkContact(ctx(id));
     assert.equal(Number((await conversation()).contact_id), 42);
     assert.equal(seen.length, 1);
-    assert.deepEqual([seen[0]!.method, seen[0]!.url, seen[0]!.auth], ["GET", `/svc/contacts/contact?identity=${encodeURIComponent("web:c-1")}`, `Bearer ${TOKEN}`]);
+    assert.deepEqual([seen[0]!.method, seen[0]!.url, seen[0]!.auth], ["GET", `/svc/contacts/contacts/lookup?identity=${encodeURIComponent("web:c-1")}`, `Bearer ${TOKEN}`]);
   });
 
   it("creates the contact with the name it has seen, named by the channel and reference, when nobody holds the identity", async (t) => {
@@ -266,6 +266,6 @@ describe("the link_contact job", { concurrency: false }, () => {
     const id = await insertConversation();
     await linkContact(ctx(id));
     assert.equal(Number((await conversation()).contact_id), 9);
-    assert.equal(seen[0]!.url.startsWith("/svc/contacts/contact?"), true);
+    assert.equal(seen[0]!.url.startsWith("/svc/contacts/contacts/lookup?"), true);
   });
 });

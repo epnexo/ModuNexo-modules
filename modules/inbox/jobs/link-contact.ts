@@ -42,7 +42,7 @@ export default async function linkContact(ctx: JobContext): Promise<void> {
   };
 
   let contactId: number;
-  const lookup = await send(`/svc/contacts/contact?identity=${encodeURIComponent(identity)}`, { method: "GET" });
+  const lookup = await send(`/svc/contacts/contacts/lookup?identity=${encodeURIComponent(identity)}`, { method: "GET" });
   if (lookup.status === 200) {
     contactId = await idOf(lookup);
   } else if (lookup.status === 404) {
