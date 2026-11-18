@@ -1,0 +1,21 @@
+[Unit]
+Description=ModuNexo host collector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=modunexo-agent
+Group=modunexo-agent
+SupplementaryGroups=docker systemd-journal
+ExecStart=/usr/local/bin/modunexo-agent --config /etc/modunexo-agent/config.json
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/modunexo-agent
+
+[Install]
+WantedBy=multi-user.target
