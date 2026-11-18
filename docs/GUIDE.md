@@ -69,8 +69,8 @@ layers, from the one every module uses to the one a module owns:
    still follows the theme. Do not restyle `card`, `badge` or `icon-tile` globally from a module; change the variables.
 
 The global classes arrive with the platform release that carries them. A module is packed against that platform's SDK
-and takes its `platform` range from it (`^${SDK_VERSION}`), so a platform that does not have the classes refuses to
-install it instead of drawing borderless boxes. A new pattern that two modules need (a form field, a dialog, a tab strip, an empty state) belongs in the platform, not
+and declares the SDK range it needs in `platform` (a literal such as `"^0.1.3"`), so a platform that does not have the
+classes refuses to install it instead of drawing borderless boxes. A new pattern that two modules need (a form field, a dialog, a tab strip, an empty state) belongs in the platform, not
 copied between modules: raise it before writing it a second time. The boundary is enforced: `tests/styles` fails when a
 module's stylesheet has a selector outside its own root class or prefix, names a platform class, or writes a colour
 value anywhere but in a custom property.
@@ -86,7 +86,10 @@ value anywhere but in a custom property.
    jobs, permissions are listed before anything runs).
 5. Install for real: `modules add ... --sha256 <hex>` then `modules apply <hex>`. The build goes beside the serving
    one and the restart is the switch, so the site does not go down. Check `/status` for jobs and events.
-6. Bump the module version for every change that ships; keep `platform: ^<SDK_VERSION>` in the manifest.
+6. Bump the module version for every change that ships; keep `platform` a literal string (`"^0.1.3"`), never built from `SDK_VERSION`: `apply` evaluates `manifest.ts` again on the
+   platform and compares it with the `manifest.json` that was packed, so a range computed from the SDK makes a package
+   packed against another SDK be refused as inconsistent. Raise it only when the module needs a newer SDK (a release
+   that changes the minor, for example 0.2.0, is refused at install until the module says it supports it); `tests/platform` enforces it.
 
 ## 3. The modules, in build order
 

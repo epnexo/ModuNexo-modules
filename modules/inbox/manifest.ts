@@ -1,4 +1,4 @@
-import { SDK_VERSION, defineModule } from "@modunexo/sdk";
+import { defineModule } from "@modunexo/sdk";
 import { LINK_ATTEMPTS } from "./lib/link.ts";
 import { DELIVER_ATTEMPTS } from "./lib/limits.ts";
 
@@ -6,7 +6,7 @@ export default defineModule({
   id: "inbox",
   version: "0.3.1", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Inbox",
-  platform: `^${SDK_VERSION}`,
+  platform: "^0.1.3", // the SDK range this module needs, as plain text: raise it only when the module needs a newer SDK
   dependsOn: {},
   schema: "inbox", // the Postgres schema this module owns
   migrationsDir: "migrations",
