@@ -45,7 +45,8 @@ describe("OpenCode collector", () => {
       utimesSync(wal, future, future);
       const [file] = await collector.discover();
       assert.equal(file!.size, base.size + 4096);
-      assert.equal(file!.mtimeMs, Math.trunc(future.getTime()));
+      // mtimeMs goes through a float (seconds and nanoseconds), so it can land one millisecond away.
+      assert.ok(Math.abs(file!.mtimeMs - future.getTime()) <= 1, `${file!.mtimeMs} vs ${future.getTime()}`);
     } finally {
       rmSync(wal, { force: true });
     }

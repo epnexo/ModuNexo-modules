@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it, type TestContext } from "node:test";
+import { hangUntilAbort, stallBodyUntilAbort } from "./helpers/hang.ts";
 import { type DocusealClient, type DocusealError, type DocusealResult, MAX_TIMEOUT_MS, createDocusealClient, docusealFromEnv } from "../src/docuseal-client.ts";
 
 /** Every answer below has the shape the /nda skill's code reads. Nothing here touches the network. */
@@ -304,7 +305,7 @@ describe("createSubmission", () => {
 
   describe("when the request may have been applied", () => {
     it("reports a timeout while waiting as an unknown outcome", async () => {
-      const hang = (_c: Call, init: RequestInit) => new Promise<Response>((_resolve, reject) => init.signal?.addEventListener("abort", () => reject(init.signal?.reason)));
+      const hang = (_c: Call, init: RequestInit) => hangUntilAbort(init);
       assert.deepEqual(failure(await client(fake(hang).impl, { timeoutMs: 20 }).createSubmission(request)), { kind: "outcome-unknown", reason: "timeout" });
     });
 
@@ -315,7 +316,7 @@ describe("createSubmission", () => {
     it("reports a body that is interrupted after a 2xx as an unknown outcome, and a body that times out the same way", async () => {
       const broken = () => new Response(new ReadableStream({ start: (controller) => controller.error(new TypeError("terminated")) }), { status: 201 });
       assert.deepEqual(failure(await client(fake(broken).impl).createSubmission(request)), { kind: "outcome-unknown", reason: "interrupted" });
-      const slow = (_c: Call, init: RequestInit) => new Response(new ReadableStream({ start: (controller) => init.signal?.addEventListener("abort", () => controller.error(init.signal?.reason)) }), { status: 200 });
+      const slow = (_c: Call, init: RequestInit) => stallBodyUntilAbort(init);
       assert.deepEqual(failure(await client(fake(slow).impl, { timeoutMs: 20 }).createSubmission(request)), { kind: "outcome-unknown", reason: "timeout" });
     });
 
@@ -334,7 +335,7 @@ describe("createSubmission", () => {
     });
 
     it("leaves the reads as they were: a timeout on a read is plain unreachable", async () => {
-      const hang = (_c: Call, init: RequestInit) => new Promise<Response>((_resolve, reject) => init.signal?.addEventListener("abort", () => reject(init.signal?.reason)));
+      const hang = (_c: Call, init: RequestInit) => hangUntilAbort(init);
       assert.deepEqual(failure(await client(fake(hang).impl, { timeoutMs: 20 }).getSubmission(1)), { kind: "unreachable", reason: "timeout" });
     });
   });
@@ -498,19 +499,12 @@ describe("failures", () => {
 
   it("maps a network failure and a timeout to unreachable", async () => {
     assert.deepEqual(failure(await call(fake(() => Promise.reject(new TypeError("fetch failed"))).impl)), { kind: "unreachable", reason: "network" });
-    const hang = (_c: Call, init: RequestInit) => new Promise<Response>((_resolve, reject) => init.signal?.addEventListener("abort", () => reject(init.signal?.reason)));
+    const hang = (_c: Call, init: RequestInit) => hangUntilAbort(init);
     assert.deepEqual(failure(await client(fake(hang).impl, { timeoutMs: 20 }).getSubmission(1)), { kind: "unreachable", reason: "timeout" });
   });
 
   it("times out while the body is still being read", async () => {
-    const slow = (_c: Call, init: RequestInit) => {
-      const body = new ReadableStream({
-        start(controller) {
-          init.signal?.addEventListener("abort", () => controller.error(init.signal?.reason));
-        },
-      });
-      return new Response(body, { status: 200 });
-    };
+    const slow = (_c: Call, init: RequestInit) => stallBodyUntilAbort(init);
     assert.deepEqual(failure(await client(fake(slow).impl, { timeoutMs: 20 }).getSubmission(1)), { kind: "unreachable", reason: "timeout" });
   });
 

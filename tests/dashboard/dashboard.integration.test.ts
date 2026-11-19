@@ -121,8 +121,10 @@ describe("agenda", { concurrency: false }, () => {
     await sql("update agenda.settings set timezone = 'UTC'");
     const booking = (starts: string, status = "booked") =>
       sql(`insert into agenda.bookings (starts_at, ends_at, status, attendee_name) values (${starts}, ${starts} + interval '30 minutes', $1, 'Ada')`, [status]);
-    await booking("date_trunc('day', now()) + interval '1 minute'");
-    await booking("date_trunc('day', now()) + interval '2 minutes'", "cancelled");
+    // The start of the UTC day, whatever time zone the database session uses (a bare date_trunc follows the session's).
+    const utcDay = "(date_trunc('day', now() at time zone 'UTC') at time zone 'UTC')";
+    await booking(`${utcDay} + interval '1 minute'`);
+    await booking(`${utcDay} + interval '2 minutes'`, "cancelled");
     await booking("now() + interval '2 days'");
     await booking("now() - interval '3 days'");
     assert.equal(await stat("agenda", "today"), 1);

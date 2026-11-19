@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { hangUntilAbort } from "./helpers/hang.ts";
 import { printed } from "./helpers/printed.ts";
 import { describe, it } from "node:test";
 import { type DocusealClient, createDocusealClient } from "../src/docuseal-client.ts";
@@ -101,7 +102,7 @@ describe("downloadSignedPdf", () => {
 
   it("answers 504 for a timeout and 502 for every other DocuSeal failure, logging only the code", async (t) => {
     const cases: [string, Handler[], number, RegExp][] = [
-      ["timeout", [(_u, init) => new Promise<Response>((_res, rej) => init.signal?.addEventListener("abort", () => rej(init.signal?.reason)))], 504, /docuseal-unreachable-timeout/],
+      ["timeout", [(_u, init) => hangUntilAbort(init)], 504, /docuseal-unreachable-timeout/],
       ["network", [() => Promise.reject(new Error(`down ${TOKEN}`))], 502, /docuseal-unreachable-network/],
       ["token refused", [() => json({}, 401)], 502, /docuseal-unauthorized-401/],
       ["submission gone", [() => json({}, 404)], 502, /docuseal-not-found/],

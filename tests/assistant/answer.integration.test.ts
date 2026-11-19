@@ -520,7 +520,8 @@ describe("the job", { concurrency: false }, () => {
 
   it("reads the event it is given and answers that message", async (t) => {
     if (skipReason) return t.skip(skipReason);
-    const c = await conversation(["in:hello"]);
+    // The job reads the real clock and ignores a message older than STALE_MS, so this one is made now, not at NOW.
+    const c = await conversation(["in:hello"], { at: new Date().toISOString() });
     await answerJob(ctx({ event: { id: 1, type: "inbox.message.received", payload: { channel: "web", conversationId: c.id, messageId: c.ids[0] }, createdAt: NOW.toISOString() } }));
     assert.equal((await outbound(c.id)).length, 1);
   });
