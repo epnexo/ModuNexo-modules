@@ -162,7 +162,7 @@ describe("MarkerPanel", () => {
     assert.match(markup, /Filled from the profile \(2\)/);
     assert.match(markup, /Asked for each document \(2\)/);
     assert.ok(markup.indexOf("A_NOMBRE") < markup.indexOf("COLOR") && markup.indexOf("COLOR") < markup.indexOf("B_NOMBRE"));
-    assert.match(markup, /<li class="dc-chip">B_NOMBRE<\/li>/);
+    assert.match(markup, /<li class="chip dc-chip">B_NOMBRE<\/li>/);
   });
 
   it("says that the platform fills the reference", () => {

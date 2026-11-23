@@ -100,7 +100,7 @@ describe("template edit page", () => {
     assert.match(markup, /Save changes/);
     assert.match(markup, /Filled from the profile \(1\)/);
     assert.match(markup, /Asked for each document \(1\)/);
-    assert.match(markup, /<li class="dc-chip">A_NOMBRE<\/li>/);
+    assert.match(markup, /<li class="chip dc-chip">A_NOMBRE<\/li>/);
     assert.match(markup, /not valid markers/);
     assert.match(markup, /Archive template/);
     assert.match(markup, /name="id" value="7"/);
