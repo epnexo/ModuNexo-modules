@@ -154,7 +154,7 @@ function VariablesSection({ rows, errors }: { rows: VariableRow[]; errors: Recor
 
   return (
     <section className="dc-variables" aria-labelledby="variables-heading">
-      <h3 id="variables-heading" className="dc-section-title">
+      <h3 id="variables-heading" className="section-title dc-section-title">
         Variables
       </h3>
       <p className="field-help">

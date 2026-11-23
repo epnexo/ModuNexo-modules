@@ -5,7 +5,7 @@ const days = (count: number): string => `${count} ${count === 1 ? "day" : "days"
 
 function DiskCard({ disk }: { disk: DiskForecast }) {
   const body = (() => {
-    if (disk.state === "unknown") return <p className="obs-empty">Needs {days(disk.needed)} of disk history to forecast; {disk.daysOfData === 0 ? "none yet" : `${days(disk.daysOfData)} so far`}.</p>;
+    if (disk.state === "unknown") return <p className="empty">Needs {days(disk.needed)} of disk history to forecast; {disk.daysOfData === 0 ? "none yet" : `${days(disk.daysOfData)} so far`}.</p>;
     if (disk.state === "stable") return <p>Stable: the disk is not growing fast enough to fill within a year.</p>;
     if (disk.daysLeft === 0) return <p><strong>The disk is full.</strong></p>;
     return (
@@ -32,7 +32,7 @@ export default function TrendsPanel({ trends }: { trends: HostTrends }) {
         <DiskCard disk={trends.disk} />
         <section className="card" aria-label="This week against last week">
           <div className="obs-chart-head"><h3>This week against last week</h3></div>
-          {trends.weeks.length === 0 ? <p className="obs-empty">Needs four days of history in each of the two weeks to compare.</p> : (
+          {trends.weeks.length === 0 ? <p className="empty">Needs four days of history in each of the two weeks to compare.</p> : (
             <div className="table-scroll">
               <table className="data-table">
                 <thead><tr><th scope="col">Metric</th><th scope="col">Last week</th><th scope="col">This week</th><th scope="col">Change</th></tr></thead>
@@ -52,7 +52,7 @@ export default function TrendsPanel({ trends }: { trends: HostTrends }) {
         </section>
         <section className="card" aria-label="Spikes in the last day">
           <div className="obs-chart-head"><h3>Spikes in the last 24 hours</h3></div>
-          {trends.spikes.length === 0 ? <p className="obs-empty">No hour stood out from the day before it.</p> : (
+          {trends.spikes.length === 0 ? <p className="empty">No hour stood out from the day before it.</p> : (
             <ul className="obs-spikes">
               {trends.spikes.map((spike) => (
                 <li key={`${spike.metric}-${spike.t}`}>

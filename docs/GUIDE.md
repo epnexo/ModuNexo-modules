@@ -47,6 +47,12 @@ layers, from the one every module uses to the one a module owns:
    - `badge` plus one tone, `badge-info`, `badge-success`, `badge-warning` or `badge-danger`: a state in one word,
      with a dot (`<span className="badge badge-success">Active</span>`). No tone gives the neutral one.
    - `icon-tile`: a small square that holds one icon (`<span className="icon-tile"><Icon /></span>`).
+   - `card-link`: add it to a `card` that is a link or a button; it lifts on hover and shows the focus ring.
+   - `rise`: an entrance (fade and a small rise). Set `--rise-i` to the item's index to stagger neighbours
+     (`style={{ "--rise-i": index }}`); it is off for anyone who asked for less motion.
+   - `empty`: the text of an empty state. `chip`: a small pill. `section-title`: the heading of a part of a page.
+   Do not write your own hover lift, entrance, empty state, chip or section title: changing these classes in the platform changes
+   every module. A module keeps in its own stylesheet only what is its own, prefixed with its id.
    - `seg`: a segmented control of links or buttons; the current one is marked with `aria-current` (or `aria-pressed`)
      and a tick (`<nav className="seg" aria-label="Period"><a aria-current="page">...</a></nav>`).
    - `stats` and `stat`: a figure with its label: `<dl className="stats"><div className="stat"><dt className="stat-label">`

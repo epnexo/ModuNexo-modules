@@ -49,7 +49,7 @@ export default function HostView({ host, range, series, firing, history, events,
       <p><a href="/observability">← Back to the fleet</a></p>
       {firing.length > 0 ? <div className="notice notice-error" role="alert"><strong>{firing.length} {firing.length === 1 ? "alert is" : "alerts are"} firing on this host.</strong></div> : null}
       <section className="obs-charts" aria-label="Metric trends">
-        {series.length === 0 ? <p className="obs-empty">This host has not reported any metric yet.</p> : null}
+        {series.length === 0 ? <p className="empty">This host has not reported any metric yet.</p> : null}
         {series.map(({ metric, points }) => {
           const unit = metricUnit(metric);
           const last = points.at(-1);
@@ -78,7 +78,7 @@ export default function HostView({ host, range, series, firing, history, events,
       </section>
       <section className="card" aria-label="Latest values">
         <h2 className="obs-chart-head">Latest values</h2>
-        {latest.length === 0 ? <p className="obs-empty">No samples yet.</p> : (
+        {latest.length === 0 ? <p className="empty">No samples yet.</p> : (
           <dl className="detail-list">
             {latest.map(([key, value]) => <div key={key}><dt>{metricLabel(key)}</dt><dd>{formatMetric(key, value)}</dd></div>)}
           </dl>

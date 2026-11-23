@@ -31,7 +31,7 @@ export interface TrendChartProps {
 export default function TrendChart({ label, unit, points, from, to, gapMs, max }: TrendChartProps) {
   const [active, setActive] = useState<number | null>(null);
   if (points.length === 0) {
-    return <p className="obs-empty">No data for {label.toLowerCase()} in this window.</p>;
+    return <p className="empty">No data for {label.toLowerCase()} in this window.</p>;
   }
   const top = max ?? niceCeiling(Math.max(...points.map((point) => point.max)) * 1.05);
   const axis = max === undefined ? axisTicks(top) : { max, ticks: axisTicks(max).ticks };

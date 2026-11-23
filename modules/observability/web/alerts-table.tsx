@@ -8,7 +8,7 @@ const valueOf = (alert: AlertRow): string => alert.value === null ? "—" : isEn
 
 /** Alerts as a table: firing ones show since when, history ones also when they resolved. `showHost` is off on a host page. */
 export default function AlertsTable({ rows, showHost = true, empty }: { rows: AlertRow[]; showHost?: boolean; empty: string }) {
-  if (rows.length === 0) return <p className="obs-empty">{empty}</p>;
+  if (rows.length === 0) return <p className="empty">{empty}</p>;
   return (
     <div className="card" style={{ padding: 0 }}>
       <div className="table-scroll">

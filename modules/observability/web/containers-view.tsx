@@ -51,7 +51,7 @@ export default function ContainersView({ containers, filters, now }: { container
         <LiveRefresh />
         <SubNav current="containers" firing={0} />
       </Bar>
-      {containers.length === 0 ? <p className="obs-empty">No containers reported yet.</p> : (
+      {containers.length === 0 ? <p className="empty">No containers reported yet.</p> : (
         <>
           <dl className="stats" aria-label="Container summary">
             <div className="stat" style={withVar("--stat-tone", "var(--success)")}><dt className="stat-label">Running</dt><dd className="stat-value">{live.length - restarting - stopped}</dd></div>
@@ -74,7 +74,7 @@ export default function ContainersView({ containers, filters, now }: { container
               <button type="submit" className="btn btn-sm">Search</button>
             </form>
           </div>
-          {hosts.length === 0 ? <p className="obs-empty">No containers match these filters. <a href="/observability/containers">Clear them</a>.</p> : hosts.map((host) => (
+          {hosts.length === 0 ? <p className="empty">No containers match these filters. <a href="/observability/containers">Clear them</a>.</p> : hosts.map((host) => (
             <details key={host.hostName} className="card obs-tree" open={searching || filters.host !== null}>
               <summary className="obs-tree-head">
                 <span className="obs-tree-name">{host.hostName}</span>

@@ -17,12 +17,12 @@ function Gauge({ metric, value }: { metric: string; value: number }) {
   );
 }
 
-function HostCard({ host, now }: { host: FleetRow; now: number }) {
+function HostCard({ host, now, index }: { host: FleetRow; now: number; index: number }) {
   const gauges = GAUGES.filter((metric) => host.metrics[metric] !== undefined);
   const facts = FACTS.filter((metric) => host.metrics[metric] !== undefined);
   const age = host.lastSampleAt === null ? null : Math.max(0, (now - host.lastSampleAt.getTime()) / 60_000);
   return (
-    <section className="card obs-host-card" aria-label={host.hostName}>
+    <section className="card card-link rise" style={withVar("--rise-i", String(Math.min(index, 3)))} aria-label={host.hostName}>
       <div className="obs-host-head">
         <a className="obs-host-name" href={`/observability/collector/${encodeURIComponent(host.hostName)}`}>{host.hostName}</a>
         <span className="obs-badges">
@@ -30,7 +30,7 @@ function HostCard({ host, now }: { host: FleetRow; now: number }) {
           <StatusBadge status={host.status} />
         </span>
       </div>
-      {gauges.length === 0 && facts.length === 0 ? <p className="obs-empty">No samples yet.</p> : null}
+      {gauges.length === 0 && facts.length === 0 ? <p className="empty">No samples yet.</p> : null}
       {gauges.length > 0 ? <dl className="obs-gauges">{gauges.map((metric) => <Gauge key={metric} metric={metric} value={host.metrics[metric]!} />)}</dl> : null}
       {host.trend.length >= 2 ? <svg className="obs-spark" viewBox="0 0 120 28" role="img" aria-label="CPU, last hour" preserveAspectRatio="none"><polyline points={sparkPoints(host.trend, 120, 28, 100)} fill="none" /></svg> : null}
       {facts.length > 0 ? <dl className="obs-facts">{facts.map((metric) => <div key={metric}><dt>{metricLabel(metric)}</dt><dd>{formatMetric(metric, host.metrics[metric]!)}</dd></div>)}</dl> : null}
@@ -64,7 +64,7 @@ export default function FleetView({ fleet, now }: { fleet: FleetRow[]; now: numb
         {fleet.length === 0 ? (
           <div className="notice notice-info" role="status"><strong>No hosts have reported yet.</strong> Point a collector at this module and it appears here after its first heartbeat.</div>
         ) : (
-          <div className="obs-hosts">{fleet.map((host) => <HostCard key={host.id} host={host} now={now} />)}</div>
+          <div className="obs-hosts">{fleet.map((host, index) => <HostCard key={host.id} host={host} now={now} index={index} />)}</div>
         )}
       </section>
     </>

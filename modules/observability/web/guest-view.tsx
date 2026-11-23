@@ -50,7 +50,7 @@ export default function GuestView({ guest, range, series, sessions, now }: Guest
         </div>
       </dl>
       <section className="obs-charts" aria-label="Guest trends">
-        {series.length === 0 ? <p className="obs-empty">This guest has not reported any metric yet.</p> : null}
+        {series.length === 0 ? <p className="empty">This guest has not reported any metric yet.</p> : null}
         {series.map(({ metric, points }) => {
           const unit = metricUnit(metric);
           const last = points.at(-1);
@@ -68,7 +68,7 @@ export default function GuestView({ guest, range, series, sessions, now }: Guest
       </section>
       <section className="obs-section" aria-labelledby="sessions-heading">
         <h2 id="sessions-heading">Sessions</h2>
-        {sessions.length === 0 ? <p className="obs-empty">No session recorded yet.</p> : (
+        {sessions.length === 0 ? <p className="empty">No session recorded yet.</p> : (
           <div className="card" style={{ padding: 0 }}>
             <div className="table-scroll">
               <table className="data-table">

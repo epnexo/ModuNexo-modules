@@ -111,7 +111,7 @@ function ChipList({ names }: { names: string[] }) {
   ) : (
     <ul className="dc-chips">
       {names.map((name) => (
-        <li key={name} className="dc-chip">
+        <li key={name} className="chip dc-chip">
           {name}
         </li>
       ))}
