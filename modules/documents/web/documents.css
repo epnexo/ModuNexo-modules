@@ -3,6 +3,8 @@
  * figures are the platform's classes; only the page bar, the page layout and a few small parts live here, every class
  * prefixed with `dc-` so nothing leaks to another page.
  */
+/* In the module layer: the platform's order puts it after its components and utilities, and before what a company or a person customizes. */
+@layer module {
 .dc-bar {
   display: flex;
   flex-wrap: wrap;
@@ -110,4 +112,5 @@
 .dc-file:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
 }

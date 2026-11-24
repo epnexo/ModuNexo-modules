@@ -7,7 +7,8 @@
  * Single-series marks (cumulative line, token and model bars) share one color, --series-total, that no tool wears.
  * Text in charts wears ink tokens, never a series color.
  */
-
+/* In the module layer: the platform's order puts it after its components and utilities, and before what a company or a person customizes. */
+@layer module {
 /*
  * Design layer. The platform ships tokens (--panel, --border, --accent...) but not the portlet, KPI, table and notice
  * patterns this page was built on, so they are defined here, scoped to `.au` so nothing leaks into other pages.
@@ -879,4 +880,5 @@
 .au [data-loading="true"] {
   opacity: 0.55;
   transition: opacity 120ms ease-out;
+}
 }

@@ -1,5 +1,6 @@
 /* Observability: only what the platform lacks (gauges and charts). Everything else uses the platform's classes. */
-
+/* In the module layer: the platform's order puts it after its components and utilities, and before what a company or a person customizes. */
+@layer module {
 .obs {
   display: flex;
   flex-direction: column;
@@ -436,4 +437,5 @@
     grid-column: 1 / -1;
     text-align: left;
   }
+}
 }

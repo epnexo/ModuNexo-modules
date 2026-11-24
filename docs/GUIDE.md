@@ -70,7 +70,9 @@ layers, from the one every module uses to the one a module owns:
    that wants something else sets them once on its page's root element, so only its own page changes:
    `<div style={{ "--card-pad": "1rem" } as React.CSSProperties}>`.
 4. **The module's own CSS**, for what the platform does not offer (charts, a tool's colors, a special layout). Import it
-   from the page (`import "./<id>.css"`), prefix every class with the module's short name (`au-` for ai-usage), scope the
+   from the page (`import "./<id>.css"`), write the whole file inside one `@layer module { ... }` block (the platform orders that layer
+   after its components and utilities and before any customization, so your rules still win over utilities and lose only to what a
+   company or a person customizes), prefix every class with the module's short name (`au-` for ai-usage), scope the
    rules under one root class, and build them from the tokens above (`var(--border)`, `var(--accent)`), so the page
    still follows the theme. Do not restyle `card`, `badge` or `icon-tile` globally from a module; change the variables.
 
