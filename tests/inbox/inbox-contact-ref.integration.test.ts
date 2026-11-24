@@ -10,7 +10,7 @@ import { POST as receive } from "../../modules/inbox/web/messages.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
-import { migrate } from "@modunexo/core/runner";
+import { migrate } from "../helpers/migrate.ts";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
 const MODULE_DIR = fileURLToPath(new URL("../../modules/inbox/", import.meta.url));

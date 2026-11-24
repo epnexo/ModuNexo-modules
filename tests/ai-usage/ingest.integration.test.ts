@@ -7,7 +7,7 @@ import { after, before, beforeEach, describe, it, type TestContext } from "node:
 import { fileURLToPath } from "node:url";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
-import { migrate } from "@modunexo/core/runner";
+import { migrate } from "../helpers/migrate.ts";
 import { createScratchDatabase } from "@modunexo/core/testing";
 import aiUsage from "../../modules/ai-usage/manifest.ts";
 import type pg from "pg";

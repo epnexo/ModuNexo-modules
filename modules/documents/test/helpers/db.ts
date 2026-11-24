@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
-import { migrate } from "@modunexo/core/runner";
+import { migrate } from "../../../../tests/helpers/migrate.ts";
 import { createScratchDatabase } from "@modunexo/core/testing";
 import type pg from "pg";
 import type { Transactional } from "../../src/transaction.ts";

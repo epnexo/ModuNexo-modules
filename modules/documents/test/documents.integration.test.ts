@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { Registry } from "@modunexo/core/registry";
-import { migrate } from "@modunexo/core/runner";
+import { migrate } from "../../../tests/helpers/migrate.ts";
 import documents from "../manifest.ts";
 import { listDocuments } from "../web/queries.ts";
 import { type TestDb, openMigratedPool } from "./helpers/db.ts";

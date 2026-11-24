@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import pg from "pg";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
-import { migrate } from "@modunexo/core/runner";
+import { migrate } from "../helpers/migrate.ts";
 import { createScratchDatabase } from "@modunexo/core/testing";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import observability from "../../modules/observability/manifest.ts";

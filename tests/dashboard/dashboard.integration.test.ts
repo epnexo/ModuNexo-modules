@@ -4,9 +4,10 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { validateManifest } from "@modunexo/sdk";
 import { DashboardService } from "@modunexo/core/dashboard";
+import { moduleRolesFor } from "@modunexo/core/data";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
-import { migrate } from "@modunexo/core/runner";
+import { migrate } from "../helpers/migrate.ts";
 import { createScratchDatabase } from "@modunexo/core/testing";
 import agenda from "../../modules/agenda/manifest.ts";
 import assistant from "../../modules/assistant/manifest.ts";
@@ -35,7 +36,7 @@ before(async () => {
   for (const manifest of MODULES) registry.register(manifest);
   await migrate(pool, registry, { moduleDirs: Object.fromEntries(MODULES.map((manifest) => [manifest.id, dir(manifest.id)])) });
   for (const manifest of MODULES) await pool.query("insert into core.modules (id, state, installed_version) values ($1, 'enabled', $2)", [manifest.id, manifest.version]);
-  service = new DashboardService(pool, registry);
+  service = new DashboardService(pool, registry, { moduleRoles: moduleRolesFor(pool) });
 });
 
 after(async () => {

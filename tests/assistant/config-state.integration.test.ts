@@ -10,7 +10,7 @@ import inbox from "../../modules/inbox/manifest.ts";
 import { registerModuleRuntime } from "@modunexo/core/job-runtime";
 import { createPool } from "@modunexo/core/pool";
 import { Registry } from "@modunexo/core/registry";
-import { migrate } from "@modunexo/core/runner";
+import { migrate } from "../helpers/migrate.ts";
 import { createScratchDatabase } from "@modunexo/core/testing";
 
 const INBOX_DIR = fileURLToPath(new URL("../../modules/inbox/", import.meta.url));
