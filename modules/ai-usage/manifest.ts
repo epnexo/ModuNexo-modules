@@ -2,9 +2,9 @@ import { defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "ai-usage",
-  version: "0.6.7", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.6.8", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "AI usage",
-  platform: "^0.1.3", // the SDK range this module needs, as plain text: raise it only when the module needs a newer SDK
+  platform: "^0.1.4", // the SDK range this module needs, as plain text: raise it only when the module needs a newer SDK
   dependsOn: {},
   schema: "ai_usage", // the Postgres schema this module owns
   migrationsDir: "migrations",
@@ -40,6 +40,15 @@ export default defineModule({
         href: "/ai-usage",
         permission: "ai_usage.read",
         sql: "select to_char(d, 'DD Mon') as label, coalesce(sum(e.total_tokens), 0)::bigint as value from generate_series((now() at time zone 'utc')::date - 13, (now() at time zone 'utc')::date, interval '1 day') d left join usage_events e on e.occurred_at >= d at time zone 'utc' and e.occurred_at < (d + interval '1 day') at time zone 'utc' group by d order by d",
+      },
+      // One bar per tool for the last 30 days (UTC), a tool with nothing in them counts as zero. The label is the tool's slug, which
+      // is what the page's `?tool=` filter takes, so pressing a bar opens that tool.
+      {
+        key: "tokens_by_tool",
+        label: "Tokens by tool, last 30 days",
+        href: "/ai-usage?tool={label}",
+        permission: "ai_usage.read",
+        sql: "select t.slug as label, coalesce(sum(e.total_tokens), 0)::bigint as value from tools t left join usage_events e on e.tool_id = t.id and e.occurred_at >= ((now() at time zone 'utc')::date - 29) at time zone 'utc' group by t.slug order by value desc, t.slug",
       },
     ],
     alerts: [],
