@@ -1,5 +1,11 @@
 # documents
 
+## 0.5.6 - 2026-11-24
+
+- Its stylesheet is written inside the platform's `module` layer.
+- The variable chips and the form's section title use the platform's `chip` and `section-title`; only the monospace font and the spacing stay here.
+- No migration.
+
 ## 0.5.5 - 2026-11-11
 
 - The PDF engine test moves to the platform's Settings screen, where it belongs to the administrator: it is now a connection check of the manifest (`checks`), a "Test connection" button under the module's settings (Settings, Modules tab). It leaves the Profile page. Needs a platform with SDK 0.1.3 or later.

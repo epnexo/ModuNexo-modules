@@ -2,7 +2,7 @@ import { defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "documents",
-  version: "0.5.5", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.5.6", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Documents",
   platform: "^0.1.3", // the SDK range this module needs, as plain text: raise it only when the module needs a newer SDK
   dependsOn: {},
