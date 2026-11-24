@@ -1,5 +1,10 @@
 # documents
 
+## 0.6.0 - 2026-11-24
+
+- The first module to offer actions to an agent over MCP (platform `^0.1.5`): `find_templates` and `count_documents` read at once; `archive_template` is proposed by the agent and archives the template only after a person with `documents.write` approves it in the platform. The new job `archive_template` does the archiving and is safe to run twice.
+- No migration.
+
 ## 0.5.6 - 2026-11-24
 
 - Its stylesheet is written inside the platform's `module` layer.

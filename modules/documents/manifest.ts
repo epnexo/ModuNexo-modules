@@ -2,9 +2,9 @@ import { defineModule } from "@modunexo/sdk";
 
 export default defineModule({
   id: "documents",
-  version: "0.5.6", // raise it whenever a migration is added: an upgrade to the same version does nothing
+  version: "0.6.0", // raise it whenever a migration is added: an upgrade to the same version does nothing
   name: "Documents",
-  platform: "^0.1.3", // the SDK range this module needs, as plain text: raise it only when the module needs a newer SDK
+  platform: "^0.1.5", // the SDK range this module needs, as plain text: raise it only when the module needs a newer SDK
   dependsOn: {},
   schema: "documents", // the Postgres schema this module owns
   migrationsDir: "migrations",
@@ -30,6 +30,36 @@ export default defineModule({
     { key: "documents.read", label: "Read documents and templates" },
     { key: "documents.write", label: "Create and change documents, templates and the owner profile" },
     { key: "documents.send", label: "Send a document to be signed" },
+  ],
+  jobs: [{ name: "archive_template", entry: "./jobs/archive-template.ts", timeoutSeconds: 30, maxAttempts: 2 }],
+  // What an agent may ask of this module over MCP. Reads run at once; archiving waits for a person with documents.write to approve it.
+  actions: [
+    {
+      key: "find_templates",
+      label: "Find templates",
+      description: "Lists the templates (id, name, slug, kind and whether it is archived), all of them or those whose name contains the given text.",
+      risk: "read",
+      permission: "documents.read",
+      input: { q: { type: "text", maxLength: 80, description: "Part of the template's name. Leave out for all." } },
+      sql: "select id, name, slug, kind, archived_at is not null as archived from templates where $1::text is null or name ilike '%' || $1 || '%' order by name limit 50",
+    },
+    {
+      key: "count_documents",
+      label: "Count documents by state",
+      description: "How many documents there are in each state (draft, generated, sent, completed, declined, expired).",
+      risk: "read",
+      permission: "documents.read",
+      sql: "select status, count(*)::int as documents from documents group by status order by status",
+    },
+    {
+      key: "archive_template",
+      label: "Archive a template",
+      description: "Archives a template so it is no longer offered for new documents. Documents already made from it are not touched.",
+      risk: "write",
+      permission: "documents.write",
+      input: { template: { type: "int", min: 1, max: 2147483647, required: true, description: "The id of the template, as find_templates shows it." } },
+      job: "archive_template",
+    },
   ],
   nav: [{ label: "Documents", href: "/documents", icon: "file", permission: "documents.read" }],
   dashboard: {
